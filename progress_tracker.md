@@ -3,7 +3,7 @@
 **Project:** TripTrack by Ut-tech  
 **Target:** Private, Offline-First Mobile PWA for Badrinath Dham 2026 (Sep 24 – Oct 02, 2026)  
 **Primary Users:** 4 Pilgrims (2 Father-Son Duos: Utkarsh & Rajnish Ji, Cousin & Uncle Ji) + Extended Home Family  
-**Current Status:** **Phase 1 Complete (100%)** • **Phase 2 Complete (100%)** • **Phase 3 Ready for Kickoff**  
+**Current Status:** **Phase 1 Complete (100%)** • **Phase 2 Complete (100%)** • **Phase 3 Complete (100%)** • **Phase 4 Ready for Kickoff**  
 **Last Updated:** September 12, 2026
 
 ---
@@ -14,8 +14,8 @@
 | :--- | :--- | :---: | :---: | :--- |
 | **Phase 1** | **Scaffolding, Mobile-First PWA & Seed Layer** | ✅ **DONE** | 100% | Completed |
 | **Phase 2** | **Offline Document Vault & Gemini AI Parser** | ✅ **DONE** | 100% | Completed |
-| **Phase 3** | **Itinerary Tracker & Leaflet Map Engine** | ⏳ **NEXT** | 0% | Up Next |
-| **Phase 4** | **Dead-Zone Shadow Guard & Voice Logger** | 📋 **PENDING** | 0% | Following Phase 3 |
+| **Phase 3** | **Itinerary Tracker & Leaflet Map Engine** | ✅ **DONE** | 100% | Completed |
+| **Phase 4** | **Dead-Zone Shadow Guard & Voice Logger** | ⏳ **NEXT** | 0% | Up Next |
 | **Phase 5** | **Hardening, PWA Offline Audit & Deployment** | 📋 **PENDING** | 0% | Final Polish |
 
 ---
@@ -82,23 +82,23 @@
 
 ---
 
-### ⏳ Phase 3: Itinerary Tracker & Leaflet Map Engine
-*Target: Live Milestone Progression & Duo-Pinned OpenStreetMap Routing*
+### ✅ Phase 3: Itinerary Tracker & Leaflet Map Engine
+*Status: Completed & Verified on Sep 12, 2026*
 
-- [ ] **3.1 Dynamic Itinerary State Sync**
-  - [ ] Build `useItinerary.ts` hook syncing MongoDB segment status with local Dexie state.
-  - [ ] Segment lifecycle transitions: `UPCOMING` $\rightarrow$ `IN_TRANSIT` $\rightarrow$ `COMPLETED`.
-  - [ ] Milestone checkpoint optimistic local toggles with queue-backed background server sync.
-- [ ] **3.2 Logistics Inline Editor**
-  - [ ] Build `LogisticsEditModal.tsx` for sons to update cab driver phone, assigned taxi plate (e.g. UK-08 commercial), and pickup bays on the fly.
-  - [ ] One-tap phone dialer for assigned cab drivers.
-- [ ] **3.3 Interactive Leaflet Pilgrimage Map**
-  - [ ] Implement `FamilyMap.tsx` using `react-leaflet` with zero-cost OpenStreetMap tile caching.
-  - [ ] Render NH-7 pilgrimage route polyline with landmark milestones (Devprayag, Srinagar, Rudraprayag, Joshimath, Badrinath, Mana).
-  - [ ] Custom colored avatar pins for the 4 pilgrims (Royal Blue for Utkarsh, Crimson for Rajnish Ji, Forest Green for Cousin, Warm Amber for Uncle Ji).
-- [ ] **3.4 Live GPS & Battery Telemetry Beacon**
-  - [ ] Implement `geolocation.ts` interfacing with `navigator.geolocation` and `navigator.getBattery()`.
-  - [ ] Implement `triggerFamilyCheckin()` saving snapshots to local Dexie when offline and flushing on reconnect.
+- [x] **3.1 Dynamic Itinerary State Sync**
+  - [x] Build `useItinerary.ts` hook syncing MongoDB segment status with local Dexie state.
+  - [x] Segment lifecycle transitions: `UPCOMING` $\rightarrow$ `IN_TRANSIT` $\rightarrow$ `COMPLETED`.
+  - [x] Milestone checkpoint optimistic local toggles with queue-backed background server sync.
+- [x] **3.2 Logistics Inline Editor**
+  - [x] Build `LogisticsEditModal.tsx` for sons to update cab driver phone, assigned taxi plate (e.g. UK-08 commercial), and pickup bays on the fly.
+  - [x] One-tap phone dialer for assigned cab drivers.
+- [x] **3.3 Interactive Leaflet Pilgrimage Map**
+  - [x] Implement `FamilyMap.tsx` using Leaflet with zero-cost, zero-watermark OpenStreetMap tiles.
+  - [x] Render NH-7 pilgrimage route polyline with landmark milestones (Devprayag, Srinagar, Rudraprayag, Joshimath, Badrinath, Mana).
+  - [x] Custom colored avatar pins for the 4 pilgrims (Royal Blue for Utkarsh, Crimson for Rajnish Ji, Forest Green for Shreyas, Warm Amber for Sanjay).
+- [x] **3.4 Live GPS & Battery Telemetry Beacon**
+  - [x] Implement `telemetry.ts` interfacing with `navigator.geolocation` and `navigator.getBattery()`.
+  - [x] Implement `broadcastPilgrimBeacon()` saving snapshots to local Dexie when offline and flushing on reconnect.
 
 ---
 
