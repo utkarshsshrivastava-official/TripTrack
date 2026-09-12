@@ -2,8 +2,8 @@
 
 **Project:** TripTrack by Ut-tech  
 **Target:** Private, Offline-First Mobile PWA for Badrinath Dham 2026 (Sep 24 – Oct 02, 2026)  
-**Primary Users:** 4 Pilgrims (2 Father-Son Duos: Utkarsh & Rajnish Ji, Shreyas & Sanjay) + Extended Home Family  
-**Current Status:** **Phase 1 Complete (100%)** • **Phase 2 Complete (100%)** • **Phase 3 Complete (100%)** • **Phase 4 Complete (100%)** • **Phase 4.5 In Progress (0%)** • **Phase 5 Next**  
+**Primary Users:** 4 Pilgrims (2 Father-Son Duos: Utkarsh & Rajnish Ji, Shreyas & Sanjay) + Extended Home Family (4–8 members total)  
+**Current Status:** **Phases 1–4 Complete (100%)** • **Phase 5 Ready for Kickoff (0%)** • **Phases 6–8 Planned**  
 **Last Updated:** September 12, 2026
 
 ---
@@ -16,8 +16,10 @@
 | **Phase 2** | **Offline Document Vault & Gemini AI Parser** | ✅ **DONE** | 100% | Completed |
 | **Phase 3** | **Itinerary Tracker & Leaflet Map Engine** | ✅ **DONE** | 100% | Completed |
 | **Phase 4** | **Dead-Zone Shadow Guard & Voice Logger** | ✅ **DONE** | 100% | Completed |
-| **Phase 4.5** | **Elder Care & Sacred Pilgrimage Toolkit** | ⏳ **IN PROGRESS** | 0% | Current Phase |
-| **Phase 5** | **Hardening, PWA Offline Audit & Deployment** | ⏳ **NEXT** | 0% | Up Next |
+| **Phase 5** | **Real-Time Family Chat & Email Notifications** | ⏳ **NEXT** | 0% | Up Next |
+| **Phase 6** | **Elder Care, Altitude Health & Reassurance** | ⏳ **QUEUED** | 0% | Queued |
+| **Phase 7** | **Sacred Liturgy, Stotra Player & Memorial** | ⏳ **QUEUED** | 0% | Queued |
+| **Phase 8** | **Production Hardening, PWA Audit & Deploy** | ⏳ **QUEUED** | 0% | Final Phase |
 
 ---
 
@@ -123,58 +125,99 @@
 
 ---
 
-### ⏳ Phase 4.5: Elder Care & Sacred Pilgrimage Toolkit (Pre-Deployment Enhancements)
-*Status: In Progress • Target: Elder Health Monitoring, Offline Chants, Ritual Liturgy & Dead-Zone Reassurance*
+### ⏳ Phase 5: Real-Time Family Sync & Targeted Notification System
+*Status: Ready for Kickoff (0%) • Target: In-Family Socket.io Chat & Targeted Gmail Alerts*
 
-- [ ] **4.5.1 Elder Care & Health Suite**
-  - [ ] Upgrade Dexie IndexedDB schema to `version(3)` with `oximeterLogs: 'id, travellerId, recordedAt'`.
-  - [ ] Implement `oximeterStorage.ts` for $SpO_2$ & pulse logging with altitude safety thresholds ($SpO_2 < 88\%$ trigger at $>3,000\text{m}$).
-  - [ ] Build `HydrationMedsTracker.tsx` with 90-minute hydration countdown chime and morning/evening BP meds checkoff for senior fathers (Rajnish Ji & Sanjay Ji).
-  - [ ] Build `OximeterLoggerModal.tsx` for quick finger pulse oximeter recordings and health dossier history.
-  - [ ] Build `MedicalDirectoryModal.tsx` listing NH-7 relief posts (Devprayag, Srinagar Base Hospital, Rudraprayag, Joshimath CHC, Badrinath Army Camp / PHC) with direct `tel:` dialers.
-  - [ ] Wire triggers into `EmergencyModal.tsx` and main screen quick action bar.
-- [ ] **4.5.2 Zero-Signal 2G SMS & WhatsApp Reassurance Generator**
-  - [ ] Implement `OfflineSmsModal.tsx` generating preformatted 1-tap `sms:?body=...` and WhatsApp links.
-  - [ ] Format exact GPS coordinates, altitude (e.g., 3,100m), battery level, current milestone name, and elder health reassurance text for home family.
-  - [ ] Embed 2G SMS trigger directly in `TrackingPreview.tsx` alongside the Mountain Shadow Guard banner.
-- [ ] **4.5.3 Brahma Kapal Pitru Tarpan Ritual Guide & Packing Checklist**
-  - [ ] Build `BrahmaKapalGuideModal.tsx` providing step-by-step offline liturgy, samagri checklist (black sesame, barley, kush grass), and panda/priest contact record keeper.
-  - [ ] Build `PackingChecklistModal.tsx` dynamic segment-by-segment packing checkoff (thermals, rain ponchos, power banks, medication kits).
-  - [ ] Wire modal launchers into `ItineraryPreview.tsx`.
-- [ ] **4.5.4 Offline Sacred Chants & Stotras Audio Player**
-  - [ ] Build `OfflineStotraPlayer.tsx` in `VoiceFeedPreview.tsx`.
-  - [ ] Include *Badrinath Aarti*, *Vishnu Sahasranama*, and *Hanuman Chalisa* with synced Sanskrit/Hindi lyrics, web audio synth / offline playback controls for mountain cab rides.
-- [ ] **4.5.5 Yatra Memorial & 50/50 Gullak Settlement Statement**
-  - [ ] Build `YatraMemorialModal.tsx` in `GullakPreview.tsx` generating a printable / shareable yatra summary card.
-  - [ ] Render 50/50 split settlement statement between Utkarsh & Shreyas with category summary and one-tap print/PDF styling.
-- [ ] **4.5.6 Real-Time In-Family Socket.io Chat (Local-First + Live Relay)**
-  - [ ] Configure `socket.io` server attached to Express HTTP server in `server/src/server.ts`.
-  - [ ] Support 4-8 group members (Pilgrim Duos + Home Observers) with live room join, typing indicators, and instant broadcast.
-  - [ ] Client `useFamilySocket.ts` hook + Dexie IndexedDB `offlineChatMessages` store with dead-zone auto-queue and reconnect replay.
-  - [ ] Build `FamilyChatDrawer.tsx` with high-contrast elder chat typography, quick presets ("Reached safely", "Chai break", "Taking meds"), and Duo badge tagging.
-- [ ] **4.5.7 Targeted Family Email Dispatch System (Nodemailer + Google App Password)**
+- [ ] **5.1 Real-Time In-Family Socket.io Server**
+  - [ ] Wrap Express server in `http.createServer(app)` and attach `socket.io` Server.
+  - [ ] Implement pilgrimage room management (`badrinath-family-2026`) with connected member presence (4 pilgrims + home observers).
+  - [ ] Socket event handlers: `join_family_room`, `send_message`, `receive_message`, `typing_indicator`, `elder_ping`.
+- [ ] **5.2 Local-First Chat Engine (Dexie IndexedDB)**
+  - [ ] Upgrade Dexie schema to include `offlineChatMessages: 'id, senderId, recipientDuo, timestamp, status'`.
+  - [ ] Build `chatStorage.ts` for instant offline message persistence with status flags (`queued` $\rightarrow$ `sent` $\rightarrow$ `delivered`).
+  - [ ] Implement `useFamilySocket.ts` hook with automatic reconnection, heartbeat, and offline queue flush upon signal recovery.
+- [ ] **5.3 Family Chat Drawer UI (`FamilyChatDrawer.tsx`)**
+  - [ ] Build slide-over / bottom-sheet mobile chat drawer with $\ge 48\text{px}$ touch targets.
+  - [ ] Display Duo identity badges (`DUO_A`: Utkarsh / Rajnish Ji; `DUO_B`: Shreyas / Sanjay) and elder-first high contrast typography.
+  - [ ] Implement 1-tap quick status chips: *"Reached safely 🙏"*, *"Tea break ☕"*, *"Taking BP meds 💊"*, *"Network low, all well 👍"*.
+  - [ ] Add chat icon with unread badge in top `Header.tsx`.
+- [ ] **5.4 Targeted Family Email Dispatcher (Nodemailer + Google App Password)**
   - [ ] Install `nodemailer` and `@types/nodemailer` on backend.
-  - [ ] Implement `email.service.ts` using Gmail SMTP (`smtp.gmail.com`) with Google App Password authentication and graceful fallback if unconfigured.
-  - [ ] Centralize recipient email list (`FAMILY_NOTIFICATION_EMAILS`) in config and `.env`.
-  - [ ] Beautiful alpine-themed responsive HTML email templates for:
-    - Milestone Checkpoint Reassurance (with photo/notes & time)
-    - Mountain Dead-Zone Entry Notice (explaining 2-3 hr gorge radio silence)
-    - Emergency SOS / Critical Health Dispatch (GPS link, battery %, elder details)
-  - [ ] Backend routes `/api/notifications/test-email`, `/api/notifications/milestone`, `/api/notifications/sos`.
+  - [ ] Build `email.service.ts` connecting to Google SMTP (`smtp.gmail.com:465`) with `SMTP_USER` & `SMTP_APP_PASSWORD`.
+  - [ ] Graceful safe dry-run fallback if credentials are unset (logs HTML email to server output without throwing).
+  - [ ] Configure `FAMILY_NOTIFICATION_EMAILS` recipient distribution list in config and `.env`.
+- [ ] **5.5 Responsive Pilgrimage Email Templates**
+  - [ ] Checkpoint Reassurance Template (photo, timestamp, landmark name, next destination).
+  - [ ] Mountain Dead-Zone Entry Notice (informs family of 2–3 hour silence in Alaknanda gorges).
+  - [ ] Emergency SOS & Critical Alert Template (live Google Maps link, battery %, elder medical dossiers).
+  - [ ] Backend controller & routes: `/api/notifications/test-email`, `/api/notifications/milestone`, `/api/notifications/sos`.
 
 ---
 
-### 📋 Phase 5: Production Hardening, PWA Audit & Deployment
-*Target: Flawless Offline Reliability & Zero-Cost Cloud Hosting*
+### ⏳ Phase 6: Elder Care, Altitude Health & Dead-Zone Reassurance
+*Status: Queued (0%) • Target: Oxygen Monitoring, Hydration/Meds Cadence & 2G Offline SMS*
 
-- [ ] **5.1 PWA Offline Audit**
+- [ ] **6.1 Dexie Pulse Oximeter Engine**
+  - [ ] Add `oximeterLogs: 'id, travellerId, recordedAt'` to client Dexie schema.
+  - [ ] Implement `oximeterStorage.ts` logging $SpO_2$ %, heart rate bpm, altitude, and notes.
+  - [ ] Altitude safety alert heuristic: automatic warning banner if $SpO_2 < 88\%$ at elevations $>3,000\text{m}$ (Joshimath / Badrinath).
+- [ ] **6.2 Pulse Oximeter Logger UI (`OximeterLoggerModal.tsx`)**
+  - [ ] Large fingertip reading input dialog with instant normal / borderline / warning color-coded gauge.
+  - [ ] Historical reading sparkline/timeline for fathers (Rajnish Ji & Sanjay Ji).
+- [ ] **6.3 Hydration & BP Medication Cadence (`HydrationMedsTracker.tsx`)**
+  - [ ] 90-minute hydration countdown timer with pleasant chime / haptic vibration for dry mountain air acclimatization.
+  - [ ] Morning & Evening BP medication checkoff toggles with timestamped logs.
+  - [ ] Persistent quick pill embedded in app navigation header.
+- [ ] **6.4 NH-7 Emergency Relief Post Directory (`MedicalDirectoryModal.tsx`)**
+  - [ ] Offline medical resource directory covering NH-7 corridor:
+    - Devprayag Community Health Center
+    - Srinagar Government Base Medical College
+    - Rudraprayag District Hospital
+    - Joshimath Army / CHC Hospital
+    - Badrinath Dham Army Medical Relief Camp & PHC
+  - [ ] 1-tap direct `tel:` dialer buttons with oxygen cylinder availability notes.
+  - [ ] Link launcher directly in `EmergencyModal.tsx`.
+- [ ] **6.5 Zero-Signal 2G SMS & WhatsApp Reassurance Generator (`OfflineSmsModal.tsx`)**
+  - [ ] 1-tap `sms:?body=...` generator formatted with GPS lat/lng, altitude, battery %, milestone name, and elder health status.
+  - [ ] Works via native cellular SMS without data packets in deep mountain dead zones.
+  - [ ] WhatsApp fallback trigger for momentary 2G/EDGE connectivity windows.
+  - [ ] Embed 2G SMS launcher in `TrackingPreview.tsx` alongside Mountain Shadow Guard banner.
+
+---
+
+### ⏳ Phase 7: Sacred Pilgrimage Suite, Audio Chants & Memorial
+*Status: Queued (0%) • Target: Brahma Kapal Liturgy, Offline Stotras & Gullak Memorial Export*
+
+- [ ] **7.1 Brahma Kapal Pitru Tarpan Ritual Guide (`BrahmaKapalGuideModal.tsx`)**
+  - [ ] Complete offline step-by-step liturgy guide for Pitru Tarpan rituals at Brahma Kapal Ghat (Badrinath).
+  - [ ] Samagri checklist (black sesame, barley, kush grass, gangajal, uncooked rice).
+  - [ ] Panda / family priest contact and lineage register card.
+- [ ] **7.2 Dynamic Segment Packing Checklist (`PackingChecklistModal.tsx`)**
+  - [ ] Segment-specific packing checklists (thermals, down jackets, rain ponchos, power banks, medication boxes).
+  - [ ] Dexie IndexedDB persistence with quick checkoff progress bar.
+  - [ ] Launch triggers from `ItineraryPreview.tsx`.
+- [ ] **7.3 Offline Sacred Chants & Stotras Player (`OfflineStotraPlayer.tsx`)**
+  - [ ] Built-in audio player with synced Sanskrit & Hindi lyrics in `VoiceFeedPreview.tsx`.
+  - [ ] Chants library: *Badrinath Aarti (Shri Badrinath Stuti)*, *Vishnu Sahasranama*, *Hanuman Chalisa*.
+  - [ ] Offline audio synth / lightweight web audio playback for long cab journeys between Rishikesh and Badrinath.
+- [ ] **7.4 Printable Yatra Memorial & 50/50 Gullak Settlement (`YatraMemorialModal.tsx`)**
+  - [ ] Generate printable / shareable pilgrimage souvenir card with crossed milestones, duration, and elder blessing notes.
+  - [ ] Complete 50/50 Gullak shared expense settlement breakdown between Utkarsh and Shreyas.
+  - [ ] Print-ready CSS `@media print` styling for 1-tap PDF export / physical printing.
+
+---
+
+### ⏳ Phase 8: Production Hardening, PWA Audit & Deployment
+*Status: Queued (0%) • Target: Flawless Offline Reliability & Zero-Cost Cloud Hosting*
+
+- [ ] **8.1 PWA Offline Audit**
   - [ ] Verify Chrome DevTools "Offline" throttling mode retains 100% functionality across all tabs.
   - [ ] Lighthouse audit for PWA, Accessibility (WCAG AAA contrast for elders), and Performance.
   - [ ] Service worker cache invalidation tests for updates.
-- [ ] **5.2 Security & Shared PIN Access**
+- [ ] **8.2 Security & Shared PIN Access**
   - [ ] Verify `x-family-pin` authentication across all backend endpoints.
   - [ ] Rate limiting on public API endpoints.
-- [ ] **5.3 Deployment Configuration**
+- [ ] **8.3 Cloud Deployment Configuration**
   - [ ] Configure `vercel.json` for frontend PWA deployment.
   - [ ] Configure Render / Railway deployment for Express API.
   - [ ] Validate MongoDB Atlas M0 network access rules and environment secrets.
@@ -184,6 +227,6 @@
 ## 🧭 Key Architectural Invariants (Must Never Be Broken)
 
 1. **Elder Dignity & High Contrast First:** All text must meet minimum contrast ratios; all touch buttons must be $\ge 48\text{px}$; no tiny links or confusing gestures.
-2. **Local-First Supremacy:** Any action taken in a cellular dead zone (marking a checkpoint, viewing a ticket, pinging location, logging an expense, tracking $SpO_2$) must work immediately via Dexie IndexedDB and silently queue for background synchronization.
+2. **Local-First Supremacy:** Any action taken in a cellular dead zone (marking a checkpoint, viewing a ticket, pinging location, logging an expense, tracking $SpO_2$, writing a chat message) must work immediately via Dexie IndexedDB and silently queue for background synchronization.
 3. **Paired Duo Identity:** Always preserve duo distinctions (`DUO_A`: Utkarsh & Rajnish Ji, `DUO_B`: Shreyas & Sanjay).
-4. **Zero-Cost Constraint:** Use free-tier tooling exclusively (Google AI Studio `@google/genai`, OpenStreetMap tiles via Leaflet, MongoDB Atlas M0, Vercel/Render free tiers).
+4. **Zero-Cost Constraint:** Use free-tier tooling exclusively (Google AI Studio `@google/genai`, OpenStreetMap tiles via Leaflet, MongoDB Atlas M0, Google SMTP via Gmail App Password, Vercel/Render free tiers).
