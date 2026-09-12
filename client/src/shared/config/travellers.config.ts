@@ -1,4 +1,4 @@
-import { Traveller, DuoId } from '../types';
+import { Traveller, DuoId, UserProfile } from '../types';
 
 /**
  * =========================================================================
@@ -102,21 +102,24 @@ export interface DuoInfo {
 export const DUO_CONFIG: Record<DuoId, DuoInfo> = {
   DUO_A: {
     id: 'DUO_A',
-    name: 'Duo A',
-    label: `Duo A (${DUO_A_SON.name}/${DUO_A_ELDER.name.split(' ')[0]})`,
+    name: 'Family A',
+    label: `Family A (${DUO_A_SON.name}/${DUO_A_ELDER.name.split(' ')[0]})`,
     sonName: DUO_A_SON.name,
     elderName: DUO_A_ELDER.name,
     color: '#2563eb'
   },
   DUO_B: {
     id: 'DUO_B',
-    name: 'Duo B',
-    label: `Duo B (${DUO_B_SON.name}/${DUO_B_ELDER.name.split(' ')[0]})`,
+    name: 'Family B',
+    label: `Family B (${DUO_B_SON.name}/${DUO_B_ELDER.name.split(' ')[0]})`,
     sonName: DUO_B_SON.name,
     elderName: DUO_B_ELDER.name,
     color: '#16a34a'
   }
 };
+
+export type FamilyInfo = DuoInfo;
+export const FAMILY_CONFIG = DUO_CONFIG;
 
 /**
  * Get traveller by unique ID
@@ -131,4 +134,68 @@ export function getTravellerById(id: string): Traveller | undefined {
 export function getTravellerName(id: string, fallback = 'General Pilgrim'): string {
   const t = getTravellerById(id);
   return t ? t.name : fallback;
+}
+
+// ── 4 Pre-Configured Home Family / Guest Profiles ──────────────────────────
+export const DEFAULT_GUESTS: UserProfile[] = [
+  {
+    id: 'guest-1',
+    name: 'Home Family 1 (Mummy)',
+    type: 'GUEST',
+    avatarColor: '#8b5cf6', // Violet
+    roleLabel: 'Home Family',
+    relation: 'Home Observer & Reassurance',
+    isCustomName: true
+  },
+  {
+    id: 'guest-2',
+    name: 'Home Family 2 (Didi)',
+    type: 'GUEST',
+    avatarColor: '#ec4899', // Pink
+    roleLabel: 'Home Family',
+    relation: 'Home Observer & Reassurance',
+    isCustomName: true
+  },
+  {
+    id: 'guest-3',
+    name: 'Home Family 3',
+    type: 'GUEST',
+    avatarColor: '#06b6d4', // Cyan
+    roleLabel: 'Home Family',
+    relation: 'Home Observer',
+    isCustomName: true
+  },
+  {
+    id: 'guest-4',
+    name: 'Home Family 4',
+    type: 'GUEST',
+    avatarColor: '#14b8a6', // Teal
+    roleLabel: 'Home Family',
+    relation: 'Home Observer',
+    isCustomName: true
+  }
+];
+
+export function getPilgrimProfiles(): UserProfile[] {
+  return TRAVELLERS_CONFIG.map(t => ({
+    id: t.id,
+    name: t.name,
+    type: 'PILGRIM',
+    duoId: t.duoId,
+    avatarColor: t.avatarColor,
+    roleLabel: t.role === 'SON_COORDINATOR' ? `${t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} Coordinator` : `${t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} Senior Pilgrim`,
+    relation: t.relation,
+    isElder: t.isSeniorCitizen,
+    bloodGroup: t.bloodGroup,
+    emergencyContact: t.emergencyContact
+  }));
+}
+
+export function getAllUserProfiles(customGuestNames: Record<string, string> = {}): UserProfile[] {
+  const pilgrims = getPilgrimProfiles();
+  const guests = DEFAULT_GUESTS.map(g => ({
+    ...g,
+    name: customGuestNames[g.id] || g.name
+  }));
+  return [...pilgrims, ...guests];
 }

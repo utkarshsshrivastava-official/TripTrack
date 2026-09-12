@@ -77,7 +77,7 @@ export const INITIAL_SEED_DOCS: Omit<CachedDocRecord, 'blobData'>[] = [
   },
   {
     id: 'doc-2',
-    title: 'Badrinath Yatra Biometric Registration (Duo A)',
+    title: 'Badrinath Yatra Biometric Registration (Family A)',
     category: 'YATRA_PASS',
     passengerId: 'traveller-rajnish',
     mimeType: 'application/pdf',
@@ -91,7 +91,7 @@ export const INITIAL_SEED_DOCS: Omit<CachedDocRecord, 'blobData'>[] = [
   },
   {
     id: 'doc-3',
-    title: 'Badrinath Yatra Biometric Registration (Duo B)',
+    title: 'Badrinath Yatra Biometric Registration (Family B)',
     category: 'YATRA_PASS',
     passengerId: 'traveller-uncle',
     mimeType: 'application/pdf',
@@ -184,7 +184,7 @@ export async function saveDocumentToDexie(
 }
 
 /**
- * Retrieve documents filtered by Duo and Category
+ * Retrieve documents filtered by Family and Category
  */
 export async function getVaultDocuments(
   duoFilter: DuoId | 'ALL' = 'ALL',

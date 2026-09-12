@@ -17,7 +17,7 @@ export interface Traveller {
 }
 
 export const TRAVELLERS_CONFIG: Traveller[] = [
-  // Duo A
+  // ── Family A: Utkarsh & Rajnish Ji ───────────────────────
   {
     id: "traveller-utkarsh",
     duoId: "DUO_A",

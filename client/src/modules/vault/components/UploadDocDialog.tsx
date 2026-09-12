@@ -228,7 +228,7 @@ export const UploadDocDialog: React.FC<UploadDocDialogProps> = ({
               >
                 {TRAVELLERS_CONFIG.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.name} ({t.duoId === 'DUO_A' ? 'Duo A' : 'Duo B'})
+                    {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'})
                   </option>
                 ))}
               </select>

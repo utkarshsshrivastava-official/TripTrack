@@ -47,12 +47,25 @@ export interface OfflineVoiceRecord {
   isSynced?: boolean;
 }
 
+export interface OfflineChatMessageRecord {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderAvatarColor: string;
+  senderType: 'PILGRIM' | 'GUEST';
+  senderDuo?: string;
+  text: string;
+  timestamp: string;
+  status: 'queued' | 'sent' | 'delivered';
+}
+
 export class TripTrackDexieDB extends Dexie {
   cachedDocs!: Table<CachedDocRecord, string>;
   queuedPings!: Table<QueuedPingRecord, number>;
   offlineSegments!: Table<OfflineSegmentRecord, string>;
   offlineExpenses!: Table<OfflineExpenseRecord, string>;
   offlineVoiceLogs!: Table<OfflineVoiceRecord, string>;
+  offlineChatMessages!: Table<OfflineChatMessageRecord, string>;
 
   constructor() {
     super('TripTrackDB');
@@ -67,6 +80,14 @@ export class TripTrackDexieDB extends Dexie {
       offlineSegments: 'id, modifiedLocallyAt',
       offlineExpenses: 'id, category, paidBy, createdAt',
       offlineVoiceLogs: 'id, speakerId, recordedAt'
+    });
+    this.version(3).stores({
+      cachedDocs: 'id, passengerId, category, updatedAt',
+      queuedPings: '++id, passengerId, deviceTimestamp',
+      offlineSegments: 'id, modifiedLocallyAt',
+      offlineExpenses: 'id, category, paidBy, createdAt',
+      offlineVoiceLogs: 'id, speakerId, recordedAt',
+      offlineChatMessages: 'id, senderId, senderName, timestamp, status'
     });
   }
 }

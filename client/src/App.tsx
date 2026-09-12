@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { DuoId } from './shared/types';
 import { useNetworkStatus } from './shared/hooks/useNetworkStatus';
+import { useUserProfile } from './shared/hooks/useUserProfile';
 import { Header } from './components/Header';
 import { BottomNav, ActiveTab } from './components/BottomNav';
 import { EmergencyModal } from './components/EmergencyModal';
+import { ProfileLoginModal } from './components/ProfileLoginModal';
+import { FamilyChatDrawer } from './modules/chat/components/FamilyChatDrawer';
 import { ItineraryPreview } from './modules/itinerary/ItineraryPreview';
 import { VaultPreview } from './modules/vault/VaultPreview';
 import { TrackingPreview } from './modules/tracking/TrackingPreview';
@@ -14,8 +17,17 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('itinerary');
   const [activeDuo, setActiveDuo] = useState<DuoId | 'ALL'>('ALL');
   const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(false);
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
 
   const { isOnline, queuedCount, isSyncing, triggerSync } = useNetworkStatus();
+  const {
+    activeUser,
+    allProfiles,
+    selectUser,
+    updateGuestName,
+    isModalOpen: isProfileModalOpen,
+    setIsModalOpen: setIsProfileModalOpen
+  } = useUserProfile();
 
   return (
     <div className="min-h-screen bg-slate-950 flex justify-center">
@@ -30,6 +42,9 @@ export const App: React.FC = () => {
           isSyncing={isSyncing}
           onManualSync={triggerSync}
           onOpenEmergency={() => setIsEmergencyOpen(true)}
+          activeUser={activeUser}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
+          onOpenChat={() => setIsChatOpen(true)}
         />
 
         {/* Main Scrollable View Area with safe dock padding */}
@@ -48,6 +63,23 @@ export const App: React.FC = () => {
         <EmergencyModal
           isOpen={isEmergencyOpen}
           onClose={() => setIsEmergencyOpen(false)}
+        />
+
+        {/* Device Onboarding & Active Profile Switcher Modal */}
+        <ProfileLoginModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          activeUser={activeUser}
+          allProfiles={allProfiles}
+          onSelectUser={selectUser}
+          onUpdateGuestName={updateGuestName}
+        />
+
+        {/* In-Family Low-Latency Socket.io Chat Drawer */}
+        <FamilyChatDrawer
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          activeUser={activeUser}
         />
       </div>
     </div>

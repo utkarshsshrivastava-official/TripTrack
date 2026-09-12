@@ -109,7 +109,7 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({ activeDuo, isO
           >
             {availableTravellers.map(t => (
               <option key={t.id} value={t.id}>
-                {t.name} ({t.duoId === 'DUO_A' ? 'Duo A' : 'Duo B'} — {t.relation})
+                {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} — {t.relation})
               </option>
             ))}
           </select>

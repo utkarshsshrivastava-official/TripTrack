@@ -2,7 +2,7 @@
 
 **Project:** TripTrack by Ut-tech  
 **Target:** Private, Offline-First Mobile PWA for Badrinath Dham 2026 (Sep 24 – Oct 02, 2026)  
-**Primary Users:** 4 Pilgrims (2 Father-Son Duos: Utkarsh & Rajnish Ji, Shreyas & Sanjay) + Extended Home Family (4–8 members total)  
+**Primary Users:** 4 Pilgrims (2 Families: Family A [Utkarsh & Rajnish Ji] & Family B [Shreyas & Sanjay]) + Extended Home Family (4–8 members total)  
 **Current Status:** **Phases 1–4 Complete (100%)** • **Phase 5 Ready for Kickoff (0%)** • **Phases 6–8 Planned**  
 **Last Updated:** September 12, 2026
 
@@ -40,7 +40,7 @@
   - [x] Implement [dexie.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/shared/db/dexie.ts) with IndexedDB stores for cached documents and queued location telemetry.
   - [x] Implement [useNetworkStatus.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/shared/hooks/useNetworkStatus.ts) for real-time online/offline detection and queue syncing.
 - [x] **1.3 Elder-First Ergonomics & Mobile Layout**
-  - [x] Create [Header.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/components/Header.tsx) with connectivity pill, Duo filter selector (`All`, `Duo A`, `Duo B`), and SOS button.
+  - [x] Create [Header.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/components/Header.tsx) with connectivity pill, Family filter selector (`All`, `Family A`, `Family B`), and SOS button.
   - [x] Build [EmergencyModal.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/components/EmergencyModal.tsx) with 1-tap dialers (108 Ambulance, 112 Police, 1364 Yatra Line) and senior health dossiers (meds, blood groups, 2,000m altitude pacing rules).
   - [x] Build [BottomNav.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/components/BottomNav.tsx) with $\ge 48\text{px}$ touch targets across 5 core views.
   - [x] Scaffold all 5 feature module views:
@@ -55,7 +55,7 @@
   - [x] Implement Mongoose schemas: [segment.model.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/models/segment.model.ts), [document.model.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/models/document.model.ts), [locationPing.model.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/models/locationPing.model.ts), [expense.model.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/models/expense.model.ts).
   - [x] Implement [seed.controller.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/modules/seed/seed.controller.ts) (`GET /api/seed/init`) and health check (`GET /api/health`).
 - [x] **1.5 Immutable Domain Truth Seeds**
-  - [x] [travellers.config.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/shared/config/travellers.config.ts) (2 Father-Son Duos, elder care notes, blood groups).
+  - [x] [travellers.config.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/shared/config/travellers.config.ts) (2 Families: Family A & Family B, elder care notes, blood groups).
   - [x] [trip.config.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/shared/config/trip.config.ts) (6 segments, 23 checkpoints, elevation metadata).
 
 ---
@@ -80,7 +80,7 @@
   - [x] Mount `/api/documents` in [app.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/app.ts) and verify end-to-end multipart ingest.
 - [x] **2.5 Centralized Travellers Configuration & Name Decoupling**
   - [x] Establish single source of truth: [client/src/shared/config/travellers.config.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/shared/config/travellers.config.ts) and [server/src/shared/config/travellers.config.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/shared/config/travellers.config.ts).
-  - [x] Decouple UI headers, Duo badges, expense splitters, voice notes, and backend Gemini prompts from hardcoded strings.
+  - [x] Decouple UI headers, Family badges, expense splitters, voice notes, and backend Gemini prompts from hardcoded strings.
   - [x] Expose ergonomic helper selectors: `DUO_CONFIG`, `getTravellerById()`, `getTravellerName()`, and typed `Traveller` entity.
 
 ---
@@ -129,7 +129,7 @@
 *Status: Completed & Verified on Sep 12, 2026*
 
 - [x] **5.1 Individual Profile Login & Guest Identity System**
-  - [x] Define `UserProfile` entity supporting 4 Pilgrims (`DUO_A`: Utkarsh, Rajnish; `DUO_B`: Shreyas, Sanjay) + 4 Home Guests (`guest-1` to `guest-4`).
+  - [x] Define `UserProfile` entity supporting 4 Pilgrims (Family A: Utkarsh, Rajnish; Family B: Shreyas, Sanjay) + 4 Home Guests (`guest-1` to `guest-4`).
   - [x] Support local editable display names for guests (e.g., "Mummy", "Pooja", "Auntie") with `localStorage` persistence.
   - [x] Implement `useUserProfile.ts` hook managing active device user profile.
   - [x] Build `ProfileLoginModal.tsx`:
@@ -148,7 +148,7 @@
   - [x] Implement `useFamilySocket.ts` hook with automatic reconnection, heartbeat, and offline queue flush upon signal recovery.
 - [x] **5.4 Family Chat Drawer UI (`FamilyChatDrawer.tsx`)**
   - [x] Build slide-over / bottom-sheet mobile chat drawer with $\ge 48\text{px}$ touch targets.
-  - [x] Display Duo identity badges (`DUO_A`: Utkarsh / Rajnish Ji; `DUO_B`: Shreyas / Sanjay) and elder-first high contrast typography.
+  - [x] Display Family identity badges (Family A: Utkarsh / Rajnish Ji; Family B: Shreyas / Sanjay) and elder-first high contrast typography.
   - [x] Implement 1-tap quick status chips: *"Reached safely 🙏"*, *"Tea break ☕"*, *"Taking BP meds 💊"*, *"Network low, all well 👍"*.
   - [x] Add chat icon with unread badge in top `Header.tsx`.
 - [x] **5.5 Targeted Family Email Dispatcher (Nodemailer + Google App Password)**
@@ -238,5 +238,5 @@
 
 1. **Elder Dignity & High Contrast First:** All text must meet minimum contrast ratios; all touch buttons must be $\ge 48\text{px}$; no tiny links or confusing gestures.
 2. **Local-First Supremacy:** Any action taken in a cellular dead zone (marking a checkpoint, viewing a ticket, pinging location, logging an expense, tracking $SpO_2$, writing a chat message) must work immediately via Dexie IndexedDB and silently queue for background synchronization.
-3. **Paired Duo Identity:** Always preserve duo distinctions (`DUO_A`: Utkarsh & Rajnish Ji, `DUO_B`: Shreyas & Sanjay).
+3. **Paired Family Identity:** Always preserve family distinctions (Family A: Utkarsh & Rajnish Ji, Family B: Shreyas & Sanjay).
 4. **Zero-Cost Constraint:** Use free-tier tooling exclusively (Google AI Studio `@google/genai`, OpenStreetMap tiles via Leaflet, MongoDB Atlas M0, Google SMTP via Gmail App Password, Vercel/Render free tiers).

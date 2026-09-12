@@ -4,8 +4,10 @@ import path from 'path';
 // Load environment configuration
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+import http from 'http';
 import { app } from './app';
 import { connectMongoDB } from './shared/lib/mongodb';
+import { initSocketServer } from './modules/chat/socket.service';
 
 const PORT = process.env.PORT || 5000;
 
@@ -13,11 +15,18 @@ async function bootstrap() {
   // Connect to MongoDB Atlas (graceful if not configured)
   await connectMongoDB();
 
-  app.listen(PORT, () => {
+  // Create Native HTTP server wrapping Express app
+  const httpServer = http.createServer(app);
+
+  // Attach Socket.io server
+  initSocketServer(httpServer);
+
+  httpServer.listen(PORT, () => {
     console.log(`🚀 [TripTrack Server] Running on http://localhost:${PORT}`);
     console.log(`🏔️ [Mission] Badrinath Dham Pilgrimage 2026 (Sep 24 - Oct 02)`);
     console.log(`📡 [Health API] http://localhost:${PORT}/api/health`);
     console.log(`🌱 [Seed API]   http://localhost:${PORT}/api/seed/init`);
+    console.log(`🔌 [Socket.io]  Live In-Family Room Ready on ws://localhost:${PORT}`);
   });
 }
 

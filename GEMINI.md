@@ -32,10 +32,10 @@ For every task, feature, bugfix, or phase execution in this project:
    - Store all travel passes, tickets, and vouchers as binary Blobs in client IndexedDB (`Dexie.js`).
    - Queue telemetry, GPS pings, checkpoint checks, and expenses locally when offline, and auto-flush to MongoDB Atlas upon network reconnection.
 
-3. **Paired Duo Identity (`DUO_A` & `DUO_B`):**
+3. **Paired Family Identity (`Family A` & `Family B`):**
    - Strictly maintain separation and filtering between:
-     - `DUO_A`: Utkarsh (Son/Coordinator) & Rajnish Ji (Father/Elder)
-     - `DUO_B`: Cousin (Son/Coordinator) & Uncle Ji / Bade Papa (Father/Elder)
+     - `Family A`: Utkarsh (Son/Coordinator) & Rajnish Ji (Father/Elder)
+     - `Family B`: Shreyas (Son/Coordinator) & Sanjay (Father/Elder / Uncle Ji)
 
 4. **Zero-Cost Production Stack:**
    - Free tier `@google/genai` (`gemini-2.5-flash`) via Google AI Studio.

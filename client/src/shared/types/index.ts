@@ -1,5 +1,6 @@
-// Duo and Traveller Roles
+// Family and Traveller Roles
 export type DuoId = 'DUO_A' | 'DUO_B';
+export type FamilyId = DuoId;
 export type TravellerRole = 'SON_COORDINATOR' | 'FATHER_ELDER';
 
 export interface ElderCareNotes {
@@ -131,3 +132,5 @@ export interface VoiceUpdate {
   recordedAt: string;
   locationName?: string;
 }
+
+export * from './user';

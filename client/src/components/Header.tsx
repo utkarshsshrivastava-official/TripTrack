@@ -1,7 +1,8 @@
 import React from 'react';
 import { DuoId } from '../shared/types';
 import { DUO_CONFIG } from '../shared/config/travellers.config';
-import { Wifi, WifiOff, RefreshCw, ShieldAlert, Mountain } from 'lucide-react';
+import { UserProfile } from '../shared/types/user';
+import { Wifi, WifiOff, RefreshCw, ShieldAlert, Mountain, MessageSquare } from 'lucide-react';
 
 interface HeaderProps {
   activeDuo: DuoId | 'ALL';
@@ -11,6 +12,9 @@ interface HeaderProps {
   isSyncing: boolean;
   onManualSync: () => void;
   onOpenEmergency: () => void;
+  activeUser: UserProfile;
+  onOpenProfile: () => void;
+  onOpenChat: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,35 +24,68 @@ export const Header: React.FC<HeaderProps> = ({
   queuedCount,
   isSyncing,
   onManualSync,
-  onOpenEmergency
+  onOpenEmergency,
+  activeUser,
+  onOpenProfile,
+  onOpenChat
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-alpine-950/95 backdrop-blur-md border-b border-slate-800/80 px-3 pt-safe pb-2 transition-all">
       {/* Top utility row */}
       <div className="flex items-center justify-between gap-2 max-w-md mx-auto">
-        {/* Brand & Mission */}
+        {/* Brand & Active Profile Avatar */}
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-temple-saffron to-amber-600 flex items-center justify-center shadow-lg shadow-amber-950/40 text-white font-black text-base border border-amber-400/40">
-            🕉️
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h1 className="text-base font-extrabold tracking-tight text-white leading-none">
-                TripTrack
-              </h1>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700 font-semibold">
-                Ut-tech
+          {/* Active User Switcher Pill */}
+          <button
+            onClick={onOpenProfile}
+            className="tap-active flex items-center gap-1.5 p-1 pr-2.5 rounded-full bg-slate-900 border border-slate-700/80 hover:border-amber-500/60 shadow-sm transition-all"
+            title={`Active device profile: ${activeUser.name}. Click to switch.`}
+          >
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-xs shadow-inner"
+              style={{ backgroundColor: activeUser.avatarColor }}
+            >
+              {activeUser.name.charAt(0)}
+            </div>
+            <div className="text-left">
+              <span className="text-[11px] font-bold text-slate-200 block leading-tight max-w-[75px] truncate">
+                {activeUser.name.split(' ')[0]}
+              </span>
+              <span className="text-[9px] text-amber-400 block leading-none font-medium">
+                {activeUser.type === 'PILGRIM' ? (activeUser.duoId === 'DUO_A' ? 'Family A' : 'Family B') : 'Guest'}
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
-              <Mountain className="w-3 h-3 text-sky-400 inline" />
-              <span>Badrinath Yatra '26</span>
+          </button>
+
+          <div>
+            <div className="flex items-center gap-1">
+              <h1 className="text-sm font-extrabold tracking-tight text-white leading-none">
+                TripTrack
+              </h1>
+              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-800 text-amber-400 border border-slate-700">
+                2026
+              </span>
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+              <Mountain className="w-2.5 h-2.5 text-sky-400 inline" />
+              <span>Badrinath</span>
             </p>
           </div>
         </div>
 
         {/* Status Actions */}
         <div className="flex items-center gap-1.5">
+          {/* In-Family Chat Button */}
+          <button
+            onClick={onOpenChat}
+            className="tap-active flex items-center gap-1 px-2 py-1.5 rounded-full bg-slate-900 text-amber-400 border border-amber-500/40 hover:bg-amber-950/40 shadow-sm transition-all"
+            title="In-Family Chat (4-8 Group Members)"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-bold text-slate-200">Chat</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          </button>
+
           {/* Offline / Online Pill */}
           <button
             onClick={onManualSync}
@@ -68,7 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
               <WifiOff className="w-3.5 h-3.5 text-amber-400" />
             )}
             <span className="text-[11px] font-mono">
-              {isOnline ? (queuedCount > 0 ? `${queuedCount} Q` : 'Sync') : 'DeadZone'}
+              {isOnline ? (queuedCount > 0 ? `${queuedCount}Q` : 'Live') : 'DeadZone'}
             </span>
           </button>
 
@@ -84,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Duo Segmented Filter Pills */}
+      {/* Family Segmented Filter Pills */}
       <div className="mt-2.5 max-w-md mx-auto">
         <div className="grid grid-cols-3 p-1 bg-slate-900/90 rounded-xl border border-slate-800 text-xs font-semibold">
           <button

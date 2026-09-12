@@ -209,7 +209,7 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({ activeDuo }) => {
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
             <strong style="font-size: 13px; color: #ffffff;">${traveller.name}</strong>
             <span style="font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 9999px; background: ${traveller.avatarColor}33; color: ${traveller.avatarColor}; border: 1px solid ${traveller.avatarColor}66;">
-              ${traveller.duoId === 'DUO_A' ? 'Duo A' : 'Duo B'}
+              ${traveller.duoId === 'DUO_A' ? 'Family A' : 'Family B'}
             </span>
           </div>
 

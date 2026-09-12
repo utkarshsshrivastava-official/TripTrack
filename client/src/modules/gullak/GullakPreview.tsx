@@ -298,7 +298,7 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo }) => {
                   >
                     {COORDINATOR_MEMBERS.map(member => (
                       <option key={member.id} value={member.name}>
-                        {member.name} ({member.duoId === 'DUO_A' ? 'Duo A' : 'Duo B'})
+                        {member.name} ({member.duoId === 'DUO_A' ? 'Family A' : 'Family B'})
                       </option>
                     ))}
                   </select>

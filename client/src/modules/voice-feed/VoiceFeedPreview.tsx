@@ -192,7 +192,7 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo })
             >
               {TRAVELLERS_CONFIG.map(t => (
                 <option key={t.id} value={t.id}>
-                  {t.name} ({t.duoId === 'DUO_A' ? 'Duo A' : 'Duo B'})
+                  {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'})
                 </option>
               ))}
             </select>
@@ -311,7 +311,7 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo })
                     <div className="text-xs font-bold text-white flex items-center gap-1.5">
                       <span>{speaker?.name || 'Pilgrim'}</span>
                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">
-                        {speaker?.duoId === 'DUO_A' ? 'Duo A' : 'Duo B'}
+                        {speaker?.duoId === 'DUO_A' ? 'Family A' : 'Family B'}
                       </span>
                     </div>
                     {item.locationName && (

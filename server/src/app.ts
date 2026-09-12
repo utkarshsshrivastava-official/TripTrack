@@ -5,6 +5,7 @@ import vaultRoutes from './modules/vault/vault.routes';
 import segmentRoutes from './modules/itinerary/segment.routes';
 import telemetryRoutes from './modules/tracking/telemetry.routes';
 import voiceRoutes from './modules/voice/voice.routes';
+import { notificationsRouter } from './modules/notifications/notifications.routes';
 import { errorHandler } from './shared/middleware/errorHandler';
 import { LocationPingModel } from './models/locationPing.model';
 import { isMongoConnected } from './shared/lib/mongodb';
@@ -39,6 +40,7 @@ app.use('/api/documents', vaultRoutes);
 app.use('/api/segments', segmentRoutes);
 app.use('/api/telemetry', telemetryRoutes);
 app.use('/api/voice', voiceRoutes);
+app.use('/api/notifications', notificationsRouter);
 
 // Bulk Ping Ingestion for Offline Queue Sync
 app.post('/api/tracking/bulk-ping', async (req, res) => {
