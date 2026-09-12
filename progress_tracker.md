@@ -147,6 +147,20 @@
 - [ ] **4.5.5 Yatra Memorial & 50/50 Gullak Settlement Statement**
   - [ ] Build `YatraMemorialModal.tsx` in `GullakPreview.tsx` generating a printable / shareable yatra summary card.
   - [ ] Render 50/50 split settlement statement between Utkarsh & Shreyas with category summary and one-tap print/PDF styling.
+- [ ] **4.5.6 Real-Time In-Family Socket.io Chat (Local-First + Live Relay)**
+  - [ ] Configure `socket.io` server attached to Express HTTP server in `server/src/server.ts`.
+  - [ ] Support 4-8 group members (Pilgrim Duos + Home Observers) with live room join, typing indicators, and instant broadcast.
+  - [ ] Client `useFamilySocket.ts` hook + Dexie IndexedDB `offlineChatMessages` store with dead-zone auto-queue and reconnect replay.
+  - [ ] Build `FamilyChatDrawer.tsx` with high-contrast elder chat typography, quick presets ("Reached safely", "Chai break", "Taking meds"), and Duo badge tagging.
+- [ ] **4.5.7 Targeted Family Email Dispatch System (Nodemailer + Google App Password)**
+  - [ ] Install `nodemailer` and `@types/nodemailer` on backend.
+  - [ ] Implement `email.service.ts` using Gmail SMTP (`smtp.gmail.com`) with Google App Password authentication and graceful fallback if unconfigured.
+  - [ ] Centralize recipient email list (`FAMILY_NOTIFICATION_EMAILS`) in config and `.env`.
+  - [ ] Beautiful alpine-themed responsive HTML email templates for:
+    - Milestone Checkpoint Reassurance (with photo/notes & time)
+    - Mountain Dead-Zone Entry Notice (explaining 2-3 hr gorge radio silence)
+    - Emergency SOS / Critical Health Dispatch (GPS link, battery %, elder details)
+  - [ ] Backend routes `/api/notifications/test-email`, `/api/notifications/milestone`, `/api/notifications/sos`.
 
 ---
 
