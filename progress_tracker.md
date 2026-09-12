@@ -128,25 +128,35 @@
 ### ⏳ Phase 5: Real-Time Family Sync & Targeted Notification System
 *Status: Ready for Kickoff (0%) • Target: In-Family Socket.io Chat & Targeted Gmail Alerts*
 
-- [ ] **5.1 Real-Time In-Family Socket.io Server**
+- [ ] **5.1 Individual Profile Login & Guest Identity System**
+  - [ ] Define `UserProfile` entity supporting 4 Pilgrims (`DUO_A`: Utkarsh, Rajnish; `DUO_B`: Shreyas, Sanjay) + 4 Home Guests (`guest-1` to `guest-4`).
+  - [ ] Support local editable display names for guests (e.g., "Mummy", "Pooja", "Auntie") with `localStorage` persistence.
+  - [ ] Implement `useUserProfile.ts` hook managing active device user profile.
+  - [ ] Build `ProfileLoginModal.tsx`:
+    - First-time launch device onboarding: *"Who is using this phone?"*
+    - Large elder-friendly cards ($\ge 64\text{px}$) with colored initials/avatars and role badges.
+    - Inline name editor for guest slots.
+    - Header profile pill allowing 1-tap switching anytime.
+  - [ ] Bind active profile ID to all client actions: chat messages, GPS telemetry pings, voice recordings, and health checks.
+- [ ] **5.2 Real-Time In-Family Socket.io Server**
   - [ ] Wrap Express server in `http.createServer(app)` and attach `socket.io` Server.
   - [ ] Implement pilgrimage room management (`badrinath-family-2026`) with connected member presence (4 pilgrims + home observers).
   - [ ] Socket event handlers: `join_family_room`, `send_message`, `receive_message`, `typing_indicator`, `elder_ping`.
-- [ ] **5.2 Local-First Chat Engine (Dexie IndexedDB)**
+- [ ] **5.3 Local-First Chat Engine (Dexie IndexedDB)**
   - [ ] Upgrade Dexie schema to include `offlineChatMessages: 'id, senderId, recipientDuo, timestamp, status'`.
   - [ ] Build `chatStorage.ts` for instant offline message persistence with status flags (`queued` $\rightarrow$ `sent` $\rightarrow$ `delivered`).
   - [ ] Implement `useFamilySocket.ts` hook with automatic reconnection, heartbeat, and offline queue flush upon signal recovery.
-- [ ] **5.3 Family Chat Drawer UI (`FamilyChatDrawer.tsx`)**
+- [ ] **5.4 Family Chat Drawer UI (`FamilyChatDrawer.tsx`)**
   - [ ] Build slide-over / bottom-sheet mobile chat drawer with $\ge 48\text{px}$ touch targets.
   - [ ] Display Duo identity badges (`DUO_A`: Utkarsh / Rajnish Ji; `DUO_B`: Shreyas / Sanjay) and elder-first high contrast typography.
   - [ ] Implement 1-tap quick status chips: *"Reached safely 🙏"*, *"Tea break ☕"*, *"Taking BP meds 💊"*, *"Network low, all well 👍"*.
   - [ ] Add chat icon with unread badge in top `Header.tsx`.
-- [ ] **5.4 Targeted Family Email Dispatcher (Nodemailer + Google App Password)**
+- [ ] **5.5 Targeted Family Email Dispatcher (Nodemailer + Google App Password)**
   - [ ] Install `nodemailer` and `@types/nodemailer` on backend.
   - [ ] Build `email.service.ts` connecting to Google SMTP (`smtp.gmail.com:465`) with `SMTP_USER` & `SMTP_APP_PASSWORD`.
   - [ ] Graceful safe dry-run fallback if credentials are unset (logs HTML email to server output without throwing).
   - [ ] Configure `FAMILY_NOTIFICATION_EMAILS` recipient distribution list in config and `.env`.
-- [ ] **5.5 Responsive Pilgrimage Email Templates**
+- [ ] **5.6 Responsive Pilgrimage Email Templates**
   - [ ] Checkpoint Reassurance Template (photo, timestamp, landmark name, next destination).
   - [ ] Mountain Dead-Zone Entry Notice (informs family of 2–3 hour silence in Alaknanda gorges).
   - [ ] Emergency SOS & Critical Alert Template (live Google Maps link, battery %, elder medical dossiers).
