@@ -3,7 +3,7 @@
 **Project:** TripTrack by Ut-tech  
 **Target:** Private, Offline-First Mobile PWA for Badrinath Dham 2026 (Sep 24 – Oct 02, 2026)  
 **Primary Users:** 4 Pilgrims (2 Father-Son Duos: Utkarsh & Rajnish Ji, Cousin & Uncle Ji) + Extended Home Family  
-**Current Status:** **Phase 1 Complete (100%)** • **Phase 2 Complete (100%)** • **Phase 3 Complete (100%)** • **Phase 4 Ready for Kickoff**  
+**Current Status:** **Phase 1 Complete (100%)** • **Phase 2 Complete (100%)** • **Phase 3 Complete (100%)** • **Phase 4 Complete (100%)** • **Phase 5 Ready for Kickoff**  
 **Last Updated:** September 12, 2026
 
 ---
@@ -15,8 +15,8 @@
 | **Phase 1** | **Scaffolding, Mobile-First PWA & Seed Layer** | ✅ **DONE** | 100% | Completed |
 | **Phase 2** | **Offline Document Vault & Gemini AI Parser** | ✅ **DONE** | 100% | Completed |
 | **Phase 3** | **Itinerary Tracker & Leaflet Map Engine** | ✅ **DONE** | 100% | Completed |
-| **Phase 4** | **Dead-Zone Shadow Guard & Voice Logger** | ⏳ **NEXT** | 0% | Up Next |
-| **Phase 5** | **Hardening, PWA Offline Audit & Deployment** | 📋 **PENDING** | 0% | Final Polish |
+| **Phase 4** | **Dead-Zone Shadow Guard & Voice Logger** | ✅ **DONE** | 100% | Completed |
+| **Phase 5** | **Hardening, PWA Offline Audit & Deployment** | ⏳ **NEXT** | 0% | Up Next |
 
 ---
 
@@ -102,19 +102,23 @@
 
 ---
 
-### 📋 Phase 4: Dead-Zone Logic & Voice Logger
-*Target: Home Family Reassurance & Hinglish Push-to-Talk AI Feed*
+### ✅ Phase 4: Dead-Zone Logic & Voice Logger
+*Status: Completed & Verified on Sep 12, 2026*
 
-- [ ] **4.1 Mountain Cellular Shadow Heuristic**
-  - [ ] Backend & frontend detector for `Date.now() - lastPingTime > 2.5 hours` while on mountain segments (`seg-3` or `seg-4`).
-  - [ ] Reassuring notification banner for home family explaining known gorge topography between Srinagar and Joshimath.
-- [ ] **4.2 Push-to-Talk Web Audio Recorder**
-  - [ ] Implement `audioRecorder.ts` utilizing `MediaRecorder` API with lightweight audio encoding (WebM/Opus).
-  - [ ] Build haptic hold-to-record mobile button with live recording waveform.
-- [ ] **4.3 Gemini Voice Log Transcription & Summary**
-  - [ ] Backend route `/api/audio/voice-log` sending audio buffer to `gemini-2.5-flash`.
-  - [ ] Prompt engineering for Hindi/Hinglish transcription with English family summaries.
-  - [ ] Chronological `FeedTimeline.tsx` displaying speaker badge, timestamp, location, and quick audio replay.
+- [x] **4.1 Mountain Cellular Shadow Heuristic**
+  - [x] Backend & frontend detector for `Date.now() - lastPingTime > 2.5 hours` while on mountain segments (`seg-3` or `seg-4`).
+  - [x] Reassuring notification banner for home family explaining known gorge topography between Srinagar and Joshimath (`deadZoneHeuristic.ts`).
+- [x] **4.2 Push-to-Talk Web Audio Recorder**
+  - [x] Implement `audioRecorder.ts` utilizing `MediaRecorder` API with lightweight audio encoding (WebM/Opus) and recording timer.
+  - [x] Build haptic mobile button with audio playback controls and Dexie IndexedDB storage (`voiceLogStorage.ts`).
+- [x] **4.3 Gemini Voice Log Transcription & Summary**
+  - [x] Backend route `/api/voice/transcribe` sending audio buffer to `gemini-2.5-flash`.
+  - [x] Multimodal prompt for Hindi/Hinglish transcription with English family reassurance summaries.
+  - [x] Chronological timeline displaying speaker avatar initials, timestamp, location, and in-browser audio replay.
+- [x] **4.4 Gullak Shared Pool Split Engine**
+  - [x] Implement `expenseStorage.ts` with Dexie IndexedDB persistence and sample pilgrimage seeds.
+  - [x] Real-time equal 50/50 split calculation between Son Coordinators (Utkarsh & Shreyas) with automated settlement banner.
+  - [x] Interactive "Add Expense" dialog with category breakdown and immediate offline saving.
 
 ---
 
