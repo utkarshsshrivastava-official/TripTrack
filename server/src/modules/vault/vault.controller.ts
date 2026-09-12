@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { DocumentModel } from '../../models/document.model';
 import { isMongoConnected } from '../../shared/lib/mongodb';
 import { parseTravelDocumentWithGemini } from './vault.service';
+import { TRAVELLERS_CONFIG } from '../../shared/config/travellers.config';
 
 // In-memory document storage fallback when MongoDB is running in offline mode
 let memoryDocuments: any[] = [];
@@ -10,7 +11,7 @@ export async function uploadDocumentHandler(req: Request, res: Response): Promis
   try {
     const file = req.file;
     const title = req.body.title || file?.originalname || 'Uploaded Document';
-    const passengerId = req.body.passengerId || 'traveller-utkarsh';
+    const passengerId = req.body.passengerId || TRAVELLERS_CONFIG[0].id;
     const category = req.body.category || 'YATRA_PASS';
 
     let parsedData = {};

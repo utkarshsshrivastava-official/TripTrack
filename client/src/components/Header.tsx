@@ -1,5 +1,6 @@
 import React from 'react';
 import { DuoId } from '../shared/types';
+import { DUO_CONFIG } from '../shared/config/travellers.config';
 import { Wifi, WifiOff, RefreshCw, ShieldAlert, Mountain } from 'lucide-react';
 
 interface HeaderProps {
@@ -105,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>
-            <span>Duo A (Utkarsh/Dad)</span>
+            <span>{DUO_CONFIG.DUO_A.label}</span>
           </button>
           <button
             onClick={() => setActiveDuo('DUO_B')}
@@ -116,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
-            <span>Duo B (Cousin/Uncle)</span>
+            <span>{DUO_CONFIG.DUO_B.label}</span>
           </button>
         </div>
       </div>

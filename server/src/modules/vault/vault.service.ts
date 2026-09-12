@@ -1,4 +1,5 @@
 import { getGeminiClient } from '../../shared/lib/geminiClient';
+import { TRAVELLERS_CONFIG } from '../../shared/config/travellers.config';
 
 export interface ParsedTravelDocument {
   docType: 'TRAIN_TICKET' | 'FLIGHT_PASS' | 'YATRA_PASS' | 'HOTEL_VOUCHER' | 'ID_CARD';
@@ -43,7 +44,7 @@ function heuristicFallbackParse(
     docType,
     pnr: pnrMatch ? pnrMatch[0] : (docType === 'TRAIN_TICKET' ? '645-1284920' : undefined),
     yatraRegistrationNo: yatraMatch ? yatraMatch[0] : (docType === 'YATRA_PASS' ? `UK-YATRA-2026-BD-${Math.floor(10000 + Math.random() * 90000)}` : undefined),
-    passengers: ['Utkarsh', 'Rajnish (Dad)'],
+    passengers: TRAVELLERS_CONFIG.slice(0, 2).map(t => t.name),
     seatNumber: seatMatch ? seatMatch[1].trim() : (docType === 'TRAIN_TICKET' ? 'B1-21, B1-24' : undefined),
     destinationOrHotel: docType === 'YATRA_PASS' ? 'Badrinath Dham Sanctum' : 'Joshimath Heritage Inn',
     validDate: dateMatch ? dateMatch[0] : '2026-09-27'
@@ -67,13 +68,14 @@ export async function parseTravelDocumentWithGemini(
   }
 
   try {
+    const travellersListPrompt = TRAVELLERS_CONFIG.map(
+      (t, idx) => `${idx + 1}. ${t.name} (${t.relation}, ${t.duoId})`
+    ).join('\n');
+
     const prompt = `
 You are an expert OCR parser for an elder-centric pilgrimage to Badrinath Dham (September 2026).
-Extract travel logistics from this uploaded document. Match any traveller names against our 4 pilgrims:
-1. Utkarsh (Son Coordinator, Duo A)
-2. Rajnish (Father Senior, Duo A)
-3. Cousin (Son Coordinator, Duo B)
-4. Uncle (Father Senior, Duo B)
+Extract travel logistics from this uploaded document. Match any traveller names against our configured pilgrims:
+${travellersListPrompt}
 
 Output strict JSON only matching this schema:
 {

@@ -10,6 +10,11 @@ import {
   Accessibility, 
   MoreHorizontal 
 } from 'lucide-react';
+import { 
+  COORDINATOR_MEMBERS, 
+  DUO_A_SON, 
+  DUO_B_SON 
+} from '../../shared/config/travellers.config';
 
 interface GullakPreviewProps {
   activeDuo: DuoId | 'ALL';
@@ -20,7 +25,7 @@ const SAMPLE_EXPENSES: Expense[] = [
     id: 'exp-1',
     title: 'Haridwar to Joshimath Mountain Cab Advance',
     amountINR: 12500,
-    paidBy: 'Utkarsh',
+    paidBy: DUO_A_SON.name,
     category: 'TOLL_TAXI',
     createdAt: '2026-09-24T18:00:00Z'
   },
@@ -28,7 +33,7 @@ const SAMPLE_EXPENSES: Expense[] = [
     id: 'exp-2',
     title: 'Brahma Kapal Ritual Samagri & Dakshina Advance',
     amountINR: 5100,
-    paidBy: 'Cousin',
+    paidBy: DUO_B_SON.name,
     category: 'RITUAL',
     createdAt: '2026-09-25T14:30:00Z'
   },
@@ -36,7 +41,7 @@ const SAMPLE_EXPENSES: Expense[] = [
     id: 'exp-3',
     title: 'Cheetal Grand Lunch (4 Satvik Thalis + Chai)',
     amountINR: 1840,
-    paidBy: 'Utkarsh',
+    paidBy: DUO_A_SON.name,
     category: 'FOOD',
     createdAt: '2026-09-25T14:45:00Z'
   },
@@ -44,7 +49,7 @@ const SAMPLE_EXPENSES: Expense[] = [
     id: 'exp-4',
     title: 'Warm Woolen Shawls & Thermal Gloves for Elders',
     amountINR: 3200,
-    paidBy: 'Cousin',
+    paidBy: DUO_B_SON.name,
     category: 'MISC',
     createdAt: '2026-09-26T17:00:00Z'
   }
@@ -55,12 +60,12 @@ export const GullakPreview: React.FC<GullakPreviewProps> = () => {
   const [newTitle, setNewTitle] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [newCategory, setNewCategory] = useState<ExpenseCategory>('FOOD');
-  const [newPaidBy, setNewPaidBy] = useState<'Utkarsh' | 'Cousin'>('Utkarsh');
+  const [newPaidBy, setNewPaidBy] = useState<string>(DUO_A_SON.name);
   const [showAddForm, setShowAddForm] = useState(false);
 
   const totalSpent = expenses.reduce((sum, e) => sum + e.amountINR, 0);
-  const utkarshPaid = expenses.filter(e => e.paidBy === 'Utkarsh').reduce((sum, e) => sum + e.amountINR, 0);
-  const cousinPaid = expenses.filter(e => e.paidBy === 'Cousin').reduce((sum, e) => sum + e.amountINR, 0);
+  const duoAPaid = expenses.filter(e => e.paidBy === DUO_A_SON.name).reduce((sum, e) => sum + e.amountINR, 0);
+  const duoBPaid = expenses.filter(e => e.paidBy === DUO_B_SON.name).reduce((sum, e) => sum + e.amountINR, 0);
 
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,12 +128,12 @@ export const GullakPreview: React.FC<GullakPreviewProps> = () => {
         {/* Pair Split Ratio */}
         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
           <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 text-xs">
-            <span className="text-[10px] text-slate-400 font-bold block">Utkarsh Paid</span>
-            <strong className="text-blue-400 font-mono text-sm">₹{utkarshPaid.toLocaleString('en-IN')}</strong>
+            <span className="text-[10px] text-slate-400 font-bold block">{DUO_A_SON.name} Paid</span>
+            <strong className="text-blue-400 font-mono text-sm">₹{duoAPaid.toLocaleString('en-IN')}</strong>
           </div>
           <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800 text-xs">
-            <span className="text-[10px] text-slate-400 font-bold block">Cousin Paid</span>
-            <strong className="text-emerald-400 font-mono text-sm">₹{cousinPaid.toLocaleString('en-IN')}</strong>
+            <span className="text-[10px] text-slate-400 font-bold block">{DUO_B_SON.name} Paid</span>
+            <strong className="text-emerald-400 font-mono text-sm">₹{duoBPaid.toLocaleString('en-IN')}</strong>
           </div>
         </div>
       </div>
@@ -168,11 +173,14 @@ export const GullakPreview: React.FC<GullakPreviewProps> = () => {
               <label className="text-[11px] text-slate-400 block font-semibold mb-1">Paid By</label>
               <select
                 value={newPaidBy}
-                onChange={(e) => setNewPaidBy(e.target.value as any)}
+                onChange={(e) => setNewPaidBy(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-500"
               >
-                <option value="Utkarsh">Utkarsh (Duo A)</option>
-                <option value="Cousin">Cousin (Duo B)</option>
+                {COORDINATOR_MEMBERS.map((coord) => (
+                  <option key={coord.id} value={coord.name}>
+                    {coord.name} ({coord.duoId === 'DUO_A' ? 'Duo A' : 'Duo B'})
+                  </option>
+                ))}
               </select>
             </div>
           </div>

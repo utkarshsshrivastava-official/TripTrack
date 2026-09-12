@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { VoiceUpdate, DuoId } from '../../shared/types';
 import { Mic, MicOff, Radio, Sparkles } from 'lucide-react';
+import { getTravellerById } from '../../shared/config/travellers.config';
 
 interface VoiceFeedPreviewProps {
   activeDuo: DuoId | 'ALL';
@@ -106,30 +107,35 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = () => {
           </span>
         </div>
 
-        {feed.map((item) => (
-          <div
-            key={item.id}
-            className="p-3.5 rounded-2xl bg-alpine-900/90 border border-slate-800 space-y-2.5 shadow-sm"
-          >
-            {/* Header info */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
-                  U
-                </div>
-                <span className="text-xs font-bold text-white">
-                  {item.speakerId === 'traveller-utkarsh' ? 'Utkarsh' : 'Cousin'}
-                </span>
-                {item.locationName && (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
-                    📍 {item.locationName}
+        {feed.map((item) => {
+          const speaker = getTravellerById(item.speakerId);
+          return (
+            <div
+              key={item.id}
+              className="p-3.5 rounded-2xl bg-alpine-900/90 border border-slate-800 space-y-2.5 shadow-sm"
+            >
+              {/* Header info */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-6 h-6 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-sm"
+                    style={{ backgroundColor: speaker?.avatarColor || '#2563eb' }}
+                  >
+                    {speaker?.name.charAt(0) || 'P'}
+                  </div>
+                  <span className="text-xs font-bold text-white">
+                    {speaker?.name || 'Pilgrim'}
                   </span>
-                )}
+                  {item.locationName && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                      📍 {item.locationName}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-mono text-slate-400">
+                  {new Date(item.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
               </div>
-              <span className="text-[10px] font-mono text-slate-400">
-                {new Date(item.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
 
             {/* AI Summary Card */}
             <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-800/40 text-xs text-purple-200 font-medium leading-relaxed">
@@ -147,8 +153,9 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = () => {
               "{item.transcription}"
             </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
-  );
+  </div>
+);
 };
