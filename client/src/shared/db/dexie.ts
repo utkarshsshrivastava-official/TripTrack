@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { LocationPing, TripSegment } from '../types';
+import { LocationPing, TripSegment, ExpenseCategory } from '../types';
 
 export interface CachedDocRecord {
   id: string;
@@ -24,10 +24,35 @@ export interface OfflineSegmentRecord {
   modifiedLocallyAt: number;
 }
 
+export interface OfflineExpenseRecord {
+  id: string;
+  title: string;
+  amountINR: number;
+  paidBy: string;
+  category: ExpenseCategory;
+  receiptUrl?: string;
+  createdAt: string;
+  isSynced?: boolean;
+}
+
+export interface OfflineVoiceRecord {
+  id: string;
+  speakerId: string;
+  audioBlob?: Blob;
+  audioUrl?: string;
+  transcription: string;
+  summary: string;
+  recordedAt: string;
+  locationName?: string;
+  isSynced?: boolean;
+}
+
 export class TripTrackDexieDB extends Dexie {
   cachedDocs!: Table<CachedDocRecord, string>;
   queuedPings!: Table<QueuedPingRecord, number>;
   offlineSegments!: Table<OfflineSegmentRecord, string>;
+  offlineExpenses!: Table<OfflineExpenseRecord, string>;
+  offlineVoiceLogs!: Table<OfflineVoiceRecord, string>;
 
   constructor() {
     super('TripTrackDB');
@@ -35,6 +60,13 @@ export class TripTrackDexieDB extends Dexie {
       cachedDocs: 'id, passengerId, category, updatedAt',
       queuedPings: '++id, passengerId, deviceTimestamp',
       offlineSegments: 'id, modifiedLocallyAt'
+    });
+    this.version(2).stores({
+      cachedDocs: 'id, passengerId, category, updatedAt',
+      queuedPings: '++id, passengerId, deviceTimestamp',
+      offlineSegments: 'id, modifiedLocallyAt',
+      offlineExpenses: 'id, category, paidBy, createdAt',
+      offlineVoiceLogs: 'id, speakerId, recordedAt'
     });
   }
 }
