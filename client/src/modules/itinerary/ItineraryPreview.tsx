@@ -19,11 +19,19 @@ import {
   PlayCircle
 } from 'lucide-react';
 
+import { Luggage, Flame } from 'lucide-react';
+
 interface ItineraryPreviewProps {
   activeDuo: DuoId | 'ALL';
+  onOpenPackingChecklist?: () => void;
+  onOpenBrahmaKapalGuide?: () => void;
 }
 
-export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ activeDuo: _activeDuo }) => {
+export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
+  activeDuo: _activeDuo,
+  onOpenPackingChecklist,
+  onOpenBrahmaKapalGuide
+}) => {
   const { 
     segments, 
     toggleCheckpoint, 
@@ -123,6 +131,41 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({ activeDuo: _
             <div className="text-[10px] text-slate-400">Oct 02 • 18:00</div>
           </div>
         </div>
+      </div>
+
+      {/* Sacred Pilgrimage Quick Actions */}
+      <div className="grid grid-cols-2 gap-2">
+        {onOpenPackingChecklist && (
+          <button
+            type="button"
+            onClick={onOpenPackingChecklist}
+            className="p-2.5 rounded-2xl bg-stone-900 border border-stone-800 hover:border-sky-500/50 text-left flex items-center gap-2.5 tap-active shadow-sm"
+          >
+            <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+              <Luggage className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-white truncate">Packing Checklist</div>
+              <div className="text-[10px] text-sky-400">Cold Gear & Meds</div>
+            </div>
+          </button>
+        )}
+
+        {onOpenBrahmaKapalGuide && (
+          <button
+            type="button"
+            onClick={onOpenBrahmaKapalGuide}
+            className="p-2.5 rounded-2xl bg-stone-900 border border-stone-800 hover:border-amber-500/50 text-left flex items-center gap-2.5 tap-active shadow-sm"
+          >
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <Flame className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-white truncate">ब्रह्मकपाल तर्पण</div>
+              <div className="text-[10px] text-amber-400">Pind Daan Liturgy</div>
+            </div>
+          </button>
+        )}
       </div>
 
       {/* Segments List */}

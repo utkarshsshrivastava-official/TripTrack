@@ -13,7 +13,8 @@ import {
   Trash2,
   CheckCircle,
   ArrowRightLeft,
-  DollarSign
+  DollarSign,
+  Award
 } from 'lucide-react';
 import { 
   COORDINATOR_MEMBERS, 
@@ -29,9 +30,10 @@ import {
 
 interface GullakPreviewProps {
   activeDuo: DuoId | 'ALL';
+  onOpenMemorial?: () => void;
 }
 
-export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo }) => {
+export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenMemorial }) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [newTitle, setNewTitle] = useState('');
@@ -167,6 +169,17 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo }) => {
             </span>
           )}
         </div>
+
+        {/* Printable Yatra Memorial & Final Settlement Certificate Trigger */}
+        {onOpenMemorial && (
+          <button
+            onClick={onOpenMemorial}
+            className="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 text-amber-200 text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all min-h-[44px]"
+          >
+            <Award className="w-4 h-4 text-amber-400" />
+            <span>Generate Yatra Memorial & 50/50 Audit</span>
+          </button>
+        )}
       </div>
 
       {/* Category Filter Chips */}

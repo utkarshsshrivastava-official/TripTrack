@@ -17,11 +17,14 @@ import { TRAVELLERS_CONFIG, getTravellerById } from '../../shared/config/travell
 import { WebAudioRecorder } from './services/audioRecorder';
 import { getVoiceLogsFromDexie, saveVoiceLogToDexie } from './services/voiceLogStorage';
 
+import { Music } from 'lucide-react';
+
 interface VoiceFeedPreviewProps {
   activeDuo: DuoId | 'ALL';
+  onOpenSacredChants?: () => void;
 }
 
-export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo }) => {
+export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, onOpenSacredChants }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordDuration, setRecordDuration] = useState(0);
   const [feed, setFeed] = useState<VoiceUpdate[]>([]);
@@ -166,6 +169,30 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo })
           Record short voice updates in Hindi/Hinglish. Gemini AI extracts transcripts and generates calm bullet summaries so elder relatives at home always know everyone is rested and well.
         </div>
       </div>
+
+      {/* Sacred Chants & Tanpura Drone Audio Banner */}
+      {onOpenSacredChants && (
+        <div className="p-3.5 rounded-3xl bg-gradient-to-r from-amber-950/70 via-stone-900 to-amber-950/50 border border-amber-700/50 flex items-center justify-between shadow-xl gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-stone-950 shadow-lg shrink-0">
+              <Music className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs sm:text-sm font-bold text-amber-200">Sacred Chants & Tanpura</h4>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-semibold">100% Offline</span>
+              </div>
+              <p className="text-[11px] text-stone-300">Aartis, Stotras, Japa Counter & C# Tanpura Synth</p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenSacredChants}
+            className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-md transition-colors shrink-0 min-h-[44px]"
+          >
+            Open Player
+          </button>
+        </div>
+      )}
 
       {/* Push-to-Talk Recording Card */}
       <div className="p-4 rounded-3xl bg-gradient-to-br from-purple-950/60 via-alpine-900 to-slate-950 border border-purple-800/50 shadow-xl space-y-3.5">

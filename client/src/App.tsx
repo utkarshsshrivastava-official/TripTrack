@@ -11,6 +11,10 @@ import { OximeterLoggerModal } from './modules/health/components/OximeterLoggerM
 import { HydrationMedsModal } from './modules/health/components/HydrationMedsModal';
 import { MedicalDirectoryModal } from './modules/health/components/MedicalDirectoryModal';
 import { OfflineSmsModal } from './modules/health/components/OfflineSmsModal';
+import { BrahmaKapalGuideModal } from './modules/sacred/components/BrahmaKapalGuideModal';
+import { PackingChecklistModal } from './modules/sacred/components/PackingChecklistModal';
+import { OfflineStotraPlayer } from './modules/sacred/components/OfflineStotraPlayer';
+import { YatraMemorialModal } from './modules/sacred/components/YatraMemorialModal';
 import { ItineraryPreview } from './modules/itinerary/ItineraryPreview';
 import { VaultPreview } from './modules/vault/VaultPreview';
 import { TrackingPreview } from './modules/tracking/TrackingPreview';
@@ -28,6 +32,12 @@ export const App: React.FC = () => {
   const [isHydrationOpen, setIsHydrationOpen] = useState<boolean>(false);
   const [isMedicalDirOpen, setIsMedicalDirOpen] = useState<boolean>(false);
   const [isOfflineSmsOpen, setIsOfflineSmsOpen] = useState<boolean>(false);
+
+  // Phase 7: Sacred Pilgrimage Suite & Audio Modal States
+  const [isBrahmaKapalOpen, setIsBrahmaKapalOpen] = useState<boolean>(false);
+  const [isPackingOpen, setIsPackingOpen] = useState<boolean>(false);
+  const [isStotraOpen, setIsStotraOpen] = useState<boolean>(false);
+  const [isMemorialOpen, setIsMemorialOpen] = useState<boolean>(false);
 
   const { isOnline, queuedCount, isSyncing, triggerSync } = useNetworkStatus();
   const {
@@ -61,7 +71,13 @@ export const App: React.FC = () => {
 
         {/* Main Scrollable View Area with safe dock padding */}
         <main className="flex-1 px-3 py-3 overflow-y-auto">
-          {activeTab === 'itinerary' && <ItineraryPreview activeDuo={activeDuo} />}
+          {activeTab === 'itinerary' && (
+            <ItineraryPreview
+              activeDuo={activeDuo}
+              onOpenPackingChecklist={() => setIsPackingOpen(true)}
+              onOpenBrahmaKapalGuide={() => setIsBrahmaKapalOpen(true)}
+            />
+          )}
           {activeTab === 'vault' && <VaultPreview activeDuo={activeDuo} />}
           {activeTab === 'tracking' && (
             <TrackingPreview
@@ -72,8 +88,18 @@ export const App: React.FC = () => {
               onOpenOximeter={() => setIsOximeterOpen(true)}
             />
           )}
-          {activeTab === 'gullak' && <GullakPreview activeDuo={activeDuo} />}
-          {activeTab === 'voice' && <VoiceFeedPreview activeDuo={activeDuo} />}
+          {activeTab === 'gullak' && (
+            <GullakPreview
+              activeDuo={activeDuo}
+              onOpenMemorial={() => setIsMemorialOpen(true)}
+            />
+          )}
+          {activeTab === 'voice' && (
+            <VoiceFeedPreview
+              activeDuo={activeDuo}
+              onOpenSacredChants={() => setIsStotraOpen(true)}
+            />
+          )}
         </main>
 
         {/* Docked Mobile Bottom Navigation */}
@@ -127,6 +153,30 @@ export const App: React.FC = () => {
         <OfflineSmsModal
           isOpen={isOfflineSmsOpen}
           onClose={() => setIsOfflineSmsOpen(false)}
+        />
+
+        {/* Phase 7.1: Brahma Kapal Pitru Tarpan Liturgy & Panda Guide */}
+        <BrahmaKapalGuideModal
+          isOpen={isBrahmaKapalOpen}
+          onClose={() => setIsBrahmaKapalOpen(false)}
+        />
+
+        {/* Phase 7.2: Segment-Aware Packing Checklist */}
+        <PackingChecklistModal
+          isOpen={isPackingOpen}
+          onClose={() => setIsPackingOpen(false)}
+        />
+
+        {/* Phase 7.3: Offline Sacred Chants, Tanpura Synthesizer & Japa Counter */}
+        <OfflineStotraPlayer
+          isOpen={isStotraOpen}
+          onClose={() => setIsStotraOpen(false)}
+        />
+
+        {/* Phase 7.4: Printable Yatra Memorial Certificate & 50/50 Settlement */}
+        <YatraMemorialModal
+          isOpen={isMemorialOpen}
+          onClose={() => setIsMemorialOpen(false)}
         />
       </div>
     </div>
