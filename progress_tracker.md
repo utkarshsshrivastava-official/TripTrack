@@ -16,7 +16,7 @@
 | **Phase 2** | **Offline Document Vault & Gemini AI Parser** | ✅ **DONE** | 100% | Completed |
 | **Phase 3** | **Itinerary Tracker & Leaflet Map Engine** | ✅ **DONE** | 100% | Completed |
 | **Phase 4** | **Dead-Zone Shadow Guard & Voice Logger** | ✅ **DONE** | 100% | Completed |
-| **Phase 5** | **Real-Time Family Chat & Email Notifications** | ⏳ **NEXT** | 0% | Up Next |
+| **Phase 5** | **Profile Login, Family Chat & Email Alerts** | ⏳ **NEXT** | 0% | Up Next |
 | **Phase 6** | **Elder Care, Altitude Health & Reassurance** | ⏳ **QUEUED** | 0% | Queued |
 | **Phase 7** | **Sacred Liturgy, Stotra Player & Memorial** | ⏳ **QUEUED** | 0% | Queued |
 | **Phase 8** | **Production Hardening, PWA Audit & Deploy** | ⏳ **QUEUED** | 0% | Final Phase |
@@ -125,8 +125,8 @@
 
 ---
 
-### ⏳ Phase 5: Real-Time Family Sync & Targeted Notification System
-*Status: Ready for Kickoff (0%) • Target: In-Family Socket.io Chat & Targeted Gmail Alerts*
+### ⏳ Phase 5: Individual Profile Login, Real-Time Family Chat & Email Alerts
+*Status: Ready for Kickoff (0%) • Target: 4 Pilgrims + 4 Guests Profile Switcher, In-Family Socket.io Chat & Targeted Gmail Alerts*
 
 - [ ] **5.1 Individual Profile Login & Guest Identity System**
   - [ ] Define `UserProfile` entity supporting 4 Pilgrims (`DUO_A`: Utkarsh, Rajnish; `DUO_B`: Shreyas, Sanjay) + 4 Home Guests (`guest-1` to `guest-4`).
