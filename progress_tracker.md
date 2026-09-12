@@ -3,7 +3,7 @@
 **Project:** TripTrack by Ut-tech  
 **Target:** Private, Offline-First Mobile PWA for Badrinath Dham 2026 (Sep 24 – Oct 02, 2026)  
 **Primary Users:** 4 Pilgrims (2 Father-Son Duos: Utkarsh & Rajnish Ji, Cousin & Uncle Ji) + Extended Home Family  
-**Current Status:** **Phase 1 Complete (100%)** • **Phase 2 Ready for Kickoff**  
+**Current Status:** **Phase 1 Complete (100%)** • **Phase 2 Complete (100%)** • **Phase 3 Ready for Kickoff**  
 **Last Updated:** September 12, 2026
 
 ---
@@ -13,8 +13,8 @@
 | Phase | Description | Status | Progress | Target Timeline |
 | :--- | :--- | :---: | :---: | :--- |
 | **Phase 1** | **Scaffolding, Mobile-First PWA & Seed Layer** | ✅ **DONE** | 100% | Completed |
-| **Phase 2** | **Offline Document Vault & Gemini AI Parser** | ⏳ **NEXT** | 0% | Up Next |
-| **Phase 3** | **Itinerary Tracker & Leaflet Map Engine** | 📋 **PENDING** | 0% | Following Phase 2 |
+| **Phase 2** | **Offline Document Vault & Gemini AI Parser** | ✅ **DONE** | 100% | Completed |
+| **Phase 3** | **Itinerary Tracker & Leaflet Map Engine** | ⏳ **NEXT** | 0% | Up Next |
 | **Phase 4** | **Dead-Zone Shadow Guard & Voice Logger** | 📋 **PENDING** | 0% | Following Phase 3 |
 | **Phase 5** | **Hardening, PWA Offline Audit & Deployment** | 📋 **PENDING** | 0% | Final Polish |
 
@@ -57,28 +57,28 @@
 
 ---
 
-### ⏳ Phase 2: Offline Document Vault & Gemini AI Parser
-*Target: 100% Zero-Network Document Rendering & Multimodal AI Ingestion*
+### ✅ Phase 2: Offline Document Vault & Gemini AI Parser
+*Status: Completed & Verified on Sep 12, 2026*
 
-- [ ] **2.1 IndexedDB Raw Blob Storage Engine**
-  - [ ] Implement `vaultStorage.ts` for direct binary Blob serialization and retrieval via Dexie.
-  - [ ] Generate local `URL.createObjectURL(blob)` for instant PDF and pass rendering without network.
-  - [ ] Build offline storage capacity indicator (showing MB cached on phone storage).
-- [ ] **2.2 In-App Document Viewer & QR Pass Presenter**
-  - [ ] Build `DocumentViewerModal.tsx` supporting in-app PDF rendering and full-screen biometric QR display for temple gate check-ins.
-  - [ ] High-contrast quick copy buttons for PNRs, Coach/Berth numbers, and Yatra Registration IDs.
-  - [ ] Support printing / native share sheet delegation for offline passes.
-- [ ] **2.3 Document Upload & Camera Scanner**
-  - [ ] Build `UploadDocDialog.tsx` supporting file selection and native mobile camera capture.
-  - [ ] Add image compression prior to cloud upload to save battery and cellular bandwidth.
-- [ ] **2.4 Backend Multimodal AI Parser (Google AI Studio)**
-  - [ ] Implement `vault.controller.ts` and `vault.service.ts` connecting `@google/genai` (`gemini-2.5-flash`).
-  - [ ] Define structured JSON schema for travel document parsing (PNR, seat number, registration ID, travel dates, passenger matching).
-  - [ ] Build fallback parser for offline scenarios and test endpoints with mock tickets.
+- [x] **2.1 IndexedDB Raw Blob Storage Engine**
+  - [x] Implement `vaultStorage.ts` for direct binary Blob serialization and retrieval via Dexie.
+  - [x] Generate local `URL.createObjectURL(blob)` for instant PDF and pass rendering without network, with memory revocation on close.
+  - [x] Build offline storage capacity indicator (showing cached pass count and KB/MB footprint on phone storage).
+- [x] **2.2 In-App Document Viewer & QR Pass Presenter**
+  - [x] Build `DocumentViewerModal.tsx` supporting in-app PDF rendering and full-screen biometric QR display for temple gate check-ins.
+  - [x] High-contrast quick copy buttons with visual feedback for PNRs, Coach/Berth numbers, and Yatra Registration IDs.
+  - [x] Support native Web Share API delegation for offline pass distribution between sons and fathers.
+- [x] **2.3 Document Upload & Camera Scanner**
+  - [x] Build `UploadDocDialog.tsx` supporting file selection and native mobile camera capture (`capture="environment"`).
+  - [x] Add client-side canvas image compression via `imageCompression.ts` downsampling 10MB camera shots to $<500\text{KB}$.
+- [x] **2.4 Backend Multimodal AI Parser (Google AI Studio)**
+  - [x] Implement `vault.service.ts` connecting `@google/genai` (`gemini-2.5-flash`) with structured JSON schema and heuristic regex fallback.
+  - [x] Implement `vault.controller.ts` & `vault.routes.ts` with `multer` memory storage.
+  - [x] Mount `/api/documents` in `app.ts` and verify end-to-end multipart ingest.
 
 ---
 
-### 📋 Phase 3: Itinerary Tracker & Leaflet Map Engine
+### ⏳ Phase 3: Itinerary Tracker & Leaflet Map Engine
 *Target: Live Milestone Progression & Duo-Pinned OpenStreetMap Routing*
 
 - [ ] **3.1 Dynamic Itinerary State Sync**

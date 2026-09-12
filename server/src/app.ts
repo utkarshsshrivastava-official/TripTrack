@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import seedRoutes from './modules/seed/seed.routes';
+import vaultRoutes from './modules/vault/vault.routes';
 import { errorHandler } from './shared/middleware/errorHandler';
 import { LocationPingModel } from './models/locationPing.model';
 import { isMongoConnected } from './shared/lib/mongodb';
@@ -29,8 +30,9 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// Seed Routes
+// Modular Routes
 app.use('/api/seed', seedRoutes);
+app.use('/api/documents', vaultRoutes);
 
 // Bulk Ping Ingestion for Offline Queue Sync
 app.post('/api/tracking/bulk-ping', async (req, res) => {
