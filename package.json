@@ -17,5 +17,8 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4"
   }
 }

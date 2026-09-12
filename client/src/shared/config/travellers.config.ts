@@ -10,7 +10,7 @@ import { Traveller, DuoId } from '../types';
  */
 
 export const TRAVELLERS_CONFIG: Traveller[] = [
-  // ── Duo A: Utkarsh & Rajnish Ji ─────────────────────────────────────────
+  // ── Duo A:─────────────────────────────────────────
   {
     id: "traveller-utkarsh",
     duoId: "DUO_A",
@@ -44,11 +44,11 @@ export const TRAVELLERS_CONFIG: Traveller[] = [
     }
   },
 
-  // ── Duo B: Cousin & Uncle Ji ───────────────────────────────────────────
+  // ── Duo B: ───────────────────────────────────────────
   {
     id: "traveller-cousin",
     duoId: "DUO_B",
-    name: "Cousin",
+    name: "Shreyas",
     role: "SON_COORDINATOR",
     relation: "Cousin / Ground & Cab Support",
     age: 28,
@@ -60,7 +60,7 @@ export const TRAVELLERS_CONFIG: Traveller[] = [
   {
     id: "traveller-uncle",
     duoId: "DUO_B",
-    name: "Uncle (Bade Papa)",
+    name: "Sanjay",
     role: "FATHER_ELDER",
     relation: "Uncle / Senior Pilgrim",
     age: 62,
