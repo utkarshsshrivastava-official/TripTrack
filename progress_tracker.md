@@ -75,6 +75,10 @@
   - [x] Implement `vault.service.ts` connecting `@google/genai` (`gemini-2.5-flash`) with structured JSON schema and heuristic regex fallback.
   - [x] Implement `vault.controller.ts` & `vault.routes.ts` with `multer` memory storage.
   - [x] Mount `/api/documents` in `app.ts` and verify end-to-end multipart ingest.
+- [x] **2.5 Centralized Travellers Configuration & Name Decoupling**
+  - [x] Establish single source of truth: `client/src/shared/config/travellers.config.ts` and `server/src/shared/config/travellers.config.ts`.
+  - [x] Decouple UI headers, Duo badges, expense splitters, voice notes, and backend Gemini prompts from hardcoded strings.
+  - [x] Expose ergonomic helper selectors: `DUO_CONFIG`, `getTravellerById()`, `getTravellerName()`, and typed `Traveller` entity.
 
 ---
 
