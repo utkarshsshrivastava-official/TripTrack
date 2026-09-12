@@ -14,12 +14,23 @@ import {
   UserCheck
 } from 'lucide-react';
 
+import { Smartphone, Hospital, HeartPulse } from 'lucide-react';
+
 interface TrackingPreviewProps {
   activeDuo: DuoId | 'ALL';
   isOnline: boolean;
+  onOpenOfflineSms?: () => void;
+  onOpenMedicalDirectory?: () => void;
+  onOpenOximeter?: () => void;
 }
 
-export const TrackingPreview: React.FC<TrackingPreviewProps> = ({ activeDuo, isOnline }) => {
+export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
+  activeDuo,
+  isOnline,
+  onOpenOfflineSms,
+  onOpenMedicalDirectory,
+  onOpenOximeter
+}) => {
   const [isPinging, setIsPinging] = useState<boolean>(false);
   const [lastPingTime, setLastPingTime] = useState<string>('Just now');
   const [selectedTravellerId, setSelectedTravellerId] = useState<string>(TRAVELLERS_CONFIG[0].id);
@@ -66,11 +77,49 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({ activeDuo, isO
   return (
     <div className="space-y-4 pb-20">
       {/* Cellular Dead-Zone Reassurance Banner */}
-      <div className="p-3.5 rounded-3xl bg-gradient-to-r from-amber-950/40 via-alpine-900 to-slate-950 border border-amber-800/50 flex items-start gap-3 shadow-lg">
-        <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
-        <div className="text-xs text-amber-200/90 leading-relaxed">
-          <strong className="text-white block font-bold mb-0.5">Mountain Cellular Shadow Guard Active:</strong>
-          In gorges between Srinagar and Joshimath, mobile networks drop completely. The home dashboard automatically reassures family that delays under 2.5 hours are expected terrain shadows.
+      <div className="p-3.5 rounded-3xl bg-gradient-to-r from-amber-950/40 via-alpine-900 to-slate-950 border border-amber-800/50 shadow-lg space-y-2.5">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
+          <div className="text-xs text-amber-200/90 leading-relaxed">
+            <strong className="text-white block font-bold mb-0.5">Mountain Cellular Shadow Guard Active:</strong>
+            In gorges between Srinagar and Joshimath, mobile networks drop completely. The home dashboard automatically reassures family that delays under 2.5 hours are expected terrain shadows.
+          </div>
+        </div>
+
+        {/* Quick Offline Resilience Buttons */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          {onOpenOfflineSms && (
+            <button
+              type="button"
+              onClick={onOpenOfflineSms}
+              className="tap-active min-h-[40px] px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold text-xs flex items-center gap-1.5 shadow-md"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Generate 2G Dead-Zone SMS</span>
+            </button>
+          )}
+
+          {onOpenMedicalDirectory && (
+            <button
+              type="button"
+              onClick={onOpenMedicalDirectory}
+              className="tap-active min-h-[40px] px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 font-bold text-xs flex items-center gap-1.5"
+            >
+              <Hospital className="w-3.5 h-3.5 text-emerald-400" />
+              <span>NH-7 Medical Relief Directory</span>
+            </button>
+          )}
+
+          {onOpenOximeter && (
+            <button
+              type="button"
+              onClick={onOpenOximeter}
+              className="tap-active min-h-[40px] px-3 rounded-xl bg-rose-950/80 hover:bg-rose-900/90 text-rose-200 border border-rose-800/80 font-bold text-xs flex items-center gap-1.5"
+            >
+              <HeartPulse className="w-3.5 h-3.5 text-rose-400" />
+              <span>SpO₂ Oximeter</span>
+            </button>
+          )}
         </div>
       </div>
 

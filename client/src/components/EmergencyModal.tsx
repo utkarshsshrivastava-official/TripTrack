@@ -1,13 +1,19 @@
-import React from 'react';
-import { X, PhoneCall, HeartPulse, ShieldAlert, Mountain } from 'lucide-react';
+import { X, PhoneCall, HeartPulse, ShieldAlert, Mountain, Hospital, Smartphone } from 'lucide-react';
 import { TRAVELLERS_CONFIG } from '../shared/config/travellers.config';
 
 interface EmergencyModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenMedicalDirectory?: () => void;
+  onOpenOfflineSms?: () => void;
 }
 
-export const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose }) => {
+export const EmergencyModal: React.FC<EmergencyModalProps> = ({
+  isOpen,
+  onClose,
+  onOpenMedicalDirectory,
+  onOpenOfflineSms
+}) => {
   if (!isOpen) return null;
 
   const elders = TRAVELLERS_CONFIG.filter(t => t.isSeniorCitizen);
@@ -87,6 +93,37 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({ isOpen, onClose 
                 <div className="text-[10px] text-slate-400">Civil Hospital Line</div>
               </div>
             </a>
+          </div>
+
+          {/* Quick Relief Directory & 2G SMS Actions */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2.5">
+            {onOpenMedicalDirectory && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenMedicalDirectory();
+                }}
+                className="min-h-[44px] p-2.5 rounded-xl bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-700/80 text-emerald-200 text-xs font-bold flex items-center gap-2 tap-active shadow-sm"
+              >
+                <Hospital className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="truncate">NH-7 Hospital & O₂ Directory</span>
+              </button>
+            )}
+
+            {onOpenOfflineSms && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenOfflineSms();
+                }}
+                className="min-h-[44px] p-2.5 rounded-xl bg-amber-950/70 hover:bg-amber-900/80 border border-amber-700/80 text-amber-200 text-xs font-bold flex items-center gap-2 tap-active shadow-sm"
+              >
+                <Smartphone className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="truncate">Zero-Signal 2G SMS Dispatcher</span>
+              </button>
+            )}
           </div>
         </div>
 

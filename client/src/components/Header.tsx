@@ -2,7 +2,7 @@ import React from 'react';
 import { DuoId } from '../shared/types';
 import { DUO_CONFIG } from '../shared/config/travellers.config';
 import { UserProfile } from '../shared/types/user';
-import { Wifi, WifiOff, RefreshCw, ShieldAlert, Mountain, MessageSquare } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, ShieldAlert, Mountain, MessageSquare, HeartPulse, Droplets } from 'lucide-react';
 
 interface HeaderProps {
   activeDuo: DuoId | 'ALL';
@@ -15,6 +15,8 @@ interface HeaderProps {
   activeUser: UserProfile;
   onOpenProfile: () => void;
   onOpenChat: () => void;
+  onOpenHealth?: () => void;
+  onOpenHydration?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,7 +29,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenEmergency,
   activeUser,
   onOpenProfile,
-  onOpenChat
+  onOpenChat,
+  onOpenHealth,
+  onOpenHydration
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-alpine-950/95 backdrop-blur-md border-b border-slate-800/80 px-3 pt-safe pb-2 transition-all">
@@ -75,6 +79,30 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Status Actions */}
         <div className="flex items-center gap-1.5">
+          {/* Elder SpO2 & Health Button */}
+          {onOpenHealth && (
+            <button
+              onClick={onOpenHealth}
+              className="tap-active flex items-center gap-1 px-2 py-1.5 rounded-full bg-slate-900 text-rose-400 border border-rose-500/40 hover:bg-rose-950/40 shadow-sm transition-all"
+              title="Elder SpO₂ & Oxygen Monitor"
+            >
+              <HeartPulse className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+              <span className="text-[11px] font-bold text-slate-200">SpO₂</span>
+            </button>
+          )}
+
+          {/* 90-Min Hydration & Meds Button */}
+          {onOpenHydration && (
+            <button
+              onClick={onOpenHydration}
+              className="tap-active flex items-center gap-1 px-2 py-1.5 rounded-full bg-slate-900 text-sky-400 border border-sky-500/40 hover:bg-sky-950/40 shadow-sm transition-all"
+              title="90-Minute Hydration & BP Meds Cadence"
+            >
+              <Droplets className="w-3.5 h-3.5 text-sky-400 animate-bounce" />
+              <span className="text-[11px] font-bold text-slate-200">Water</span>
+            </button>
+          )}
+
           {/* In-Family Chat Button */}
           <button
             onClick={onOpenChat}
