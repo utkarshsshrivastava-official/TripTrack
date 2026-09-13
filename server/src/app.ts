@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import seedRoutes from './modules/seed/seed.routes';
 import vaultRoutes from './modules/vault/vault.routes';
@@ -50,7 +50,7 @@ app.use('/api/notifications', familyPinMutationsOnly, notificationsRouter);
 app.use('/api/travellers', familyPinMutationsOnly, travellerRoutes);
 
 // Bulk Ping Ingestion for Offline Queue Sync
-app.post('/api/tracking/bulk-ping', familyPinMutationsOnly, async (req, res) => {
+app.post('/api/tracking/bulk-ping', familyPinMutationsOnly, async (req: Request, res: Response) => {
   try {
     const { pings } = req.body;
     if (!Array.isArray(pings) || pings.length === 0) {
