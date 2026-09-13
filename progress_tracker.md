@@ -249,9 +249,10 @@
 
 - [x] **9.1 Minimalist Himalayan App Bar**
   - [x] Replace crowded multi-row header with an ultra-sleek, clean single-tier App Bar (~56px).
-  - [x] Left: Hamburger menu button with active user avatar initial + Brand crest ("TripTrack '26 Badrinath").
+  - [x] Left: Hamburger menu button with active user avatar initial + Brand crest ("TripTrack '26 Badrinath Dham").
   - [x] Center-Right: Compact active Family badge toggle pill (`All`, `A`, `B`).
-  - [x] Far-Right: Connection status indicator + Unread family chat quick launcher + Floating Emergency SOS pill.
+  - [x] Far-Right: Connection status & cloud sync button (`Wifi` / `2G`), completely eliminating horizontal overflow on mobile viewports.
+  - [x] Consolidate Emergency SOS protocols as the primary sticky footer action inside the slide-out navigation drawer.
 - [x] **9.2 Slide-Out Navigation Drawer / Sidebar (`AppSidebar.tsx`)**
   - [x] Gesture/tap-driven slide-out drawer (`w-80 max-w-[85vw]`) with backdrop blur (`backdrop-blur-2xl bg-slate-950/95`).
   - [x] Active device profile switcher with large elder avatar cards, role badges, and guest alias editors.
