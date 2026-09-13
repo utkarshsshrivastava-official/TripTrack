@@ -118,15 +118,31 @@ export const INITIAL_SEED_DOCS: Omit<CachedDocRecord, 'blobData'>[] = [
   },
   {
     id: 'doc-5',
-    title: 'Return Air Tickets (Dehradun DED to Raipur RPR)',
+    title: 'IndiGo Return Flights - Sons (DED to RPR via DEL)',
     category: 'FLIGHT_PASS',
     passengerId: 'traveller-utkarsh',
     mimeType: 'application/pdf',
     parsedData: {
       docType: 'FLIGHT_PASS',
-      pnr: '6E-7892 / UK-441',
+      pnr: 'VGLHWK',
       validDate: '2026-10-02',
-      seatNumber: 'Senior Citizen Priority 4D, 4E, 5D, 5E'
+      seatNumber: 'Utkarsh: 28E/28B | Shreyas: 28F/28A (IndiGo 6E 2476 / 6E 734)',
+      destinationOrHotel: 'Raipur (RPR) via DEL T2->T1'
+    },
+    updatedAt: Date.now()
+  },
+  {
+    id: 'doc-6',
+    title: 'IndiGo Return Flights - Elders (Senior Citizens)',
+    category: 'FLIGHT_PASS',
+    passengerId: 'traveller-rajnish',
+    mimeType: 'application/pdf',
+    parsedData: {
+      docType: 'FLIGHT_PASS',
+      pnr: 'L8CM7C',
+      validDate: '2026-10-02',
+      seatNumber: 'Sanjay Ji: 27F/27A (Win) | Rajnish Ji: 27E/27B (Mid)',
+      destinationOrHotel: 'Raipur (RPR) via DEL T2->T1'
     },
     updatedAt: Date.now()
   }

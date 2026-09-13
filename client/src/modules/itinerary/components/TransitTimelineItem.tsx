@@ -26,6 +26,7 @@ interface TransitTimelineItemProps {
   onCycleStatus: (e: React.MouseEvent, segmentId: string, currentStatus: SegmentStatus) => void;
   onEditLogistics: (segment: TripSegment) => void;
   onOpenTrainTracker?: () => void;
+  onOpenFlightTracker?: () => void;
 }
 
 export const TransitTimelineItem: React.FC<TransitTimelineItemProps> = ({
@@ -36,7 +37,8 @@ export const TransitTimelineItem: React.FC<TransitTimelineItemProps> = ({
   onToggleCheckpoint,
   onCycleStatus,
   onEditLogistics,
-  onOpenTrainTracker
+  onOpenTrainTracker,
+  onOpenFlightTracker
 }) => {
   const getModeIcon = (mode: TransitMode) => {
     switch (mode) {
@@ -227,6 +229,26 @@ export const TransitTimelineItem: React.FC<TransitTimelineItemProps> = ({
                   <span>View 12441 Live Stations & Coach A2</span>
                 </div>
                 <span className="font-mono text-[10px] text-amber-400/90 font-bold">
+                  Open Tracker →
+                </span>
+              </button>
+            )}
+
+            {/* Day 9 IndiGo Return Live Tracker Action */}
+            {segment.id === 'seg-6' && onOpenFlightTracker && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenFlightTracker();
+                }}
+                className="w-full mt-2 py-2 px-3 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold flex items-center justify-between transition-all tap-active"
+              >
+                <div className="flex items-center gap-2">
+                  <Plane className="w-3.5 h-3.5 text-sky-400" />
+                  <span>View IndiGo Flights & Rows 27-28</span>
+                </div>
+                <span className="font-mono text-[10px] text-sky-400/90 font-bold">
                   Open Tracker →
                 </span>
               </button>

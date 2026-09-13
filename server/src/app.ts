@@ -9,6 +9,7 @@ import { notificationsRouter } from './modules/notifications/notifications.route
 import travellerRoutes from './modules/traveller/traveller.routes';
 import chatRoutes from './modules/chat/chat.routes';
 import trainRoutes from './modules/itinerary/train.routes';
+import flightRoutes from './modules/itinerary/flight.routes';
 import { errorHandler } from './shared/middleware/errorHandler';
 import { rateLimiter } from './shared/middleware/rateLimiter';
 import { familyPinMutationsOnly } from './shared/middleware/familyPinAuth';
@@ -52,6 +53,7 @@ app.use('/api/notifications', familyPinMutationsOnly, notificationsRouter);
 app.use('/api/travellers', familyPinMutationsOnly, travellerRoutes);
 app.use('/api/chat', familyPinMutationsOnly, chatRoutes);
 app.use('/api/train', trainRoutes);
+app.use('/api/flight', flightRoutes);
 
 // Bulk Ping Ingestion for Offline Queue Sync
 app.post('/api/tracking/bulk-ping', familyPinMutationsOnly, async (req: Request, res: Response) => {

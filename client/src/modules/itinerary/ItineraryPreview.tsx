@@ -5,6 +5,7 @@ import { DaySelectorStrip } from './components/DaySelectorStrip';
 import { TransitHeroCard } from './components/TransitHeroCard';
 import { TransitTimelineItem } from './components/TransitTimelineItem';
 import { RajdhaniTrackerDrawer } from './components/RajdhaniTrackerDrawer';
+import { FlightTrackerDrawer } from './components/FlightTrackerDrawer';
 import { TripSegment, DuoId, SegmentStatus } from '../../shared/types';
 import { Luggage, Flame } from 'lucide-react';
 
@@ -30,6 +31,7 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
   const [expandedSegmentId, setExpandedSegmentId] = useState<string>('seg-1');
   const [editingSegment, setEditingSegment] = useState<TripSegment | null>(null);
   const [isRajdhaniDrawerOpen, setIsRajdhaniDrawerOpen] = useState<boolean>(false);
+  const [isFlightDrawerOpen, setIsFlightDrawerOpen] = useState<boolean>(false);
 
   // Cycle segment status: UPCOMING -> IN_TRANSIT -> COMPLETED -> UPCOMING
   const cycleStatus = (e: React.MouseEvent, segmentId: string, currentStatus: SegmentStatus) => {
@@ -97,6 +99,7 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
           onCycleStatus={cycleStatus}
           onEditLogistics={(seg) => setEditingSegment(seg)}
           onOpenTrainTracker={() => setIsRajdhaniDrawerOpen(true)}
+          onOpenFlightTracker={() => setIsFlightDrawerOpen(true)}
         />
       )}
 
@@ -166,6 +169,7 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
             onCycleStatus={cycleStatus}
             onEditLogistics={(seg) => setEditingSegment(seg)}
             onOpenTrainTracker={() => setIsRajdhaniDrawerOpen(true)}
+            onOpenFlightTracker={() => setIsFlightDrawerOpen(true)}
           />
         ))}
       </div>
@@ -186,6 +190,12 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
       <RajdhaniTrackerDrawer
         isOpen={isRajdhaniDrawerOpen}
         onClose={() => setIsRajdhaniDrawerOpen(false)}
+      />
+
+      {/* 7. Live IndiGo Return Flight & Dual-PNR Connection Tracker Drawer */}
+      <FlightTrackerDrawer
+        isOpen={isFlightDrawerOpen}
+        onClose={() => setIsFlightDrawerOpen(false)}
       />
     </div>
   );

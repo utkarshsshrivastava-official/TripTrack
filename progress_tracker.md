@@ -29,6 +29,7 @@
 | **Phase 14** | **Voice Studio, Audio Waveforms & Sacred Chants Redesign** | ✅ **DONE** | 100% | Completed |
 | **Phase 15** | **MongoDB Atlas Family Chat Persistence & WhatsApp Engine** | ✅ **DONE** | 100% | Completed |
 | **Phase 16** | **Zero-Cost Train 12441 Smart Transit Engine & IRCTC Berth Pass** | ✅ **DONE** | 100% | Completed |
+| **Phase 17** | **Zero-Cost IndiGo Flight Engine & Dual-PNR Connection Tracker** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -401,6 +402,33 @@
   - [x] Official IRCTC Confirmed Bay card with 1-tap PNR copy.
   - [x] Vertical station journey line with passed/current/upcoming stations.
   - [x] 1-tap RailMadad (139) & "Where Is My Train" deep launcher.
+
+---
+
+### ✅ Phase 17: Zero-Cost IndiGo Flight Engine & Dual-PNR Connection Tracker
+*Status: Completed & Verified on Sep 13, 2026 (100%)*
+
+- [x] **17.1 Ground Official Dual-PNR IndiGo Return Tickets**
+  - [x] Sons' Ticket (Utkarsh & Shreyas): Confirmed PNR `VGLHWK`
+    - Leg 1 (DED-DEL): Seat 28E (Utkarsh, Middle), Seat 28F (Shreyas, Window)
+    - Leg 2 (DEL-RPR): Seat 28B (Utkarsh, Middle), Seat 28A (Shreyas, Window)
+  - [x] Senior Citizens' Ticket (Sanjay Ji & Rajnish Ji): Confirmed PNR `L8CM7C`
+    - Leg 1 (DED-DEL): Seat 27F (Sanjay Ji, Window), Seat 27E (Rajnish Ji, Middle)
+    - Leg 2 (DEL-RPR): Seat 27A (Sanjay Ji, Window), Seat 27B (Rajnish Ji, Middle)
+  - [x] Update Segment 6 in `trip.config.ts` (dep: 13:15, arr: 18:10) and `vaultStorage.ts`.
+- [x] **17.2 IndiGo 2-Leg Schedule & Delhi T2 -> T1 Connection Health Evaluator (`flight6E.ts`)**
+  - [x] Leg 1: 6E 2476 (Dehradun DED 13:15 -> Delhi DEL T2 14:10, 55 mins)
+  - [x] Inter-terminal transit: Delhi T2 -> T1 Shuttle Transfer guide (130 mins scheduled layover)
+  - [x] Connection health badge (🟢 Healthy > 90m, 🟡 Moderate 60-90m, 🔴 Tight < 60m)
+  - [x] Leg 2: 6E 734 (Delhi DEL T1 16:20 -> Raipur RPR 18:10, 1h 50m)
+- [x] **17.3 Family Delay & Connection Sync Engine**
+  - [x] Server endpoint `/api/flight/6e/delay` and `/api/flight/6e/status` with MongoDB persistence and WebSockets sync.
+  - [x] 1-tap delay simulator (+15m, +30m, +45m, On-Time) to dynamically recalculate remaining layover minutes at Delhi.
+- [x] **17.4 Interactive IndiGo Flight Tracker Drawer (`FlightTrackerDrawer.tsx`)**
+  - [x] Slide-out responsive sheet accessible from Day 1 Itinerary card and Segment 6 card.
+  - [x] Dual PNR copy pills (`VGLHWK` & `L8CM7C`) with haptic check.
+  - [x] Row 27 (Fathers) & Row 28 (Sons) visual cabin seating layout.
+  - [x] 1-tap IndiGo Support (+91 9910383838) and web check-in launcher.
 
 ---
 

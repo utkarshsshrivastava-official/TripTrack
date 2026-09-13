@@ -125,24 +125,27 @@ export const TRIP_SEED_SEGMENTS: TripSegment[] = [
   },
   {
     id: "seg-6",
-    title: "Flight Return Journey Home",
+    title: "Flight Return Journey Home (IndiGo)",
     origin: "Dehradun Jolly Grant Airport (DED)",
     destination: "Raipur Airport (RPR) -> Durg",
-    departureTime: "2026-10-02T09:00:00+05:30",
-    arrivalTime: "2026-10-02T16:00:00+05:30",
+    departureTime: "2026-10-02T13:15:00+05:30",
+    arrivalTime: "2026-10-02T18:10:00+05:30",
     mode: "FLIGHT",
     status: "UPCOMING",
     logistics: {
-      serviceName: "Connecting Commercial Flight",
-      identifier: "PNR: Cached in App",
-      pickupLocation: "DED Airport Departure Bay"
+      serviceName: "IndiGo 6E 2476 / 6E 734 (A320)",
+      identifier: "PNRs: VGLHWK & L8CM7C (Rows 27 & 28)",
+      pickupLocation: "DED Airport Terminal Departure Bay",
+      driverPhone: "+91 9910383838 (IndiGo Helpline)"
     },
     elevationMeters: 298,
     isHighAltitude: false,
     checkpoints: [
-      { id: "cp-6-1", name: "Check-in at DED Airport", estimatedTime: "07:30", done: false, elderComfortNote: "Senior citizen priority check-in & wheelchair escort" },
-      { id: "cp-6-2", name: "Flight Transit & Landing at Raipur", estimatedTime: "14:00", done: false, elderComfortNote: "Smooth luggage pickup by sons" },
-      { id: "cp-6-3", name: "Safe Arrival at Durg Home", estimatedTime: "18:00", done: false, elderComfortNote: "Badrinath Yatra successfully & comfortably completed!" }
+      { id: "cp-6-1", name: "DED Bag Drop & Check-in", estimatedTime: "12:15", done: false, elderComfortNote: "Bag drop closes at 12:15. Senior citizen priority for Sanjay & Rajnish Ji. Bags checked through to Raipur." },
+      { id: "cp-6-2", name: "Leg 1: 6E 2476 Takeoff (DED->DEL)", estimatedTime: "13:15", done: false, elderComfortNote: "Airbus A320. Row 27 (Fathers: 27F-Win, 27E-Mid) & Row 28 (Sons: 28F-Win, 28E-Mid)." },
+      { id: "cp-6-3", name: "Delhi Transit: T2 to T1 Shuttle", estimatedTime: "14:10", done: false, elderComfortNote: "130m layover. Deplane at Terminal 2, take airport shuttle coach to Terminal 1 for Leg 2 boarding." },
+      { id: "cp-6-4", name: "Leg 2: 6E 734 Takeoff (DEL->RPR)", estimatedTime: "16:20", done: false, elderComfortNote: "Boarding from T1. Row 27 (Fathers: 27A-Win, 27B-Mid) & Row 28 (Sons: 28A-Win, 28B-Mid)." },
+      { id: "cp-6-5", name: "Raipur Landing & Home Cab to Durg", estimatedTime: "18:10", done: false, elderComfortNote: "18:10 touchdown at Swami Vivekananda Airport. Smooth luggage pickup and cab drive home to Durg!" }
     ]
   }
 ];
