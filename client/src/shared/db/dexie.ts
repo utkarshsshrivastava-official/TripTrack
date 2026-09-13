@@ -169,7 +169,10 @@ export async function flushQueuedPings(apiBaseUrl: string = ''): Promise<{ flush
 
     const response = await fetch(`${apiBaseUrl}/api/tracking/bulk-ping`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      },
       body: JSON.stringify({ pings: pendingPings })
     });
 

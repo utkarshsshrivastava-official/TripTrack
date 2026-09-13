@@ -1,6 +1,7 @@
 import { localDB, OfflineTravellerRecord } from '../db/dexie';
 import { Traveller } from '../types';
 import { TRAVELLERS_CONFIG } from '../config/travellers.config';
+import { getApiHeaders } from './apiConfig';
 
 /**
  * Get all travellers from local IndexedDB with immediate fallback to static config
@@ -26,7 +27,9 @@ export async function getCachedTravellersFromDexie(): Promise<Traveller[]> {
  */
 export async function syncTravellersFromApi(): Promise<Traveller[]> {
   try {
-    const response = await fetch('/api/travellers');
+    const response = await fetch('/api/travellers', {
+      headers: getApiHeaders()
+    });
     if (!response.ok) {
       throw new Error(`HTTP error ${response.status}`);
     }
@@ -74,7 +77,7 @@ export async function updateTravellerProfile(
     // 2. Sync to MongoDB backend in background
     fetch(`/api/travellers/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getApiHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(updates)
     }).catch(err => {
       console.warn('[travellerStorage] Server update failed (queued offline):', err);

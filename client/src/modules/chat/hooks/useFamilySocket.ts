@@ -28,9 +28,13 @@ export function useFamilySocket(activeUser: UserProfile) {
 
   // Connect socket
   useEffect(() => {
-    const serverUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin;
+    const serverUrl = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_BACKEND_URL) ||
+      (window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin);
 
     const socket = io(serverUrl, {
+      auth: {
+        pin: localStorage.getItem('triptrack_family_pin') || '2026'
+      },
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 2000,

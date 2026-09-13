@@ -95,6 +95,9 @@ export async function saveVoiceLogToDexie(
 
     fetch('/api/voice/transcribe', {
       method: 'POST',
+      headers: {
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      },
       body: formData
     })
       .then(res => res.json())

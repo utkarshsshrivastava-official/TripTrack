@@ -77,43 +77,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Status Actions */}
-        <div className="flex items-center gap-1.5">
-          {/* Elder SpO2 & Health Button */}
-          {onOpenHealth && (
-            <button
-              onClick={onOpenHealth}
-              className="tap-active flex items-center gap-1 px-2 py-1.5 rounded-full bg-slate-900 text-rose-400 border border-rose-500/40 hover:bg-rose-950/40 shadow-sm transition-all"
-              title="Elder SpO₂ & Oxygen Monitor"
-            >
-              <HeartPulse className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
-              <span className="text-[11px] font-bold text-slate-200">SpO₂</span>
-            </button>
-          )}
-
-          {/* 90-Min Hydration & Meds Button */}
-          {onOpenHydration && (
-            <button
-              onClick={onOpenHydration}
-              className="tap-active flex items-center gap-1 px-2 py-1.5 rounded-full bg-slate-900 text-sky-400 border border-sky-500/40 hover:bg-sky-950/40 shadow-sm transition-all"
-              title="90-Minute Hydration & BP Meds Cadence"
-            >
-              <Droplets className="w-3.5 h-3.5 text-sky-400 animate-bounce" />
-              <span className="text-[11px] font-bold text-slate-200">Water</span>
-            </button>
-          )}
-
-          {/* In-Family Chat Button */}
-          <button
-            onClick={onOpenChat}
-            className="tap-active flex items-center gap-1 px-2 py-1.5 rounded-full bg-slate-900 text-amber-400 border border-amber-500/40 hover:bg-amber-950/40 shadow-sm transition-all"
-            title="In-Family Chat (4-8 Group Members)"
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span className="text-[11px] font-bold text-slate-200">Chat</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          </button>
-
+        {/* Essential Connectivity & Emergency Action */}
+        <div className="flex items-center gap-1.5 shrink-0">
           {/* Offline / Online Pill */}
           <button
             onClick={onManualSync}
@@ -132,21 +97,61 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <WifiOff className="w-3.5 h-3.5 text-amber-400" />
             )}
-            <span className="text-[11px] font-mono">
+            <span className="text-[11px] font-mono font-bold">
               {isOnline ? (queuedCount > 0 ? `${queuedCount}Q` : 'Live') : 'DeadZone'}
             </span>
           </button>
 
-          {/* Elder SOS Button */}
+          {/* Elder Emergency SOS Button (Always Prominently Visible on Mobile) */}
           <button
             onClick={onOpenEmergency}
-            className="tap-active flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-rose-600 text-white font-bold text-xs shadow-md shadow-rose-950/50 border border-rose-400/50 hover:bg-rose-500"
+            className="tap-active flex items-center gap-1 px-3 py-1.5 rounded-full bg-rose-600 text-white font-extrabold text-xs shadow-md shadow-rose-950/60 border border-rose-400/80 hover:bg-rose-500 transition-all"
             aria-label="Elder Emergency Protocols"
           >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span className="text-[11px] tracking-wide">SOS</span>
+            <ShieldAlert className="w-4 h-4 text-white" />
+            <span className="text-xs tracking-wider font-bold">SOS</span>
           </button>
         </div>
+      </div>
+
+      {/* Row 2: Elder Care Quick Action Strip */}
+      <div className="flex items-center justify-between gap-1.5 mt-2 max-w-md mx-auto">
+        <div className="flex items-center gap-1.5">
+          {/* Elder SpO2 & Health Button */}
+          {onOpenHealth && (
+            <button
+              onClick={onOpenHealth}
+              className="tap-active flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900 text-rose-400 border border-rose-500/40 hover:bg-rose-950/40 shadow-sm transition-all"
+              title="Elder SpO₂ & Oxygen Monitor"
+            >
+              <HeartPulse className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+              <span className="text-[11px] font-bold text-slate-200">SpO₂</span>
+            </button>
+          )}
+
+          {/* 90-Min Hydration & Meds Button */}
+          {onOpenHydration && (
+            <button
+              onClick={onOpenHydration}
+              className="tap-active flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900 text-sky-400 border border-sky-500/40 hover:bg-sky-950/40 shadow-sm transition-all"
+              title="90-Minute Hydration & BP Meds Cadence"
+            >
+              <Droplets className="w-3.5 h-3.5 text-sky-400" />
+              <span className="text-[11px] font-bold text-slate-200">Water</span>
+            </button>
+          )}
+        </div>
+
+        {/* In-Family Chat Button */}
+        <button
+          onClick={onOpenChat}
+          className="tap-active flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900 text-amber-400 border border-amber-500/40 hover:bg-amber-950/40 shadow-sm transition-all"
+          title="In-Family Chat (4-8 Group Members)"
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span className="text-[11px] font-bold text-slate-200">Family Chat</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        </button>
       </div>
 
       {/* Family Segmented Filter Pills */}

@@ -8,10 +8,15 @@ import voiceRoutes from './modules/voice/voice.routes';
 import { notificationsRouter } from './modules/notifications/notifications.routes';
 import travellerRoutes from './modules/traveller/traveller.routes';
 import { errorHandler } from './shared/middleware/errorHandler';
+import { rateLimiter } from './shared/middleware/rateLimiter';
+import { familyPinMutationsOnly } from './shared/middleware/familyPinAuth';
 import { LocationPingModel } from './models/locationPing.model';
 import { isMongoConnected } from './shared/lib/mongodb';
 
 export const app = express();
+
+// Global Rate Limiter to protect free-tier APIs and database
+app.use('/api', rateLimiter);
 
 // Middleware
 app.use(cors({
@@ -23,7 +28,7 @@ app.use(cors({
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check Endpoint
+// Health Check Endpoint (Public)
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
@@ -35,17 +40,17 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// Modular Routes
-app.use('/api/seed', seedRoutes);
-app.use('/api/documents', vaultRoutes);
-app.use('/api/segments', segmentRoutes);
-app.use('/api/telemetry', telemetryRoutes);
-app.use('/api/voice', voiceRoutes);
-app.use('/api/notifications', notificationsRouter);
-app.use('/api/travellers', travellerRoutes);
+// Protected Modular Routes (Mutations require x-family-pin header)
+app.use('/api/seed', familyPinMutationsOnly, seedRoutes);
+app.use('/api/documents', familyPinMutationsOnly, vaultRoutes);
+app.use('/api/segments', familyPinMutationsOnly, segmentRoutes);
+app.use('/api/telemetry', familyPinMutationsOnly, telemetryRoutes);
+app.use('/api/voice', familyPinMutationsOnly, voiceRoutes);
+app.use('/api/notifications', familyPinMutationsOnly, notificationsRouter);
+app.use('/api/travellers', familyPinMutationsOnly, travellerRoutes);
 
 // Bulk Ping Ingestion for Offline Queue Sync
-app.post('/api/tracking/bulk-ping', async (req, res) => {
+app.post('/api/tracking/bulk-ping', familyPinMutationsOnly, async (req, res) => {
   try {
     const { pings } = req.body;
     if (!Array.isArray(pings) || pings.length === 0) {

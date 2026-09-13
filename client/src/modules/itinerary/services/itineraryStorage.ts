@@ -86,7 +86,10 @@ export async function toggleCheckpointInDexie(
   if (navigator.onLine) {
     fetch(`/api/segments/${segmentId}/checkpoint`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      },
       body: JSON.stringify({ checkpointId })
     }).catch(e => console.warn('Checkpoint sync deferred', e));
   }
@@ -114,7 +117,10 @@ export async function updateSegmentStatusInDexie(
   if (navigator.onLine) {
     fetch(`/api/segments/${segmentId}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      },
       body: JSON.stringify({ status })
     }).catch(e => console.warn('Segment status sync deferred', e));
   }
@@ -145,7 +151,10 @@ export async function updateLogisticsInDexie(
   if (navigator.onLine) {
     fetch(`/api/segments/${segmentId}/logistics`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      },
       body: JSON.stringify(logisticsUpdate)
     }).catch(e => console.warn('Logistics sync deferred', e));
   }

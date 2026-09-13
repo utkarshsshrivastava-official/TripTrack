@@ -100,7 +100,10 @@ export async function broadcastPilgrimBeacon(
     try {
       await fetch('/api/telemetry/ping', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+        },
         body: JSON.stringify(ping)
       });
     } catch (err) {
