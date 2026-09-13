@@ -5,18 +5,20 @@ import {
   MicOff, 
   Radio, 
   Sparkles, 
-  Send,
-  AlertCircle,
-  Music,
-  MapPin,
-  User,
-  Activity,
-  Layers
+  Send, 
+  AlertCircle, 
+  Music, 
+  MapPin, 
+  User, 
+  Activity, 
+  Layers,
+  ShieldAlert
 } from 'lucide-react';
 import { TRAVELLERS_CONFIG, getTravellerById } from '../../shared/config/travellers.config';
 import { WebAudioRecorder } from './services/audioRecorder';
 import { getVoiceLogsFromDexie, saveVoiceLogToDexie } from './services/voiceLogStorage';
 import { AudioWaveformCard } from './components/AudioWaveformCard';
+import { RouteGuardTab } from './components/RouteGuardTab';
 import { sacredAudioSynth } from '../sacred/services/sacredAudioSynth';
 
 interface VoiceFeedPreviewProps {
@@ -28,6 +30,7 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({
   activeDuo: initialActiveDuo, 
   onOpenSacredChants 
 }) => {
+  const [activeHubTab, setActiveHubTab] = useState<'VOICE' | 'ROUTE_GUARD'>('VOICE');
   const [selectedDuo, setSelectedDuo] = useState<DuoId | 'ALL'>(initialActiveDuo);
   const [isRecording, setIsRecording] = useState(false);
   const [recordDuration, setRecordDuration] = useState(0);
@@ -190,21 +193,54 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({
     <div className="space-y-4 pb-28">
       <audio ref={audioPlayerRef} className="hidden" />
 
-      {/* Dead-Zone Reassurance Banner */}
-      <div className="p-3.5 rounded-3xl bg-gradient-to-r from-purple-950/50 via-slate-900 to-indigo-950/40 border border-purple-800/40 flex items-start gap-3 shadow-lg">
-        <div className="p-2 rounded-xl bg-purple-900/60 border border-purple-700/50 text-purple-300 shrink-0">
-          <AlertCircle className="w-4 h-4" />
-        </div>
-        <div className="text-xs text-purple-200/90 leading-relaxed">
-          <strong className="text-white block font-black text-xs mb-0.5 flex items-center gap-1.5">
-            <span>Himalayan Voice Studio & Reassurance Feed</span>
-            <span className="text-[9px] bg-purple-900/80 px-2 py-0.2 rounded-full border border-purple-700 text-purple-200">
-              100% Offline
-            </span>
-          </strong>
-          Record voice notes for loved ones at home. Audio is stored offline in phone memory (`Dexie.js`) and auto-synced to family when signal returns.
-        </div>
+      {/* Top Hub Navigation Segmented Control */}
+      <div className="grid grid-cols-2 p-1 bg-slate-950/90 rounded-2xl border border-white/10 shadow-xl backdrop-blur-xl">
+        <button
+          type="button"
+          onClick={() => setActiveHubTab('VOICE')}
+          className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 tap-active min-h-[46px] ${
+            activeHubTab === 'VOICE'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-950/80 border border-purple-400/40'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Mic className="w-4 h-4 text-purple-200" />
+          <span>Family Voice Studio</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveHubTab('ROUTE_GUARD')}
+          className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 tap-active min-h-[46px] ${
+            activeHubTab === 'ROUTE_GUARD'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-950/80 border border-amber-400'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4 text-amber-950" />
+          <span>Route Guard & Alerts</span>
+        </button>
       </div>
+
+      {activeHubTab === 'ROUTE_GUARD' ? (
+        <RouteGuardTab />
+      ) : (
+        <>
+          {/* Dead-Zone Reassurance Banner */}
+          <div className="p-3.5 rounded-3xl bg-gradient-to-r from-purple-950/50 via-slate-900 to-indigo-950/40 border border-purple-800/40 flex items-start gap-3 shadow-lg">
+            <div className="p-2 rounded-xl bg-purple-900/60 border border-purple-700/50 text-purple-300 shrink-0">
+              <AlertCircle className="w-4 h-4" />
+            </div>
+            <div className="text-xs text-purple-200/90 leading-relaxed">
+              <strong className="text-white block font-black text-xs mb-0.5 flex items-center gap-1.5">
+                <span>Himalayan Voice Studio & Reassurance Feed</span>
+                <span className="text-[9px] bg-purple-900/80 px-2 py-0.2 rounded-full border border-purple-700 text-purple-200">
+                  100% Offline
+                </span>
+              </strong>
+              Record voice notes for loved ones at home. Audio is stored offline in phone memory (`Dexie.js`) and auto-synced to family when signal returns.
+            </div>
+          </div>
 
       {/* Sacred Chants & Tanpura Drone Soundboard Card */}
       {onOpenSacredChants && (
@@ -436,6 +472,8 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({
           )}
         </div>
       </div>
-    </div>
-  );
+    </>
+  )}
+</div>
+);
 };

@@ -100,6 +100,24 @@ export interface OfflineTravellerRecord {
   updatedAt?: number;
 }
 
+export interface OfflineRouteAlertRecord {
+  id: string;
+  stretch: string;
+  location: string;
+  eventType: 'LANDSLIDE' | 'FLASH_FLOOD' | 'ROAD_BLOCKED' | 'ONE_WAY_TRAFFIC' | 'HEAVY_JAM' | 'WEATHER_WARNING' | 'CLEAR';
+  severity: 'CRITICAL' | 'MODERATE' | 'ADVISORY' | 'NORMAL';
+  status: 'ACTIVE_BLOCK' | 'CLEARING_IN_PROGRESS' | 'OPEN_CAUTION' | 'ALL_CLEAR';
+  headline: string;
+  summary: string;
+  broClearanceETA?: string;
+  source: string;
+  sourceUrl?: string;
+  timestamp: string;
+  reportedBy?: string;
+  isFamilyReport?: boolean;
+  isSynced?: boolean;
+}
+
 export class TripTrackDexieDB extends Dexie {
   cachedDocs!: Table<CachedDocRecord, string>;
   queuedPings!: Table<QueuedPingRecord, number>;
@@ -110,6 +128,7 @@ export class TripTrackDexieDB extends Dexie {
   oximeterLogs!: Table<OfflineOximeterRecord, string>;
   medicationLogs!: Table<OfflineMedicationRecord, string>;
   travellers!: Table<OfflineTravellerRecord, string>;
+  offlineRouteAlerts!: Table<OfflineRouteAlertRecord, string>;
 
   constructor() {
     super('TripTrackDB');
@@ -153,6 +172,18 @@ export class TripTrackDexieDB extends Dexie {
       oximeterLogs: 'id, travellerId, recordedAt, spo2',
       medicationLogs: 'id, travellerId, date, timeSlot',
       travellers: 'id, duoId, role, name, isSeniorCitizen'
+    });
+    this.version(6).stores({
+      cachedDocs: 'id, passengerId, category, updatedAt',
+      queuedPings: '++id, passengerId, deviceTimestamp',
+      offlineSegments: 'id, modifiedLocallyAt',
+      offlineExpenses: 'id, category, paidBy, createdAt',
+      offlineVoiceLogs: 'id, speakerId, recordedAt',
+      offlineChatMessages: 'id, senderId, senderName, timestamp, status',
+      oximeterLogs: 'id, travellerId, recordedAt, spo2',
+      medicationLogs: 'id, travellerId, date, timeSlot',
+      travellers: 'id, duoId, role, name, isSeniorCitizen',
+      offlineRouteAlerts: 'id, stretch, severity, eventType, timestamp, isFamilyReport'
     });
   }
 }

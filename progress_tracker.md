@@ -30,6 +30,7 @@
 | **Phase 15** | **MongoDB Atlas Family Chat Persistence & WhatsApp Engine** | ✅ **DONE** | 100% | Completed |
 | **Phase 16** | **Zero-Cost Train 12441 Smart Transit Engine & IRCTC Berth Pass** | ✅ **DONE** | 100% | Completed |
 | **Phase 17** | **Zero-Cost IndiGo Flight Engine & Dual-PNR Connection Tracker** | ✅ **DONE** | 100% | Completed |
+| **Phase 18** | **Himalayan Route Guard, Highway Alerts & Dual-Tab Feed Hub** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -429,6 +430,29 @@
   - [x] Dual PNR copy pills (`VGLHWK` & `L8CM7C`) with haptic check.
   - [x] Row 27 (Fathers) & Row 28 (Sons) visual cabin seating layout.
   - [x] 1-tap IndiGo Support (+91 9910383838) and web check-in launcher.
+
+---
+
+### ✅ Phase 18: Himalayan Route Guard, Highway Alerts & Dual-Tab Feed Hub
+*Status: Completed & Verified on Sep 13, 2026 (100%)*
+
+- [x] **18.1 Dexie DB v6 Offline Route Alerts Table**
+  - [x] Add `offlineRouteAlerts: 'id, stretch, severity, eventType, timestamp, isFamilyReport'` in `dexie.ts`.
+  - [x] Support local caching of server alerts and crowdsourced family spotter records.
+- [x] **18.2 Zero-Cost Google News RSS & Gemini 2.5 Flash Pipeline**
+  - [x] Build `routeAlert.service.ts` to ingest free public Google News RSS for NH-7 / Badrinath landslides.
+  - [x] Classify and structure raw news into normalized disruption objects using `gemini-2.5-flash` with in-memory caching and fallback heuristics.
+  - [x] Express endpoints `GET /api/alerts/route-status` and `POST /api/alerts/report`.
+- [x] **18.3 Dual-Tab Feed Hub in Bottom Navigation**
+  - [x] Refactor `VoiceFeedPreview.tsx` to host top segmented switcher: `[ 🎙️ Family Voice Studio ]` & `[ 🏔️ Route Guard & Alerts ]`.
+  - [x] Maintain state and audio playback across tab changes without unmounting active voice recording or player.
+- [x] **18.4 Interactive NH-7 Corridor Health & Alert UI (`RouteGuardTab.tsx`)**
+  - [x] Corridor Health Bar spanning Haridwar to Badrinath across 6 segments (🟢 Clear, 🟡 Caution, 🔴 Blocked).
+  - [x] Alert cards with BRO clearance status, severity badges, and source attribution.
+  - [x] Emergency dialers: Highway Police (`112`), BRO (`1364`), SDRF (`1070`).
+- [x] **18.5 Crowdsourced Family Road Spotter (`ReportObstructionModal.tsx`)**
+  - [x] 1-tap modal for Utkarsh & Shreyas to report landslides, falling rocks, or traffic halts with estimated delays.
+  - [x] Offline-first Dexie queueing and optimistic UI updates with cloud sync.
 
 ---
 
