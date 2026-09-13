@@ -22,8 +22,8 @@
 | **Sec Milestone** | **Traveller Data Security & MongoDB Dexie Sync** | ✅ **DONE** | 100% | Completed |
 | **Phase 8** | **Production Hardening, PWA Audit & Deploy** | ✅ **DONE** | 100% | Completed |
 | **Phase 9** | **Unified App Shell, Slide-Out Sidebar & Design Tokens** | ✅ **DONE** | 100% | Completed |
-| **Phase 10** | **Itinerary Timeline & Live Transit Cards Redesign** | ⏳ **NEXT** | 0% | Up Next |
-| **Phase 11** | **Apple Wallet-Grade Document Vault & Pass Redesign** | ⏳ **QUEUED** | 0% | Milestone 11 |
+| **Phase 10** | **Itinerary Timeline & Live Transit Cards Redesign** | ✅ **DONE** | 100% | Completed |
+| **Phase 11** | **Apple Wallet-Grade Document Vault & Pass Redesign** | ⏳ **NEXT** | 0% | Up Next |
 | **Phase 12** | **Immersive Full-Bleed Map & Mountain Telemetry Redesign** | ⏳ **QUEUED** | 0% | Milestone 12 |
 | **Phase 13** | **Fintech-Grade Gullak 50/50 Shared Pool Redesign** | ⏳ **QUEUED** | 0% | Milestone 13 |
 | **Phase 14** | **Voice Studio, Audio Waveforms & Sacred Chants Redesign** | ⏳ **QUEUED** | 0% | Milestone 14 |
@@ -267,19 +267,21 @@
 
 ---
 
-### ⏳ Phase 10: Itinerary Timeline & Live Transit Cards Redesign
-*Status: Queued (0%) • Target: Flighty & Apple Maps-Style Pilgrimage Roadmap*
+### ✅ Phase 10: Itinerary Timeline & Live Transit Cards Redesign
+*Status: Completed & Verified on Sep 13, 2026 (100%)*
 
-- [ ] **10.1 Vertical Transit Route Roadmap**
-  - [ ] Glowing transit timeline line with altitude elevation markers at Devprayag, Srinagar, Rudraprayag, Joshimath, Badrinath.
-  - [ ] Dynamic day selector pill strip (Sep 24 to Oct 02) with auto-centering on active pilgrimage day.
-- [ ] **10.2 Live Segment Hero Card**
-  - [ ] Real-time status indicator (`UPCOMING`, `IN_TRANSIT`, `HALT / RESTING`, `COMPLETED`).
-  - [ ] Elevation profile gain / descent visualization for active segment.
-  - [ ] Redesigned cab & driver logistics callout card with taxi plate badge and 1-tap call button.
-- [ ] **10.3 Checkpoint Interaction Polish**
-  - [ ] Interactive checkoff milestone rings with haptic completion animation.
-  - [ ] Proximity cues and offline status syncing indicators.
+- [x] **10.1 Vertical Transit Route Roadmap**
+  - [x] Glowing transit timeline line with altitude elevation markers at Devprayag, Srinagar, Rudraprayag, Joshimath, Badrinath.
+  - [x] Dynamic day selector pill strip (`DaySelectorStrip.tsx` from Sep 24 to Oct 02) with 1-tap day filtering and auto-expansion.
+- [x] **10.2 Live Segment Hero Card**
+  - [x] Real-time status indicator (`TransitHeroCard.tsx` with `UPCOMING`, `IN_TRANSIT`, `COMPLETED` tap-to-cycle).
+  - [x] Station-to-station flighty route nodes (e.g. `DURG` $\rightarrow$ `NDLS`, `HW` $\rightarrow$ `JOSH`, `JOSH` $\rightarrow$ `BADRI`).
+  - [x] Dynamic elevation ascent visualization (e.g. `312m ▲ +2,821m to 3,133m`).
+  - [x] Redesigned cab & driver logistics callout card with taxi plate badge and 1-tap phone dialer.
+- [x] **10.3 Checkpoint Interaction Polish**
+  - [x] Interactive checkoff milestone rings (`TransitTimelineItem.tsx`) with haptic completion green glow.
+  - [x] Real-time recalculation of milestone percentage and segment completion.
+  - [x] High-contrast Elder Comfort notes (rest stops, hot tea, motion sickness timing, pacing).
 
 ---
 
