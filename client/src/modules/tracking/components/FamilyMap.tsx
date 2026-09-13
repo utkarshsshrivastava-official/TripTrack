@@ -43,8 +43,8 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({ activeDuo }) => {
   const pilgrimPositions: Record<string, { coords: [number, number]; locationName: string; battery: number }> = {
     'traveller-utkarsh': { coords: [30.7447, 79.4930], locationName: 'Badrinath Temple Valley', battery: 88 },
     'traveller-rajnish': { coords: [30.7441, 79.4925], locationName: 'Badrinath Temple Valley (With Utkarsh)', battery: 92 },
-    'traveller-cousin': { coords: [30.5564, 79.5663], locationName: 'Joshimath Base Camp', battery: 78 },
-    'traveller-uncle': { coords: [30.5558, 79.5658], locationName: 'Joshimath Base Camp (With Shreyas)', battery: 84 }
+    'traveller-shreyas': { coords: [30.5564, 79.5663], locationName: 'Joshimath Base Camp', battery: 78 },
+    'traveller-sanjay': { coords: [30.5558, 79.5658], locationName: 'Joshimath Base Camp (With Shreyas)', battery: 84 }
   };
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({ activeDuo }) => {
 
       // Add route polyline
       const polylineCoords = PILGRIMAGE_WAYPOINTS.map(w => w.coords);
-      
+
       // Outer glow line
       L.polyline(polylineCoords, {
         color: '#f59e0b',
@@ -282,8 +282,8 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({ activeDuo }) => {
       </div>
 
       {/* Leaflet Map Canvas */}
-      <div 
-        ref={mapContainerRef} 
+      <div
+        ref={mapContainerRef}
         className="w-full h-[360px] sm:h-[400px] z-0"
       />
 

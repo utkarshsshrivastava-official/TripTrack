@@ -1,11 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { UserProfile } from '../types/user';
 import { getAllUserProfiles } from '../config/travellers.config';
+import { useTravellers } from './useTravellers';
 
 const STORAGE_KEY_ACTIVE_USER = 'triptrack_active_user_id';
 const STORAGE_KEY_GUEST_NAMES = 'triptrack_guest_custom_names';
 
 export function useUserProfile() {
+  const { travellers } = useTravellers();
+
   // Load custom guest names from localStorage
   const [guestNames, setGuestNames] = useState<Record<string, string>>(() => {
     try {
@@ -16,8 +19,10 @@ export function useUserProfile() {
     }
   });
 
-  // All available profiles with customized guest names
-  const allProfiles = getAllUserProfiles(guestNames);
+  // All available profiles dynamically merged with synced travellers
+  const allProfiles = useMemo(() => {
+    return getAllUserProfiles(guestNames, travellers);
+  }, [guestNames, travellers]);
 
   // Load active user ID from localStorage
   const [activeUserId, setActiveUserId] = useState<string>(() => {

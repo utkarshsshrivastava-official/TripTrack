@@ -13,7 +13,7 @@ const INITIAL_VOICE_SEEDS: OfflineVoiceRecord[] = [
   },
   {
     id: 'voice-2',
-    speakerId: 'traveller-cousin',
+    speakerId: 'traveller-shreyas',
     transcription: 'Joshimath base hotel pahunch gaye hain. Room heater on kar diya hai. Bade papa aur chacha ji ne garam paani se haath-munh dho liya hai aur dinner karke aaram kar rahe hain.',
     summary: 'Joshimath hotel reached. Elders settled with room heating and warm dinner; acclimating for tomorrow\'s Badrinath ascent.',
     recordedAt: '2026-09-26T16:30:00+05:30',

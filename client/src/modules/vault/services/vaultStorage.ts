@@ -93,7 +93,7 @@ export const INITIAL_SEED_DOCS: Omit<CachedDocRecord, 'blobData'>[] = [
     id: 'doc-3',
     title: 'Badrinath Yatra Biometric Registration (Family B)',
     category: 'YATRA_PASS',
-    passengerId: 'traveller-uncle',
+    passengerId: 'traveller-sanjay',
     mimeType: 'application/pdf',
     parsedData: {
       docType: 'YATRA_PASS',
@@ -107,7 +107,7 @@ export const INITIAL_SEED_DOCS: Omit<CachedDocRecord, 'blobData'>[] = [
     id: 'doc-4',
     title: 'Joshimath Base Hotel Confirmation Voucher',
     category: 'HOTEL_VOUCHER',
-    passengerId: 'traveller-cousin',
+    passengerId: 'traveller-shreyas',
     mimeType: 'application/pdf',
     parsedData: {
       docType: 'HOTEL_VOUCHER',

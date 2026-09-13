@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { SegmentModel } from '../../models/segment.model';
+import { TravellerModel } from '../../models/traveller.model';
+import { TRAVELLERS_CONFIG } from '../../shared/config/travellers.config';
 import { isMongoConnected } from '../../shared/lib/mongodb';
 
 // Default static pilgrimage segments for initial database hydration
@@ -181,14 +183,20 @@ export async function initSeedData(req: Request, res: Response): Promise<void> {
 
     if (force) {
       await SegmentModel.deleteMany({});
+      await TravellerModel.deleteMany({});
     }
 
     const created = await SegmentModel.insertMany(SEED_SEGMENTS);
 
+    const existingTravellers = await TravellerModel.countDocuments();
+    if (existingTravellers === 0) {
+      await TravellerModel.insertMany(TRAVELLERS_CONFIG);
+    }
+
     res.json({
       success: true,
       mode: 'mongodb',
-      message: `Successfully seeded ${created.length} segments into MongoDB Atlas.`,
+      message: `Successfully seeded segments and travellers into MongoDB Atlas.`,
       seededCount: created.length,
       segments: created
     });

@@ -1,5 +1,5 @@
 import { X, PhoneCall, HeartPulse, ShieldAlert, Mountain, Hospital, Smartphone } from 'lucide-react';
-import { TRAVELLERS_CONFIG } from '../shared/config/travellers.config';
+import { useTravellers } from '../shared/hooks/useTravellers';
 
 interface EmergencyModalProps {
   isOpen: boolean;
@@ -14,9 +14,9 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({
   onOpenMedicalDirectory,
   onOpenOfflineSms
 }) => {
-  if (!isOpen) return null;
+  const { elders } = useTravellers();
 
-  const elders = TRAVELLERS_CONFIG.filter(t => t.isSeniorCitizen);
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">

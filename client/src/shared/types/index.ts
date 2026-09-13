@@ -1,7 +1,7 @@
 // Family and Traveller Roles
 export type DuoId = 'DUO_A' | 'DUO_B';
 export type FamilyId = DuoId;
-export type TravellerRole = 'SON_COORDINATOR' | 'FATHER_ELDER';
+export type TravellerRole = 'COORDINATOR' | 'ELDER';
 
 export interface ElderCareNotes {
   dailyMeds: string[];
@@ -77,11 +77,11 @@ export interface LocationPing {
 }
 
 // Document Vault
-export type DocumentCategory = 
-  | 'ID_CARD' 
-  | 'TRAIN_TICKET' 
-  | 'FLIGHT_PASS' 
-  | 'YATRA_PASS' 
+export type DocumentCategory =
+  | 'ID_CARD'
+  | 'TRAIN_TICKET'
+  | 'FLIGHT_PASS'
+  | 'YATRA_PASS'
   | 'HOTEL_VOUCHER';
 
 export interface TravelDocument {
@@ -104,12 +104,12 @@ export interface TravelDocument {
 }
 
 // Gullak / Shared Expense
-export type ExpenseCategory = 
-  | 'FOOD' 
-  | 'TOLL_TAXI' 
-  | 'RITUAL' 
-  | 'PORTER_DANDI' 
-  | 'HOTEL' 
+export type ExpenseCategory =
+  | 'FOOD'
+  | 'TOLL_TAXI'
+  | 'RITUAL'
+  | 'PORTER_DANDI'
+  | 'HOTEL'
   | 'MISC';
 
 export interface Expense {

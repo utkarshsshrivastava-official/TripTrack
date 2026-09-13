@@ -9,29 +9,33 @@ import { Traveller, DuoId, UserProfile } from '../types';
  * =========================================================================
  */
 
+const getClientEnv = (key: string, fallback: string): string => {
+  return (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) || fallback;
+};
+
 export const TRAVELLERS_CONFIG: Traveller[] = [
-  // ── Duo A:─────────────────────────────────────────
+  // ── Family A: Utkarsh & Rajnish Ji ─────────────────
   {
     id: "traveller-utkarsh",
     duoId: "DUO_A",
-    name: "Utkarsh",
-    role: "SON_COORDINATOR",
+    name: getClientEnv("VITE_FAMILY_A_SON_NAME", "Utkarsh"),
+    role: "COORDINATOR",
     relation: "Son / Primary Route & Tech Coordinator",
-    age: 30,
-    bloodGroup: "B+",
-    emergencyContact: "+91-9876543210",
+    age: Number(getClientEnv("VITE_FAMILY_A_SON_AGE", "30")),
+    bloodGroup: getClientEnv("VITE_FAMILY_A_SON_BLOOD", "B+"),
+    emergencyContact: getClientEnv("VITE_FAMILY_A_EMERGENCY_PHONE", "+91-9000000001"),
     avatarColor: "#2563eb", // Royal Blue
     isSeniorCitizen: false
   },
   {
     id: "traveller-rajnish",
     duoId: "DUO_A",
-    name: "Rajnish (Dad)",
-    role: "FATHER_ELDER",
+    name: getClientEnv("VITE_FAMILY_A_ELDER_NAME", "Rajnish"),
+    role: "ELDER",
     relation: "Father / Senior Pilgrim",
-    age: 60,
-    bloodGroup: "B+",
-    emergencyContact: "+91-9876543210",
+    age: Number(getClientEnv("VITE_FAMILY_A_ELDER_AGE", "65")),
+    bloodGroup: getClientEnv("VITE_FAMILY_A_ELDER_BLOOD", "B+"),
+    emergencyContact: getClientEnv("VITE_FAMILY_A_EMERGENCY_PHONE", "+91-9000000001"),
     avatarColor: "#dc2626", // Crimson Red
     isSeniorCitizen: true,
     elderCareNotes: {
@@ -44,28 +48,28 @@ export const TRAVELLERS_CONFIG: Traveller[] = [
     }
   },
 
-  // ── Duo B: ───────────────────────────────────────────
+  // ── Family B: Shreyas & Sanjay ─────────────────────
   {
-    id: "traveller-cousin",
+    id: "traveller-shreyas",
     duoId: "DUO_B",
-    name: "Shreyas",
-    role: "SON_COORDINATOR",
+    name: getClientEnv("VITE_FAMILY_B_SON_NAME", "Shreyas"),
+    role: "COORDINATOR",
     relation: "Cousin / Ground & Cab Support",
-    age: 28,
-    bloodGroup: "O+",
-    emergencyContact: "+91-9876543211",
+    age: Number(getClientEnv("VITE_FAMILY_B_SON_AGE", "28")),
+    bloodGroup: getClientEnv("VITE_FAMILY_B_SON_BLOOD", "O+"),
+    emergencyContact: getClientEnv("VITE_FAMILY_B_EMERGENCY_PHONE", "+91-9000000002"),
     avatarColor: "#16a34a", // Forest Green
     isSeniorCitizen: false
   },
   {
-    id: "traveller-uncle",
+    id: "traveller-sanjay",
     duoId: "DUO_B",
-    name: "Sanjay",
-    role: "FATHER_ELDER",
+    name: getClientEnv("VITE_FAMILY_B_ELDER_NAME", "Sanjay"),
+    role: "ELDER",
     relation: "Uncle / Senior Pilgrim",
-    age: 62,
-    bloodGroup: "A+",
-    emergencyContact: "+91-9876543211",
+    age: Number(getClientEnv("VITE_FAMILY_B_ELDER_AGE", "62")),
+    bloodGroup: getClientEnv("VITE_FAMILY_B_ELDER_BLOOD", "A+"),
+    emergencyContact: getClientEnv("VITE_FAMILY_B_EMERGENCY_PHONE", "+91-9000000002"),
     avatarColor: "#d97706", // Warm Amber
     isSeniorCitizen: true,
     elderCareNotes: {
@@ -85,10 +89,10 @@ export const DUO_B_MEMBERS = TRAVELLERS_CONFIG.filter(t => t.duoId === 'DUO_B');
 export const ELDER_MEMBERS = TRAVELLERS_CONFIG.filter(t => t.isSeniorCitizen);
 export const COORDINATOR_MEMBERS = TRAVELLERS_CONFIG.filter(t => !t.isSeniorCitizen);
 
-export const DUO_A_SON = DUO_A_MEMBERS.find(t => t.role === 'SON_COORDINATOR') || DUO_A_MEMBERS[0];
-export const DUO_A_ELDER = DUO_A_MEMBERS.find(t => t.role === 'FATHER_ELDER') || DUO_A_MEMBERS[1];
-export const DUO_B_SON = DUO_B_MEMBERS.find(t => t.role === 'SON_COORDINATOR') || DUO_B_MEMBERS[0];
-export const DUO_B_ELDER = DUO_B_MEMBERS.find(t => t.role === 'FATHER_ELDER') || DUO_B_MEMBERS[1];
+export const DUO_A_SON = DUO_A_MEMBERS.find(t => t.role === 'COORDINATOR') || DUO_A_MEMBERS[0];
+export const DUO_A_ELDER = DUO_A_MEMBERS.find(t => t.role === 'ELDER') || DUO_A_MEMBERS[1];
+export const DUO_B_SON = DUO_B_MEMBERS.find(t => t.role === 'COORDINATOR') || DUO_B_MEMBERS[0];
+export const DUO_B_ELDER = DUO_B_MEMBERS.find(t => t.role === 'ELDER') || DUO_B_MEMBERS[1];
 
 export interface DuoInfo {
   id: DuoId;
@@ -176,14 +180,14 @@ export const DEFAULT_GUESTS: UserProfile[] = [
   }
 ];
 
-export function getPilgrimProfiles(): UserProfile[] {
-  return TRAVELLERS_CONFIG.map(t => ({
+export function getPilgrimProfiles(sourceList: Traveller[] = TRAVELLERS_CONFIG): UserProfile[] {
+  return sourceList.map(t => ({
     id: t.id,
     name: t.name,
     type: 'PILGRIM',
     duoId: t.duoId,
     avatarColor: t.avatarColor,
-    roleLabel: t.role === 'SON_COORDINATOR' ? `${t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} Coordinator` : `${t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} Senior Pilgrim`,
+    roleLabel: t.role === 'COORDINATOR' ? `${t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} Coordinator` : `${t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} Senior Pilgrim`,
     relation: t.relation,
     isElder: t.isSeniorCitizen,
     bloodGroup: t.bloodGroup,
@@ -191,8 +195,11 @@ export function getPilgrimProfiles(): UserProfile[] {
   }));
 }
 
-export function getAllUserProfiles(customGuestNames: Record<string, string> = {}): UserProfile[] {
-  const pilgrims = getPilgrimProfiles();
+export function getAllUserProfiles(
+  customGuestNames: Record<string, string> = {},
+  sourceList: Traveller[] = TRAVELLERS_CONFIG
+): UserProfile[] {
+  const pilgrims = getPilgrimProfiles(sourceList);
   const guests = DEFAULT_GUESTS.map(g => ({
     ...g,
     name: customGuestNames[g.id] || g.name

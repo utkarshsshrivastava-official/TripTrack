@@ -47,7 +47,7 @@ export interface Traveller {
   id: string;
   duoId: 'DUO_A' | 'DUO_B';
   name: string;
-  role: 'SON_COORDINATOR' | 'FATHER_ELDER';
+  role: 'COORDINATOR' | 'ELDER';
   relation: string;
   age: number;
   bloodGroup: string;
@@ -67,7 +67,7 @@ export const TRAVELLERS_CONFIG: Traveller[] = [
     id: "traveller-utkarsh",
     duoId: "DUO_A",
     name: "Utkarsh",
-    role: "SON_COORDINATOR",
+    role: "COORDINATOR",
     relation: "Son / Primary Tech & Route Coordinator",
     age: 30,
     bloodGroup: "B+",
@@ -79,7 +79,7 @@ export const TRAVELLERS_CONFIG: Traveller[] = [
     id: "traveller-rajnish",
     duoId: "DUO_A",
     name: "Rajnish (Dad)",
-    role: "FATHER_ELDER",
+    role: "ELDER",
     relation: "Father / Senior Pilgrim",
     age: 60,
     bloodGroup: "B+",
@@ -95,10 +95,10 @@ export const TRAVELLERS_CONFIG: Traveller[] = [
 
   // Duo B
   {
-    id: "traveller-cousin",
+    id: "traveller-shreyas",
     duoId: "DUO_B",
     name: "Cousin",
-    role: "SON_COORDINATOR",
+    role: "COORDINATOR",
     relation: "Cousin / Ground & Cab Support",
     age: 28,
     bloodGroup: "O+",
@@ -107,10 +107,10 @@ export const TRAVELLERS_CONFIG: Traveller[] = [
     isSeniorCitizen: false
   },
   {
-    id: "traveller-uncle",
+    id: "traveller-sanjay",
     duoId: "DUO_B",
     name: "Uncle (Bade Papa / Chacha)",
-    role: "FATHER_ELDER",
+    role: "ELDER",
     relation: "Uncle / Senior Pilgrim",
     age: 62,
     bloodGroup: "A+",

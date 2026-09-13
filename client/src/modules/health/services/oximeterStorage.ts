@@ -42,7 +42,7 @@ const SAMPLE_OXIMETER_SEEDS: OfflineOximeterRecord[] = [
   },
   {
     id: 'oxi-seed-3',
-    travellerId: 'traveller-uncle',
+    travellerId: 'traveller-sanjay',
     spo2: 96,
     pulseBpm: 74,
     altitudeMeters: 314,
@@ -52,7 +52,7 @@ const SAMPLE_OXIMETER_SEEDS: OfflineOximeterRecord[] = [
   },
   {
     id: 'oxi-seed-4',
-    travellerId: 'traveller-uncle',
+    travellerId: 'traveller-sanjay',
     spo2: 93,
     pulseBpm: 80,
     altitudeMeters: 610,
