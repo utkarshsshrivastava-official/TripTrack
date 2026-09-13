@@ -126,19 +126,30 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
         </div>
 
         {/* Messages List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {messages.map((msg, index) => {
-            const isMe = msg.senderId === activeUser.id;
-            const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            // Check if we need date divider
-            const currentDateDivider = formatChatDateDivider(msg.timestamp);
-            const prevMessage = index > 0 ? messages[index - 1] : null;
-            const prevDateDivider = prevMessage ? formatChatDateDivider(prevMessage.timestamp) : null;
-            const showDateDivider = currentDateDivider !== prevDateDivider;
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col">
+          {messages.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3 my-auto">
+              <div className="w-14 h-14 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shadow-inner">
+                <MessageSquare className="w-7 h-7" />
+              </div>
+              <p className="text-sm font-semibold text-stone-200">Private Family Group</p>
+              <p className="text-xs text-stone-400 max-w-xs leading-relaxed">
+                Connect with pilgrims and home members. Messages sync to MongoDB Atlas and stay saved offline in dead zones.
+              </p>
+            </div>
+          ) : (
+            messages.map((msg, index) => {
+              const isMe = msg.senderId === activeUser.id;
+              const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              
+              // Check if we need date divider
+              const currentDateDivider = formatChatDateDivider(msg.timestamp);
+              const prevMessage = index > 0 ? messages[index - 1] : null;
+              const prevDateDivider = prevMessage ? formatChatDateDivider(prevMessage.timestamp) : null;
+              const showDateDivider = currentDateDivider !== prevDateDivider;
 
-            return (
-              <React.Fragment key={msg.id}>
+              return (
+                <React.Fragment key={msg.id}>
                 {showDateDivider && (
                   <div className="flex justify-center my-2">
                     <span className="px-3 py-0.5 rounded-full text-[10px] font-semibold tracking-wide bg-stone-800/90 text-stone-400 border border-stone-700/60 shadow-sm">
@@ -192,7 +203,7 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
                 </div>
               </React.Fragment>
             );
-          })}
+          }))}
 
           {typingUser && (
             <div className="text-xs text-stone-400 italic flex items-center gap-1.5 px-2 py-1">
