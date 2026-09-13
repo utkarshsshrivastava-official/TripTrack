@@ -17,8 +17,12 @@ import {
   UserCheck,
   ChevronRight,
   Sparkles,
-  MessageSquareShare
+  MessageSquareShare,
+  Smartphone,
+  Download,
+  CheckCircle2
 } from 'lucide-react';
+import { usePwaInstall } from '../shared/hooks/usePwaInstall';
 
 interface AppSidebarProps {
   isOpen: boolean;
@@ -59,6 +63,8 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onManualSync,
   onOpenEmergency
 }) => {
+  const { isInstallable, isInstalled, triggerInstall } = usePwaInstall();
+
   // Close drawer on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -316,6 +322,46 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Section: Standalone WebAPK App Installation */}
+          {!isInstalled && (
+            <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500/15 via-slate-900/60 to-slate-900/80 border border-amber-500/30 space-y-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-stone-100">Install Native App</h4>
+                  <p className="text-[10px] text-stone-400">Standalone WebAPK • No Browser Bar</p>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-stone-300 leading-relaxed">
+                Install TripTrack to launch directly from your home screen with zero URL bar and full offline Himalayan caching.
+              </p>
+
+              {isInstallable ? (
+                <button
+                  onClick={() => triggerInstall()}
+                  className="w-full tap-active py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-amber-500/20"
+                >
+                  <Download className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Install App on Phone</span>
+                </button>
+              ) : (
+                <div className="text-[10px] text-amber-300/90 bg-amber-950/40 border border-amber-800/40 p-2 rounded-lg leading-snug">
+                  💡 In Chrome menu (⋮), tap <strong>"Install app"</strong> to get the standalone APK.
+                </div>
+              )}
+            </div>
+          )}
+
+          {isInstalled && (
+            <div className="p-2.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-300">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Running as Standalone Mobile App</span>
+            </div>
+          )}
 
           {/* Section 3: Telemetry & Cloud Storage Diagnostics */}
           <div>

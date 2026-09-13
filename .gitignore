@@ -9,8 +9,10 @@ coverage/
 # Production & Build outputs
 dist/
 dist-ssr/
+dev-dist/
 build/
 *.local
+*.tsbuildinfo
 
 # Environment variables
 .env
