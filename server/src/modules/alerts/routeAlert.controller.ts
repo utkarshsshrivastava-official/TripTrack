@@ -62,3 +62,45 @@ export async function postFamilySpotterReportHandler(req: Request, res: Response
     });
   }
 }
+
+/**
+ * DELETE /api/alerts/report/:id
+ * Removes a specific family spotter report
+ */
+export async function deleteFamilySpotterReportHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const { removeFamilySpotterReport } = await import('./routeAlert.service');
+    const removed = removeFamilySpotterReport(id);
+    res.status(200).json({
+      success: true,
+      removed
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to remove spotter report'
+    });
+  }
+}
+
+/**
+ * DELETE /api/alerts/reports/reset
+ * Clears all test/family spotter reports
+ */
+export async function clearAllSpotterReportsHandler(_req: Request, res: Response): Promise<void> {
+  try {
+    const { clearAllFamilySpotterReports } = await import('./routeAlert.service');
+    clearAllFamilySpotterReports();
+    res.status(200).json({
+      success: true,
+      message: 'All family spotter reports reset'
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to clear spotter reports'
+    });
+  }
+}
+

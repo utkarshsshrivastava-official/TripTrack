@@ -13,6 +13,7 @@ import {
   Car, 
   CloudFog, 
   Share2,
+  Trash2,
   Wifi,
   WifiOff
 } from 'lucide-react';
@@ -20,8 +21,10 @@ import {
   RouteAlert, 
   CorridorStretchHealth, 
   CORRIDOR_STRETCHES, 
-  fetchLiveRouteAlerts 
+  fetchLiveRouteAlerts,
+  deleteSpotterReport
 } from '../services/routeAlertStorage';
+import { localDB } from '../../../shared/db/dexie';
 import { ReportObstructionModal } from './ReportObstructionModal';
 
 export const RouteGuardTab: React.FC = () => {
@@ -48,13 +51,30 @@ export const RouteGuardTab: React.FC = () => {
   };
 
   useEffect(() => {
-    loadAlerts();
+    // Purge test spotters on load to keep only authentic feeds
+    localDB.offlineRouteAlerts.toArray().then(items => {
+      const testItems = items.filter(i => 
+        i.isFamilyReport && (i.location?.includes('Helang') || i.headline?.includes('Helang') || i.id?.includes('test'))
+      );
+      if (testItems.length > 0) {
+        localDB.offlineRouteAlerts.bulkDelete(testItems.map(t => t.id)).then(() => loadAlerts());
+      } else {
+        loadAlerts();
+      }
+    });
   }, []);
 
   const handleSpotterReportSubmitted = (newReport: RouteAlert) => {
     setAlerts(prev => [newReport, ...prev]);
     setFeedbackToast('✅ Obstruction logged & shared with family!');
     setTimeout(() => setFeedbackToast(null), 4000);
+  };
+
+  const handleDeleteReport = async (id: string) => {
+    await deleteSpotterReport(id);
+    setAlerts(prev => prev.filter(a => a.id !== id));
+    setFeedbackToast('🗑️ Report dismissed');
+    setTimeout(() => setFeedbackToast(null), 3000);
   };
 
   const filteredAlerts = alerts.filter(a => {
@@ -304,6 +324,8 @@ export const RouteGuardTab: React.FC = () => {
                 ? 'border-rose-700/60 shadow-rose-950/30'
                 : alert.severity === 'MODERATE'
                 ? 'border-amber-600/50 shadow-amber-950/20'
+                : alert.status === 'ALL_CLEAR'
+                ? 'border-emerald-600/50 shadow-emerald-950/20'
                 : 'border-white/10'
             }`}
           >
@@ -345,12 +367,16 @@ export const RouteGuardTab: React.FC = () => {
 
             {/* Status & Clearance ETA */}
             {alert.broClearanceETA && (
-              <div className="flex items-center justify-between text-[11px] bg-amber-950/40 border border-amber-800/40 px-3 py-2 rounded-xl text-amber-200">
+              <div className={`flex items-center justify-between text-[11px] px-3 py-2 rounded-xl border ${
+                alert.status === 'ALL_CLEAR'
+                  ? 'bg-emerald-950/40 border-emerald-800/40 text-emerald-200'
+                  : 'bg-amber-950/40 border-amber-800/40 text-amber-200'
+              }`}>
                 <span className="font-bold flex items-center gap-1.5">
                   <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
                   <span>Clearance & Traffic State:</span>
                 </span>
-                <span className="font-mono font-black text-amber-300">
+                <span className={`font-mono font-black ${alert.status === 'ALL_CLEAR' ? 'text-emerald-300' : 'text-amber-300'}`}>
                   {alert.broClearanceETA}
                 </span>
               </div>
@@ -378,6 +404,17 @@ export const RouteGuardTab: React.FC = () => {
                   <Share2 className="w-3 h-3" />
                   <span>WhatsApp</span>
                 </button>
+
+                {alert.isFamilyReport && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteReport(alert.id)}
+                    className="p-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-700 text-rose-300 tap-active"
+                    title="Dismiss / Delete Spotter Alert"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
 
                 {alert.sourceUrl && (
                   <a
