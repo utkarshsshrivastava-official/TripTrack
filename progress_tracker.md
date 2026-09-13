@@ -24,8 +24,8 @@
 | **Phase 9** | **Unified App Shell, Slide-Out Sidebar & Design Tokens** | ✅ **DONE** | 100% | Completed |
 | **Phase 10** | **Itinerary Timeline & Live Transit Cards Redesign** | ✅ **DONE** | 100% | Completed |
 | **Phase 11** | **Apple Wallet-Grade Document Vault & Pass Redesign** | ✅ **DONE** | 100% | Completed |
-| **Phase 12** | **Immersive Full-Bleed Map & Mountain Telemetry Redesign** | ⏳ **NEXT** | 0% | Up Next |
-| **Phase 13** | **Fintech-Grade Gullak 50/50 Shared Pool Redesign** | ⏳ **QUEUED** | 0% | Milestone 13 |
+| **Phase 12** | **Immersive Full-Bleed Map & Mountain Telemetry Redesign** | ✅ **DONE** | 100% | Completed |
+| **Phase 13** | **Fintech-Grade Gullak 50/50 Shared Pool Redesign** | ⏳ **NEXT** | 0% | Up Next |
 | **Phase 14** | **Voice Studio, Audio Waveforms & Sacred Chants Redesign** | ⏳ **QUEUED** | 0% | Milestone 14 |
 
 ---
@@ -302,17 +302,22 @@
 
 ---
 
-### ⏳ Phase 12: Immersive Full-Bleed Map & Mountain Telemetry Redesign
-*Status: Queued (0%) • Target: Full-Screen Native Map Experience with Floating Controls*
+### ✅ Phase 12: Immersive Full-Bleed Map & Mountain Telemetry Redesign
+*Status: Completed & Verified on Sep 13, 2026 (100%)*
 
-- [ ] **12.1 Edge-to-Edge Map Canvas**
-  - [ ] Full-bleed Leaflet canvas extending to screen borders with dark alpine tiles.
-  - [ ] Floating frosted control pills: GPS Centering, Family A / Family B toggle, Map Layer switcher.
-- [ ] **12.2 Animated Pilgrim Halos & Battery Rings**
-  - [ ] Live animated avatar pins with battery level rings and telemetry tooltips.
-  - [ ] Pulsing Mountain Cellular Shadow banner over gorge zones.
-- [ ] **12.3 Collapsible Elevation Sheet**
-  - [ ] Drag-to-reveal cross-section profile of NH-7 elevation curve (312m to 3,133m).
+- [x] **12.1 Edge-to-Edge Map Canvas**
+  - [x] Full-bleed Leaflet canvas extending to screen borders with dark alpine tiles ([FamilyMap.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/tracking/components/FamilyMap.tsx)).
+  - [x] Floating frosted control pills: Camera quick-focus (`Dham`, `Base`, `Fit Circuit`), live GPS pill, and re-center crosshair button.
+  - [x] Family Duo filter integration (`All`, `Fam A`, `Fam B`).
+- [x] **12.2 Animated Pilgrim Halos & Battery Rings**
+  - [x] High-fidelity SVG pilgrim pins with concentric SVG battery level rings (color-coded green/amber/rose).
+  - [x] Dynamic radar breath halos in each pilgrim's signature color (Royal Blue, Crimson, Forest Green, Warm Amber).
+  - [x] Rich telemetry popup with location, battery %, altitude, blood group, and elder care pacing notices.
+  - [x] Floating Mountain Cellular Shadow gorge banner with zero-signal 2G SMS & relief directory launchers ([TrackingPreview.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/tracking/TrackingPreview.tsx)).
+- [x] **12.3 Collapsible Elevation Sheet & Telemetry Beacon**
+  - [x] Collapsible floating bottom sheet with slim pill collapsed state and expanded elevation profile.
+  - [x] Stylized NH-7 Himalayan ascent gradient curve (Durg 216m $\rightarrow$ Haridwar 314m $\rightarrow$ Rudraprayag 895m $\rightarrow$ Joshimath 1890m $\rightarrow$ Badrinath 3130m $\rightarrow$ Mana 3200m).
+  - [x] One-tap pilgrim telemetry and vital beacon broadcaster with instant Dexie IndexedDB offline queueing.
 
 ---
 

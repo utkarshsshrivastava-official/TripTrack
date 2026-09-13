@@ -91,7 +91,7 @@ export const App: React.FC = () => {
         />
 
         {/* Main Scrollable View Area with safe dock bottom padding */}
-        <main className="flex-1 px-3 pt-2 pb-24 overflow-y-auto">
+        <main className={`flex-1 ${activeTab === 'tracking' ? 'p-0 overflow-hidden relative flex flex-col' : 'px-3 pt-2 pb-24 overflow-y-auto'}`}>
           {activeTab === 'itinerary' && (
             <ItineraryPreview
               activeDuo={activeDuo}
@@ -107,6 +107,7 @@ export const App: React.FC = () => {
               onOpenOfflineSms={() => setIsOfflineSmsOpen(true)}
               onOpenMedicalDirectory={() => setIsMedicalDirOpen(true)}
               onOpenOximeter={() => setIsOximeterOpen(true)}
+              onDuoChange={setActiveDuo}
             />
           )}
           {activeTab === 'gullak' && (
