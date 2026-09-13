@@ -2,7 +2,7 @@ import React from 'react';
 import { DuoId } from '../shared/types';
 import { DUO_CONFIG } from '../shared/config/travellers.config';
 import { UserProfile } from '../shared/types/user';
-import { Menu, ShieldAlert, Mountain, MessageSquare, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Menu, ShieldAlert, Mountain, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -14,7 +14,6 @@ interface HeaderProps {
   onManualSync: () => void;
   onOpenEmergency: () => void;
   activeUser: UserProfile;
-  onOpenChat: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,8 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
   isSyncing,
   onManualSync,
   onOpenEmergency,
-  activeUser,
-  onOpenChat
+  activeUser
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/80 px-3 pt-safe pb-2 transition-all">
@@ -110,8 +108,8 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Far-Right: Connectivity, Chat & Emergency SOS */}
-        <div className="flex items-center gap-1.5">
+        {/* Far-Right: Connectivity Status & Emergency SOS */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* Connectivity Status Dot / Trigger */}
           <button
             onClick={onManualSync}
@@ -140,25 +138,14 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          {/* Quick Chat Bubble Button */}
-          <button
-            onClick={onOpenChat}
-            className="tap-active relative w-8 h-8 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-center text-slate-300 hover:text-amber-400 hover:border-slate-700 transition-all"
-            title="Family Chat Room"
-            aria-label="Family Chat"
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-slate-950 animate-pulse"></span>
-          </button>
-
           {/* High-Contrast Elder Emergency SOS Button */}
           <button
             onClick={onOpenEmergency}
-            className="tap-active flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs shadow-md shadow-rose-950/60 border border-rose-500 transition-all shrink-0"
+            className="tap-active flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs shadow-md shadow-rose-950/60 border border-rose-500 transition-all shrink-0 min-h-touch"
             aria-label="Elder Emergency Protocols"
             title="Emergency Medical & Police Protocols"
           >
-            <ShieldAlert className="w-3.5 h-3.5 text-white" />
+            <ShieldAlert className="w-4 h-4 text-white" />
             <span className="tracking-wider">SOS</span>
           </button>
         </div>

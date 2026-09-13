@@ -4,6 +4,7 @@ import { useNetworkStatus } from './shared/hooks/useNetworkStatus';
 import { useUserProfile } from './shared/hooks/useUserProfile';
 import { Header } from './components/Header';
 import { BottomDock, ActiveTab } from './components/BottomDock';
+import { FloatingChatButton } from './components/FloatingChatButton';
 import { AppSidebar } from './components/AppSidebar';
 import { EmergencyModal } from './components/EmergencyModal';
 import { ProfileLoginModal } from './components/ProfileLoginModal';
@@ -66,7 +67,6 @@ export const App: React.FC = () => {
           onManualSync={triggerSync}
           onOpenEmergency={() => setIsEmergencyOpen(true)}
           activeUser={activeUser}
-          onOpenChat={() => setIsChatOpen(true)}
         />
 
         {/* Slide-out Navigation Drawer for Health, Sacred Liturgy & Diagnostics */}
@@ -123,6 +123,9 @@ export const App: React.FC = () => {
             />
           )}
         </main>
+
+        {/* Floating Quick Chat Bubble (Bottom-Left) */}
+        <FloatingChatButton onClick={() => setIsChatOpen(true)} />
 
         {/* Floating Frosted Glass Bottom Dock */}
         <BottomDock activeTab={activeTab} setActiveTab={setActiveTab} />
