@@ -3,7 +3,8 @@ import { DuoId } from './shared/types';
 import { useNetworkStatus } from './shared/hooks/useNetworkStatus';
 import { useUserProfile } from './shared/hooks/useUserProfile';
 import { Header } from './components/Header';
-import { BottomNav, ActiveTab } from './components/BottomNav';
+import { BottomDock, ActiveTab } from './components/BottomDock';
+import { AppSidebar } from './components/AppSidebar';
 import { EmergencyModal } from './components/EmergencyModal';
 import { ProfileLoginModal } from './components/ProfileLoginModal';
 import { FamilyChatDrawer } from './modules/chat/components/FamilyChatDrawer';
@@ -24,6 +25,7 @@ import { VoiceFeedPreview } from './modules/voice-feed/VoiceFeedPreview';
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('itinerary');
   const [activeDuo, setActiveDuo] = useState<DuoId | 'ALL'>('ALL');
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(false);
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
 
@@ -52,9 +54,10 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 flex justify-center">
       {/* Mobile-First Frame: 100% on phones, max-w-md centered on desktop */}
-      <div className="w-full max-w-md min-h-screen flex flex-col bg-alpine-950 text-slate-100 shadow-2xl relative border-x border-slate-800/40">
-        {/* Sticky Mobile App Bar */}
+      <div className="w-full max-w-md min-h-screen flex flex-col bg-slate-950 text-slate-100 shadow-2xl relative border-x border-slate-800/40">
+        {/* Sticky Mobile Single-Tier App Bar */}
         <Header
+          onOpenSidebar={() => setIsSidebarOpen(true)}
           activeDuo={activeDuo}
           setActiveDuo={setActiveDuo}
           isOnline={isOnline}
@@ -63,14 +66,32 @@ export const App: React.FC = () => {
           onManualSync={triggerSync}
           onOpenEmergency={() => setIsEmergencyOpen(true)}
           activeUser={activeUser}
-          onOpenProfile={() => setIsProfileModalOpen(true)}
           onOpenChat={() => setIsChatOpen(true)}
-          onOpenHealth={() => setIsOximeterOpen(true)}
-          onOpenHydration={() => setIsHydrationOpen(true)}
         />
 
-        {/* Main Scrollable View Area with safe dock padding */}
-        <main className="flex-1 px-3 py-3 overflow-y-auto">
+        {/* Slide-out Navigation Drawer for Health, Sacred Liturgy & Diagnostics */}
+        <AppSidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          activeUser={activeUser}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
+          onOpenHealth={() => setIsOximeterOpen(true)}
+          onOpenHydration={() => setIsHydrationOpen(true)}
+          onOpenMedicalDirectory={() => setIsMedicalDirOpen(true)}
+          onOpenOfflineSms={() => setIsOfflineSmsOpen(true)}
+          onOpenBrahmaKapal={() => setIsBrahmaKapalOpen(true)}
+          onOpenPackingChecklist={() => setIsPackingOpen(true)}
+          onOpenSacredChants={() => setIsStotraOpen(true)}
+          onOpenMemorial={() => setIsMemorialOpen(true)}
+          isOnline={isOnline}
+          queuedCount={queuedCount}
+          isSyncing={isSyncing}
+          onManualSync={triggerSync}
+          onOpenEmergency={() => setIsEmergencyOpen(true)}
+        />
+
+        {/* Main Scrollable View Area with safe dock bottom padding */}
+        <main className="flex-1 px-3 pt-2 pb-24 overflow-y-auto">
           {activeTab === 'itinerary' && (
             <ItineraryPreview
               activeDuo={activeDuo}
@@ -102,8 +123,8 @@ export const App: React.FC = () => {
           )}
         </main>
 
-        {/* Docked Mobile Bottom Navigation */}
-        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
+        {/* Floating Frosted Glass Bottom Dock */}
+        <BottomDock activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* High-Contrast Elder Emergency Modal */}
         <EmergencyModal

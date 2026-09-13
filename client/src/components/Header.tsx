@@ -2,9 +2,10 @@ import React from 'react';
 import { DuoId } from '../shared/types';
 import { DUO_CONFIG } from '../shared/config/travellers.config';
 import { UserProfile } from '../shared/types/user';
-import { Wifi, WifiOff, RefreshCw, ShieldAlert, Mountain, MessageSquare, HeartPulse, Droplets } from 'lucide-react';
+import { Menu, ShieldAlert, Mountain, MessageSquare, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 
 interface HeaderProps {
+  onOpenSidebar: () => void;
   activeDuo: DuoId | 'ALL';
   setActiveDuo: (duo: DuoId | 'ALL') => void;
   isOnline: boolean;
@@ -13,13 +14,11 @@ interface HeaderProps {
   onManualSync: () => void;
   onOpenEmergency: () => void;
   activeUser: UserProfile;
-  onOpenProfile: () => void;
   onOpenChat: () => void;
-  onOpenHealth?: () => void;
-  onOpenHydration?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  onOpenSidebar,
   activeDuo,
   setActiveDuo,
   isOnline,
@@ -28,169 +27,144 @@ export const Header: React.FC<HeaderProps> = ({
   onManualSync,
   onOpenEmergency,
   activeUser,
-  onOpenProfile,
-  onOpenChat,
-  onOpenHealth,
-  onOpenHydration
+  onOpenChat
 }) => {
   return (
-    <header className="sticky top-0 z-40 bg-alpine-950/95 backdrop-blur-md border-b border-slate-800/80 px-3 pt-safe pb-2 transition-all">
-      {/* Top utility row */}
-      <div className="flex items-center justify-between gap-2 max-w-md mx-auto">
-        {/* Brand & Active Profile Avatar */}
+    <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/80 px-3 pt-safe pb-2 transition-all">
+      <div className="flex items-center justify-between gap-2 max-w-md mx-auto h-12">
+        {/* Left: Hamburger Menu & Brand Crest */}
         <div className="flex items-center gap-2">
-          {/* Active User Switcher Pill */}
+          {/* Hamburger Drawer Button with Active User Badge */}
           <button
-            onClick={onOpenProfile}
-            className="tap-active flex items-center gap-1.5 p-1 pr-2.5 rounded-full bg-slate-900 border border-slate-700/80 hover:border-amber-500/60 shadow-sm transition-all"
-            title={`Active device profile: ${activeUser.name}. Click to switch.`}
+            onClick={onOpenSidebar}
+            className="tap-active relative w-10 h-10 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-center text-slate-200 hover:text-white hover:border-slate-700 shadow-sm transition-all"
+            aria-label="Open Navigation Drawer"
+            title={`Active profile: ${activeUser.name}. Click to open menu & tools.`}
           >
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-xs shadow-inner"
+            <Menu className="w-5 h-5 text-slate-300" />
+            <span
+              className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-950 flex items-center justify-center text-[9px] font-black text-white shadow-xs"
               style={{ backgroundColor: activeUser.avatarColor }}
             >
               {activeUser.name.charAt(0)}
-            </div>
-            <div className="text-left">
-              <span className="text-[11px] font-bold text-slate-200 block leading-tight max-w-[75px] truncate">
-                {activeUser.name.split(' ')[0]}
-              </span>
-              <span className="text-[9px] text-amber-400 block leading-none font-medium">
-                {activeUser.type === 'PILGRIM' ? (activeUser.duoId === 'DUO_A' ? 'Family A' : 'Family B') : 'Guest'}
-              </span>
-            </div>
+            </span>
           </button>
 
-          <div>
-            <div className="flex items-center gap-1">
-              <h1 className="text-sm font-extrabold tracking-tight text-white leading-none">
-                TripTrack
-              </h1>
-              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-800 text-amber-400 border border-slate-700">
-                2026
+          {/* Brand Crest */}
+          <div className="flex items-center gap-1.5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-sm shadow-amber-500/20">
+              <Mountain className="w-4 h-4 text-slate-950" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1">
+                <h1 className="text-sm font-black tracking-tight text-white leading-none">
+                  TripTrack
+                </h1>
+                <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-800/90 text-amber-400 border border-slate-700 font-bold leading-none">
+                  '26
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400 block leading-tight font-medium">
+                Badrinath
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-              <Mountain className="w-2.5 h-2.5 text-sky-400 inline" />
-              <span>Badrinath</span>
-            </p>
           </div>
         </div>
 
-        {/* Essential Connectivity & Emergency Action */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Offline / Online Pill */}
+        {/* Center-Right: Compact Duo Filter Pill */}
+        <div className="flex items-center p-0.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] font-bold">
+          <button
+            onClick={() => setActiveDuo('ALL')}
+            className={`tap-active px-2 py-1 rounded-md transition-all ${
+              activeDuo === 'ALL'
+                ? 'bg-slate-800 text-white shadow-xs'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Show all 4 pilgrims"
+          >
+            All
+          </button>
+          <button
+            onClick={() => setActiveDuo('DUO_A')}
+            className={`tap-active px-2 py-1 rounded-md transition-all flex items-center gap-1 ${
+              activeDuo === 'DUO_A'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-400 hover:text-blue-300'
+            }`}
+            title={DUO_CONFIG.DUO_A.label}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+            <span>A</span>
+          </button>
+          <button
+            onClick={() => setActiveDuo('DUO_B')}
+            className={`tap-active px-2 py-1 rounded-md transition-all flex items-center gap-1 ${
+              activeDuo === 'DUO_B'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-400 hover:text-emerald-300'
+            }`}
+            title={DUO_CONFIG.DUO_B.label}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>B</span>
+          </button>
+        </div>
+
+        {/* Far-Right: Connectivity, Chat & Emergency SOS */}
+        <div className="flex items-center gap-1.5">
+          {/* Connectivity Status Dot / Trigger */}
           <button
             onClick={onManualSync}
             disabled={isSyncing}
-            className={`tap-active flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+            className={`tap-active w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${
               isOnline
-                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/70 hover:bg-emerald-900/60'
-                : 'bg-amber-950/70 text-amber-300 border-amber-700/80 animate-pulse'
+                ? 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50 hover:bg-emerald-900/40'
+                : 'bg-amber-950/60 text-amber-400 border-amber-700/60 animate-pulse'
             }`}
-            title={isOnline ? 'Online (Connected)' : 'Offline (Dexie Local Mode)'}
+            title={
+              isSyncing
+                ? 'Syncing with MongoDB Atlas...'
+                : isOnline
+                ? queuedCount > 0
+                  ? `${queuedCount} queued locally. Click to sync.`
+                  : 'Online & Live'
+                : 'Offline Dead Zone (Dexie Local Mode)'
+            }
           >
             {isSyncing ? (
               <RefreshCw className="w-3.5 h-3.5 animate-spin text-sky-400" />
             ) : isOnline ? (
-              <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+              <Wifi className="w-3.5 h-3.5" />
             ) : (
-              <WifiOff className="w-3.5 h-3.5 text-amber-400" />
+              <WifiOff className="w-3.5 h-3.5" />
             )}
-            <span className="text-[11px] font-mono font-bold">
-              {isOnline ? (queuedCount > 0 ? `${queuedCount}Q` : 'Live') : 'DeadZone'}
-            </span>
           </button>
 
-          {/* Elder Emergency SOS Button (Always Prominently Visible on Mobile) */}
+          {/* Quick Chat Bubble Button */}
+          <button
+            onClick={onOpenChat}
+            className="tap-active relative w-8 h-8 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-center text-slate-300 hover:text-amber-400 hover:border-slate-700 transition-all"
+            title="Family Chat Room"
+            aria-label="Family Chat"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-slate-950 animate-pulse"></span>
+          </button>
+
+          {/* High-Contrast Elder Emergency SOS Button */}
           <button
             onClick={onOpenEmergency}
-            className="tap-active flex items-center gap-1 px-3 py-1.5 rounded-full bg-rose-600 text-white font-extrabold text-xs shadow-md shadow-rose-950/60 border border-rose-400/80 hover:bg-rose-500 transition-all"
+            className="tap-active flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs shadow-md shadow-rose-950/60 border border-rose-500 transition-all shrink-0"
             aria-label="Elder Emergency Protocols"
+            title="Emergency Medical & Police Protocols"
           >
-            <ShieldAlert className="w-4 h-4 text-white" />
-            <span className="text-xs tracking-wider font-bold">SOS</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Row 2: Elder Care Quick Action Strip */}
-      <div className="flex items-center justify-between gap-1.5 mt-2 max-w-md mx-auto">
-        <div className="flex items-center gap-1.5">
-          {/* Elder SpO2 & Health Button */}
-          {onOpenHealth && (
-            <button
-              onClick={onOpenHealth}
-              className="tap-active flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900 text-rose-400 border border-rose-500/40 hover:bg-rose-950/40 shadow-sm transition-all"
-              title="Elder SpO₂ & Oxygen Monitor"
-            >
-              <HeartPulse className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
-              <span className="text-[11px] font-bold text-slate-200">SpO₂</span>
-            </button>
-          )}
-
-          {/* 90-Min Hydration & Meds Button */}
-          {onOpenHydration && (
-            <button
-              onClick={onOpenHydration}
-              className="tap-active flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900 text-sky-400 border border-sky-500/40 hover:bg-sky-950/40 shadow-sm transition-all"
-              title="90-Minute Hydration & BP Meds Cadence"
-            >
-              <Droplets className="w-3.5 h-3.5 text-sky-400" />
-              <span className="text-[11px] font-bold text-slate-200">Water</span>
-            </button>
-          )}
-        </div>
-
-        {/* In-Family Chat Button */}
-        <button
-          onClick={onOpenChat}
-          className="tap-active flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900 text-amber-400 border border-amber-500/40 hover:bg-amber-950/40 shadow-sm transition-all"
-          title="In-Family Chat (4-8 Group Members)"
-        >
-          <MessageSquare className="w-3.5 h-3.5" />
-          <span className="text-[11px] font-bold text-slate-200">Family Chat</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-        </button>
-      </div>
-
-      {/* Family Segmented Filter Pills */}
-      <div className="mt-2.5 max-w-md mx-auto">
-        <div className="grid grid-cols-3 p-1 bg-slate-900/90 rounded-xl border border-slate-800 text-xs font-semibold">
-          <button
-            onClick={() => setActiveDuo('ALL')}
-            className={`tap-active py-1.5 rounded-lg transition-all ${
-              activeDuo === 'ALL'
-                ? 'bg-slate-800 text-white shadow-sm font-bold border border-slate-700'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            All Pilgrims (4)
-          </button>
-          <button
-            onClick={() => setActiveDuo('DUO_A')}
-            className={`tap-active py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 ${
-              activeDuo === 'DUO_A'
-                ? 'bg-blue-600 text-white shadow-sm font-bold'
-                : 'text-slate-400 hover:text-blue-300'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>
-            <span>{DUO_CONFIG.DUO_A.label}</span>
-          </button>
-          <button
-            onClick={() => setActiveDuo('DUO_B')}
-            className={`tap-active py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 ${
-              activeDuo === 'DUO_B'
-                ? 'bg-emerald-600 text-white shadow-sm font-bold'
-                : 'text-slate-400 hover:text-emerald-300'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
-            <span>{DUO_CONFIG.DUO_B.label}</span>
+            <ShieldAlert className="w-3.5 h-3.5 text-white" />
+            <span className="tracking-wider">SOS</span>
           </button>
         </div>
       </div>
     </header>
   );
 };
+
+export default Header;

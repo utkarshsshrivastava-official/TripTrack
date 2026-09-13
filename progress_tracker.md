@@ -3,7 +3,7 @@
 **Project:** TripTrack by Ut-tech  
 **Target:** Private, Offline-First Mobile PWA for Badrinath Dham 2026 (Sep 24 – Oct 02, 2026)  
 **Primary Users:** 4 Pilgrims (2 Families: Family A [Utkarsh & Rajnish Ji] & Family B [Shreyas & Sanjay]) + Extended Home Family (4–8 members total)  
-**Current Status:** **All 8 Phases & Security Milestones Complete (100%)** • **Production Ready for Badrinath 2026**  
+**Current Status:** **Core System Complete (100%)** • **UI/UX App Redesign Engineering (Phases 9–14) Kickoff**  
 **Last Updated:** September 13, 2026
 
 ---
@@ -21,6 +21,12 @@
 | **Phase 7** | **Sacred Liturgy, Stotra Player & Memorial** | ✅ **DONE** | 100% | Completed |
 | **Sec Milestone** | **Traveller Data Security & MongoDB Dexie Sync** | ✅ **DONE** | 100% | Completed |
 | **Phase 8** | **Production Hardening, PWA Audit & Deploy** | ✅ **DONE** | 100% | Completed |
+| **Phase 9** | **Unified App Shell, Slide-Out Sidebar & Design Tokens** | ✅ **DONE** | 100% | Completed |
+| **Phase 10** | **Itinerary Timeline & Live Transit Cards Redesign** | ⏳ **NEXT** | 0% | Up Next |
+| **Phase 11** | **Apple Wallet-Grade Document Vault & Pass Redesign** | ⏳ **QUEUED** | 0% | Milestone 11 |
+| **Phase 12** | **Immersive Full-Bleed Map & Mountain Telemetry Redesign** | ⏳ **QUEUED** | 0% | Milestone 12 |
+| **Phase 13** | **Fintech-Grade Gullak 50/50 Shared Pool Redesign** | ⏳ **QUEUED** | 0% | Milestone 13 |
+| **Phase 14** | **Voice Studio, Audio Waveforms & Sacred Chants Redesign** | ⏳ **QUEUED** | 0% | Milestone 14 |
 
 ---
 
@@ -234,6 +240,101 @@
   - [x] Configured `vercel.json` (root and `client/`) for SPA routing fallback, asset caching, and PWA manifest headers.
   - [x] Configured `render.yaml` for one-click backend deployment to Render free tier with health check path `/api/health`.
   - [x] Created `client/.env.example` and verified clean `server/.env.example` with zero secrets.
+
+---
+
+### ✅ Phase 9: Unified App Shell, Slide-Out Sidebar & Design Tokens
+*Status: Completed & Verified on Sep 13, 2026 (100%)*
+
+- [x] **9.1 Minimalist Himalayan App Bar**
+  - [x] Replace crowded multi-row header with an ultra-sleek, clean single-tier App Bar (~56px).
+  - [x] Left: Hamburger menu button with active user avatar initial + Brand crest ("TripTrack '26 Badrinath").
+  - [x] Center-Right: Compact active Family badge toggle pill (`All`, `A`, `B`).
+  - [x] Far-Right: Connection status indicator + Unread family chat quick launcher + Floating Emergency SOS pill.
+- [x] **9.2 Slide-Out Navigation Drawer / Sidebar (`AppSidebar.tsx`)**
+  - [x] Gesture/tap-driven slide-out drawer (`w-80 max-w-[85vw]`) with backdrop blur (`backdrop-blur-2xl bg-slate-950/95`).
+  - [x] Active device profile switcher with large elder avatar cards, role badges, and guest alias editors.
+  - [x] Health quick launch section: $SpO_2$ Monitor, 90-Min Hydration timer, NH-7 Relief Post Directory, 2G SMS Dispatcher.
+  - [x] Sacred suite section: Brahma Kapal Tarpan liturgy, Packing checklists, Offline Stotras & Tanpura Synthesizer, Yatra Memorial keepsake.
+  - [x] Cloud sync & storage diagnostics: live network state, queued records counter, and force cloud sync button.
+- [x] **9.3 Floating Glass Dock Navigation (`BottomDock.tsx`)**
+  - [x] Elevated floating dock with frosted glass styling (`glass-dock backdrop-blur-2xl border border-white/12 shadow-2xl`).
+  - [x] Glowing active tab indicator pill and spring animation transitions.
+  - [x] Tactile haptic feedback on tab change across Itinerary, Vault, Map, Gullak, Feed.
+- [x] **9.4 Design Tokens & Micro-Interactions**
+  - [x] Deep alpine obsidian theme (`#060913`, `#0d1527`), subtle border glows, and custom scrollbars.
+  - [x] Tap-scale physics (`tap-active active:scale-[0.96]`) across all cards and buttons.
+
+---
+
+### ⏳ Phase 10: Itinerary Timeline & Live Transit Cards Redesign
+*Status: Queued (0%) • Target: Flighty & Apple Maps-Style Pilgrimage Roadmap*
+
+- [ ] **10.1 Vertical Transit Route Roadmap**
+  - [ ] Glowing transit timeline line with altitude elevation markers at Devprayag, Srinagar, Rudraprayag, Joshimath, Badrinath.
+  - [ ] Dynamic day selector pill strip (Sep 24 to Oct 02) with auto-centering on active pilgrimage day.
+- [ ] **10.2 Live Segment Hero Card**
+  - [ ] Real-time status indicator (`UPCOMING`, `IN_TRANSIT`, `HALT / RESTING`, `COMPLETED`).
+  - [ ] Elevation profile gain / descent visualization for active segment.
+  - [ ] Redesigned cab & driver logistics callout card with taxi plate badge and 1-tap call button.
+- [ ] **10.3 Checkpoint Interaction Polish**
+  - [ ] Interactive checkoff milestone rings with haptic completion animation.
+  - [ ] Proximity cues and offline status syncing indicators.
+
+---
+
+### ⏳ Phase 11: Apple Wallet-Grade Document Vault & Pass Redesign
+*Status: Queued (0%) • Target: Authentic Digital Boarding Pass & Biometric Turnstile Presenter*
+
+- [ ] **11.1 Passbook Card Stack UI**
+  - [ ] Physical ticket aesthetics: notched ticket edges, perforated separation lines, metallic pass headers.
+  - [ ] Category-coded glow badges: Train (`Indigo`), Temple (`Saffron`), Cab (`Emerald`), Hotel (`Sky`).
+- [ ] **11.2 Biometric Turnstile Presenter Modal**
+  - [ ] High-contrast, full-screen biometric QR code with brightness boost mode for temple turnstiles.
+  - [ ] Large copyable PNR and Coach/Seat callouts.
+- [ ] **11.3 Floating Action Button (FAB) Document Ingest**
+  - [ ] Floating upload button launching camera scanner or PDF picker without taking screen space.
+
+---
+
+### ⏳ Phase 12: Immersive Full-Bleed Map & Mountain Telemetry Redesign
+*Status: Queued (0%) • Target: Full-Screen Native Map Experience with Floating Controls*
+
+- [ ] **12.1 Edge-to-Edge Map Canvas**
+  - [ ] Full-bleed Leaflet canvas extending to screen borders with dark alpine tiles.
+  - [ ] Floating frosted control pills: GPS Centering, Family A / Family B toggle, Map Layer switcher.
+- [ ] **12.2 Animated Pilgrim Halos & Battery Rings**
+  - [ ] Live animated avatar pins with battery level rings and telemetry tooltips.
+  - [ ] Pulsing Mountain Cellular Shadow banner over gorge zones.
+- [ ] **12.3 Collapsible Elevation Sheet**
+  - [ ] Drag-to-reveal cross-section profile of NH-7 elevation curve (312m to 3,133m).
+
+---
+
+### ⏳ Phase 13: Fintech-Grade Gullak 50/50 Shared Pool Redesign
+*Status: Queued (0%) • Target: Revolut / Apple Card-Grade Financial Aesthetics*
+
+- [ ] **13.1 High-Impact Balance Hero**
+  - [ ] Large typography displaying total pool funds, spent amount, and remaining budget.
+  - [ ] Category spending distribution bar (Food, Cab, Samagri, Lodging).
+- [ ] **13.2 50/50 Settlement Gauge**
+  - [ ] Modern bilateral settlement indicator: Utkarsh vs Shreyas with clear "Who owes whom" visual balance.
+  - [ ] 1-tap WhatsApp settlement message generator.
+- [ ] **13.3 Frictionless Expense Bottom Sheet**
+  - [ ] Quick numpad entry with category chips and offline Dexie storage.
+
+---
+
+### ⏳ Phase 14: Voice Studio, Audio Waveforms & Sacred Chants Redesign
+*Status: Queued (0%) • Target: Modern Audio Studio & Sacred Liturgy Experience*
+
+- [ ] **14.1 Waveform Voice Feed**
+  - [ ] Telegram/WhatsApp-style waveform visualization for recorded family voice notes.
+  - [ ] Speaker avatar initials, timestamp, and Himalayan dead-zone reassurance badges.
+- [ ] **14.2 Sacred Chants Studio & Tanpura Drone**
+  - [ ] Glowing Himalayan Tanpura soundboard with pitch resonance dials.
+  - [ ] Synchronized Sanskrit & Hindi lyric teleprompter with auto-scroll and elder A+ font zoom.
+  - [ ] Tactile 108 Japa counter with haptic feedback at 27, 54, 81, and 108 beads.
 
 ---
 
