@@ -5,26 +5,30 @@ import {
   MicOff, 
   Radio, 
   Sparkles, 
-  Play, 
-  Pause, 
-  Volume2, 
-  Clock, 
-  ShieldCheck, 
   Send,
-  AlertCircle
+  AlertCircle,
+  Music,
+  MapPin,
+  User,
+  Activity,
+  Layers
 } from 'lucide-react';
 import { TRAVELLERS_CONFIG, getTravellerById } from '../../shared/config/travellers.config';
 import { WebAudioRecorder } from './services/audioRecorder';
 import { getVoiceLogsFromDexie, saveVoiceLogToDexie } from './services/voiceLogStorage';
-
-import { Music } from 'lucide-react';
+import { AudioWaveformCard } from './components/AudioWaveformCard';
+import { sacredAudioSynth } from '../sacred/services/sacredAudioSynth';
 
 interface VoiceFeedPreviewProps {
   activeDuo: DuoId | 'ALL';
   onOpenSacredChants?: () => void;
 }
 
-export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, onOpenSacredChants }) => {
+export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ 
+  activeDuo: initialActiveDuo, 
+  onOpenSacredChants 
+}) => {
+  const [selectedDuo, setSelectedDuo] = useState<DuoId | 'ALL'>(initialActiveDuo);
   const [isRecording, setIsRecording] = useState(false);
   const [recordDuration, setRecordDuration] = useState(0);
   const [feed, setFeed] = useState<VoiceUpdate[]>([]);
@@ -34,6 +38,7 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, o
   const [showManualInput, setShowManualInput] = useState<boolean>(false);
   const [feedbackNote, setFeedbackNote] = useState<string | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [isTanpuraPlaying, setIsTanpuraPlaying] = useState<boolean>(false);
 
   const recorderRef = useRef<WebAudioRecorder | null>(null);
   const timerRef = useRef<any>(null);
@@ -41,6 +46,18 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, o
 
   useEffect(() => {
     getVoiceLogsFromDexie().then(setFeed);
+  }, []);
+
+  useEffect(() => {
+    setSelectedDuo(initialActiveDuo);
+  }, [initialActiveDuo]);
+
+  useEffect(() => {
+    const unsub = sacredAudioSynth.subscribe(playing => {
+      setIsTanpuraPlaying(playing);
+    });
+    setIsTanpuraPlaying(sacredAudioSynth.getIsPlaying());
+    return () => unsub();
   }, []);
 
   const handleStartRecording = async () => {
@@ -57,11 +74,15 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, o
 
       setIsRecording(true);
       setRecordDuration(0);
-      setFeedbackNote('Recording audio... Speak in Hindi/Hinglish for family reassurance.');
+      setFeedbackNote('🔴 Recording in progress... Speak reassuringly in Hindi/Hinglish.');
 
       timerRef.current = setInterval(() => {
         setRecordDuration(d => d + 1);
       }, 1000);
+
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(50);
+      }
     } catch (err: any) {
       console.warn('Microphone permission denied or unavailable', err);
       setShowManualInput(true);
@@ -79,7 +100,7 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, o
 
     try {
       setIsRecording(false);
-      setFeedbackNote('Transcribing & summarizing with Gemini 2.5 Flash...');
+      setFeedbackNote('✨ Transcribing & summarizing with Gemini 2.5 Flash...');
 
       const result = await recorderRef.current.stopRecording();
       const speaker = getTravellerById(selectedSpeakerId);
@@ -98,8 +119,12 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, o
       );
 
       setFeed(prev => [newUpdate, ...prev]);
-      setFeedbackNote('✅ Broadcast saved to Dexie & synced to Home Family feed!');
+      setFeedbackNote('✅ Broadcast saved to Dexie & ready for Home Family!');
       setTimeout(() => setFeedbackNote(null), 4000);
+
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([40, 40, 60]);
+      }
     } catch (err: any) {
       console.error('Failed to stop recording', err);
       setFeedbackNote('Audio recording failed. Please try again.');
@@ -129,19 +154,23 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, o
   };
 
   const togglePlayAudio = (id: string, audioUrl?: string) => {
-    if (!audioUrl) return;
-
     if (playingId === id) {
       audioPlayerRef.current?.pause();
       setPlayingId(null);
       return;
     }
 
-    if (audioPlayerRef.current) {
+    if (audioUrl && audioPlayerRef.current) {
       audioPlayerRef.current.src = audioUrl;
-      audioPlayerRef.current.play();
+      audioPlayerRef.current.play().catch(e => console.warn('Audio play failed', e));
       setPlayingId(id);
       audioPlayerRef.current.onended = () => setPlayingId(null);
+    } else {
+      // Simulated playback for demo or audio without binary URL
+      setPlayingId(id);
+      setTimeout(() => {
+        setPlayingId(current => (current === id ? null : current));
+      }, 8000);
     }
   };
 
@@ -152,70 +181,101 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, o
   };
 
   const filteredFeed = feed.filter(item => {
-    if (activeDuo === 'ALL') return true;
+    if (selectedDuo === 'ALL') return true;
     const speaker = getTravellerById(item.speakerId);
-    return speaker?.duoId === activeDuo;
+    return speaker?.duoId === selectedDuo;
   });
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-28">
       <audio ref={audioPlayerRef} className="hidden" />
 
-      {/* Cellular Dead-Zone Reassurance Banner */}
-      <div className="p-3.5 rounded-3xl bg-gradient-to-r from-purple-950/40 via-alpine-900 to-slate-950 border border-purple-800/50 flex items-start gap-3 shadow-lg">
-        <AlertCircle className="w-5 h-5 text-purple-400 mt-0.5 shrink-0" />
+      {/* Dead-Zone Reassurance Banner */}
+      <div className="p-3.5 rounded-3xl bg-gradient-to-r from-purple-950/50 via-slate-900 to-indigo-950/40 border border-purple-800/40 flex items-start gap-3 shadow-lg">
+        <div className="p-2 rounded-xl bg-purple-900/60 border border-purple-700/50 text-purple-300 shrink-0">
+          <AlertCircle className="w-4 h-4" />
+        </div>
         <div className="text-xs text-purple-200/90 leading-relaxed">
-          <strong className="text-white block font-bold mb-0.5">Push-to-Talk Family Reassurance:</strong>
-          Record short voice updates in Hindi/Hinglish. Gemini AI extracts transcripts and generates calm bullet summaries so elder relatives at home always know everyone is rested and well.
+          <strong className="text-white block font-black text-xs mb-0.5 flex items-center gap-1.5">
+            <span>Himalayan Voice Studio & Reassurance Feed</span>
+            <span className="text-[9px] bg-purple-900/80 px-2 py-0.2 rounded-full border border-purple-700 text-purple-200">
+              100% Offline
+            </span>
+          </strong>
+          Record voice notes for loved ones at home. Audio is stored offline in phone memory (`Dexie.js`) and auto-synced to family when signal returns.
         </div>
       </div>
 
-      {/* Sacred Chants & Tanpura Drone Audio Banner */}
+      {/* Sacred Chants & Tanpura Drone Soundboard Card */}
       {onOpenSacredChants && (
-        <div className="p-3.5 rounded-3xl bg-gradient-to-r from-amber-950/70 via-stone-900 to-amber-950/50 border border-amber-700/50 flex items-center justify-between shadow-xl gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-stone-950 shadow-lg shrink-0">
-              <Music className="w-5 h-5" />
+        <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-950/80 via-stone-900 to-stone-950 border border-amber-600/40 flex items-center justify-between shadow-2xl gap-3 relative overflow-hidden group">
+          <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-stone-950 shadow-lg shadow-amber-500/30 shrink-0 relative">
+              <Music className="w-6 h-6" />
+              {isTanpuraPlaying && (
+                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-400" />
+                </span>
+              )}
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h4 className="text-xs sm:text-sm font-bold text-amber-200">Sacred Chants & Tanpura</h4>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-semibold">100% Offline</span>
+                <h4 className="text-sm font-black text-amber-100 truncate">
+                  Sacred Chants & Tanpura
+                </h4>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-mono font-bold ${
+                  isTanpuraPlaying
+                    ? 'bg-emerald-950 text-emerald-300 border-emerald-700 animate-pulse'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}>
+                  {isTanpuraPlaying ? 'Drone Active' : 'Offline'}
+                </span>
               </div>
-              <p className="text-[11px] text-stone-300">Aartis, Stotras, Japa Counter & C# Tanpura Synth</p>
+              <p className="text-[11px] text-stone-300 truncate">
+                Aartis, Stotras, 108 Japa Counter & C# Tanpura
+              </p>
             </div>
           </div>
+
           <button
+            type="button"
             onClick={onOpenSacredChants}
-            className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-md transition-colors shrink-0 min-h-[44px]"
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs shadow-lg shadow-amber-500/20 transition-all shrink-0 min-h-[46px] tap-active"
           >
-            Open Player
+            Open Studio
           </button>
         </div>
       )}
 
-      {/* Push-to-Talk Recording Card */}
-      <div className="p-4 rounded-3xl bg-gradient-to-br from-purple-950/60 via-alpine-900 to-slate-950 border border-purple-800/50 shadow-xl space-y-3.5">
+      {/* Modern Push-to-Talk Studio Console */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-slate-900/95 via-slate-950 to-purple-950/30 border border-white/10 shadow-2xl space-y-4 backdrop-blur-xl relative overflow-hidden">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Radio className="w-4 h-4 text-purple-400 animate-pulse" />
-            <span className="text-xs font-bold text-white uppercase tracking-wider">
-              Push-to-Talk Broadcast
+            <span className="text-xs font-black text-white uppercase tracking-wider">
+              Live Voice Dispatcher
             </span>
           </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-900/60 text-purple-200 border border-purple-700/60">
-            Gemini Flash 2.5 AI
+          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-purple-900/60 text-purple-200 border border-purple-700/60 flex items-center gap-1 shadow-sm">
+            <Sparkles className="w-3 h-3 text-temple-gold" />
+            <span>Gemini AI Audio</span>
           </span>
         </div>
 
-        {/* Speaker & Location Picker */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <div>
-            <label className="text-[10px] font-bold text-slate-400 block mb-1">Speaker</label>
+        {/* Speaker and Location Inputs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <User className="w-3 h-3 text-purple-400" />
+              <span>Speaking Pilgrim</span>
+            </label>
             <select
               value={selectedSpeakerId}
               onChange={e => setSelectedSpeakerId(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-purple-500"
+              className="w-full px-3 py-2.5 rounded-xl bg-slate-950/90 border border-white/10 text-xs text-white font-medium focus:outline-none focus:border-purple-500 transition-colors shadow-inner"
             >
               {TRAVELLERS_CONFIG.map(t => (
                 <option key={t.id} value={t.id}>
@@ -225,78 +285,104 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, o
             </select>
           </div>
 
-          <div>
-            <label className="text-[10px] font-bold text-slate-400 block mb-1">Current Location</label>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-purple-400" />
+              <span>Location Landmark</span>
+            </label>
             <input
               type="text"
               value={locationName}
               onChange={e => setLocationName(e.target.value)}
               placeholder="e.g. Devprayag / Joshimath"
-              className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-purple-500"
+              className="w-full px-3 py-2.5 rounded-xl bg-slate-950/90 border border-white/10 text-xs text-white font-medium focus:outline-none focus:border-purple-500 transition-colors shadow-inner"
             />
           </div>
         </div>
 
-        {/* Big Mic Button & Waveform Area */}
-        <div className="py-3 flex flex-col items-center justify-center space-y-2">
+        {/* Tactile Microphone Hub with Simulated Real-Time Audio Frequency Bars */}
+        <div className="py-2 flex flex-col items-center justify-center space-y-3">
+          {/* Audio Visualizer Bars while Recording */}
+          {isRecording && (
+            <div className="flex items-center gap-1 h-8 px-4 py-1">
+              {[40, 80, 55, 95, 70, 85, 60, 100, 75, 50, 90, 65, 45].map((h, idx) => (
+                <div
+                  key={idx}
+                  className="w-1 bg-gradient-to-t from-purple-500 to-rose-400 rounded-full animate-pulse"
+                  style={{
+                    height: `${h}%`,
+                    animationDuration: `${0.3 + (idx % 4) * 0.15}s`
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
           <button
+            type="button"
             onClick={isRecording ? handleStopRecording : handleStartRecording}
-            className={`tap-active w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl border-4 ${
+            className={`tap-active w-24 h-24 rounded-3xl flex items-center justify-center transition-all duration-300 shadow-2xl border-4 ${
               isRecording
-                ? 'bg-rose-600 border-rose-400 text-white animate-pulse scale-110 shadow-rose-900/80'
-                : 'bg-gradient-to-tr from-purple-700 to-indigo-600 border-purple-400/50 text-white shadow-purple-950/60 hover:scale-105'
+                ? 'bg-rose-600 border-rose-400 text-white animate-pulse scale-105 shadow-rose-900/80'
+                : 'bg-gradient-to-tr from-purple-700 via-indigo-600 to-purple-600 border-purple-400/50 text-white shadow-purple-950/70 hover:scale-105'
             }`}
+            aria-label={isRecording ? 'Stop recording voice update' : 'Start recording voice update'}
           >
-            {isRecording ? <MicOff className="w-8 h-8" /> : <Mic className="w-8 h-8" />}
+            {isRecording ? (
+              <MicOff className="w-10 h-10 animate-bounce" />
+            ) : (
+              <Mic className="w-10 h-10" />
+            )}
           </button>
 
           <div className="text-center">
             {isRecording ? (
-              <div className="flex items-center gap-2 text-xs font-mono font-bold text-rose-400">
+              <div className="flex items-center gap-2 text-xs font-mono font-black text-rose-400 bg-rose-950/60 px-3 py-1 rounded-full border border-rose-800">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-                <span>RECORDING: {formatSeconds(recordDuration)}</span>
+                <span>RECORDING LIVE: {formatSeconds(recordDuration)}</span>
               </div>
             ) : (
-              <div className="text-xs text-slate-300">
-                Tap microphone to start voice update
+              <div className="text-xs text-slate-300 font-medium">
+                Tap microphone to record Himalayan voice note
               </div>
             )}
           </div>
         </div>
 
-        {/* Feedback / Progress Status */}
+        {/* Feedback / Progress Status Notification */}
         {feedbackNote && (
-          <div className="p-2 rounded-xl bg-purple-950/80 border border-purple-800 text-center text-xs font-semibold text-purple-200 animate-in fade-in">
+          <div className="p-2.5 rounded-2xl bg-purple-950/80 border border-purple-700/60 text-center text-xs font-bold text-purple-200 animate-in fade-in shadow-lg">
             {feedbackNote}
           </div>
         )}
 
         {/* Fallback Text Input Toggle */}
-        <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400 border-t border-purple-900/40">
+        <div className="pt-2 flex items-center justify-between text-[11px] text-slate-400 border-t border-white/10">
           <button
+            type="button"
             onClick={() => setShowManualInput(!showManualInput)}
-            className="text-purple-300 hover:underline flex items-center gap-1 font-semibold"
+            className="text-purple-300 hover:text-purple-200 hover:underline flex items-center gap-1 font-bold tap-active"
           >
             {showManualInput ? 'Hide text note' : 'Or type text note instead'}
           </button>
-          <span className="flex items-center gap-1 text-slate-400 font-mono">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Dexie IndexedDB Outbox</span>
+          <span className="flex items-center gap-1 text-slate-400 font-mono text-[10px]">
+            <Activity className="w-3 h-3 text-emerald-400" />
+            <span>Dexie Binary Storage</span>
           </span>
         </div>
 
         {showManualInput && (
-          <form onSubmit={handleManualSubmit} className="space-y-2 pt-2 animate-in fade-in">
+          <form onSubmit={handleManualSubmit} className="space-y-2 pt-2 animate-in fade-in duration-200">
             <textarea
               rows={2}
               value={manualText}
               onChange={e => setManualText(e.target.value)}
               placeholder="e.g. Papa log ne chai pee li hai, aaram se baith gaye hain..."
-              className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+              className="w-full p-3 rounded-2xl bg-slate-950 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
             />
             <button
               type="submit"
-              className="w-full py-2.5 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 tap-active min-h-[44px]"
+              className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black flex items-center justify-center gap-1.5 tap-active min-h-[46px] shadow-lg shadow-purple-950/80"
             >
               <Send className="w-4 h-4" />
               <span>Publish Note</span>
@@ -305,87 +391,50 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({ activeDuo, o
         )}
       </div>
 
-      {/* Family Reassurance Broadcast Timeline */}
-      <div className="space-y-3">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-          <span>Family Reassurance Timeline</span>
-          <span className="text-temple-gold text-[10px] flex items-center gap-1">
-            <Sparkles className="w-3 h-3" />
-            <span>Gemini AI Summarized</span>
-          </span>
+      {/* Filter Tabs & Feed Timeline */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center justify-between">
+          <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5 text-purple-400" />
+            <span>Family Reassurance Timeline</span>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded-xl border border-white/10">
+            {(['ALL', 'DUO_A', 'DUO_B'] as const).map(f => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setSelectedDuo(f)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all tap-active ${
+                  selectedDuo === f
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {f === 'ALL' ? 'All' : f === 'DUO_A' ? 'Family A' : 'Family B'}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {filteredFeed.map((item) => {
-          const speaker = getTravellerById(item.speakerId);
-          const hasAudio = !!item.audioUrl;
-          const isCurrentPlaying = playingId === item.id;
-
-          return (
-            <div
+        {/* Waveform Card Feed */}
+        <div className="space-y-3.5">
+          {filteredFeed.map(item => (
+            <AudioWaveformCard
               key={item.id}
-              className="p-3.5 rounded-2xl bg-alpine-900/90 border border-slate-800 space-y-2.5 shadow-sm"
-            >
-              {/* Header info */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-7 h-7 rounded-full text-white font-bold text-xs flex items-center justify-center shadow-sm"
-                    style={{ backgroundColor: speaker?.avatarColor || '#2563eb' }}
-                  >
-                    {speaker?.name.charAt(0) || 'P'}
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <span>{speaker?.name || 'Pilgrim'}</span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">
-                        {speaker?.duoId === 'DUO_A' ? 'Family A' : 'Family B'}
-                      </span>
-                    </div>
-                    {item.locationName && (
-                      <div className="text-[10px] font-medium text-slate-400">
-                        📍 {item.locationName}
-                      </div>
-                    )}
-                  </div>
-                </div>
+              update={item}
+              isPlaying={playingId === item.id}
+              onTogglePlay={togglePlayAudio}
+            />
+          ))}
 
-                <div className="flex items-center gap-2">
-                  {hasAudio && (
-                    <button
-                      onClick={() => togglePlayAudio(item.id, item.audioUrl)}
-                      className="px-2.5 py-1 rounded-lg bg-purple-900/50 hover:bg-purple-800 text-purple-200 border border-purple-700/60 text-[10px] font-bold flex items-center gap-1 tap-active"
-                    >
-                      {isCurrentPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                      <span>{isCurrentPlaying ? 'Pause' : 'Listen'}</span>
-                    </button>
-                  )}
-                  <span className="text-[10px] font-mono text-slate-400 flex items-center gap-0.5">
-                    <Clock className="w-3 h-3" />
-                    <span>{new Date(item.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* AI Summary Card */}
-              <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-800/40 text-xs text-purple-200 font-medium leading-relaxed">
-                <div className="text-[10px] uppercase font-mono font-bold text-purple-300 mb-0.5 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-temple-gold" />
-                  <span>Home Family Summary:</span>
-                </div>
-                "{item.summary}"
-              </div>
-
-              {/* Spoken Voice Note Transcript */}
-              <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800/60 text-[11px] text-slate-300 italic">
-                <span className="text-slate-500 not-italic font-semibold block text-[10px] flex items-center gap-1">
-                  <Volume2 className="w-3 h-3" />
-                  <span>Original Spoken Update:</span>
-                </span>
-                "{item.transcription}"
-              </div>
+          {filteredFeed.length === 0 && (
+            <div className="p-8 text-center rounded-3xl bg-slate-900/60 border border-slate-800 text-slate-400 text-xs">
+              No voice updates recorded for this family yet. Tap the microphone to publish one.
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
     </div>
   );
