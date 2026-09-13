@@ -25,6 +25,7 @@ interface TransitTimelineItemProps {
   onToggleCheckpoint: (segmentId: string, checkpointId: string) => void;
   onCycleStatus: (e: React.MouseEvent, segmentId: string, currentStatus: SegmentStatus) => void;
   onEditLogistics: (segment: TripSegment) => void;
+  onOpenTrainTracker?: () => void;
 }
 
 export const TransitTimelineItem: React.FC<TransitTimelineItemProps> = ({
@@ -34,7 +35,8 @@ export const TransitTimelineItem: React.FC<TransitTimelineItemProps> = ({
   onToggleExpand,
   onToggleCheckpoint,
   onCycleStatus,
-  onEditLogistics
+  onEditLogistics,
+  onOpenTrainTracker
 }) => {
   const getModeIcon = (mode: TransitMode) => {
     switch (mode) {
@@ -208,6 +210,26 @@ export const TransitTimelineItem: React.FC<TransitTimelineItemProps> = ({
                   <span>Call Pilot</span>
                 </a>
               </div>
+            )}
+
+            {/* Day 1 Rajdhani Live Tracker Action */}
+            {segment.id === 'seg-1' && onOpenTrainTracker && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenTrainTracker();
+                }}
+                className="w-full mt-2 py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center justify-between transition-all tap-active"
+              >
+                <div className="flex items-center gap-2">
+                  <Train className="w-3.5 h-3.5 text-amber-400" />
+                  <span>View 12441 Live Stations & Coach A2</span>
+                </div>
+                <span className="font-mono text-[10px] text-amber-400/90 font-bold">
+                  Open Tracker →
+                </span>
+              </button>
             )}
           </div>
 

@@ -4,6 +4,7 @@ import { LogisticsEditModal } from './components/LogisticsEditModal';
 import { DaySelectorStrip } from './components/DaySelectorStrip';
 import { TransitHeroCard } from './components/TransitHeroCard';
 import { TransitTimelineItem } from './components/TransitTimelineItem';
+import { RajdhaniTrackerDrawer } from './components/RajdhaniTrackerDrawer';
 import { TripSegment, DuoId, SegmentStatus } from '../../shared/types';
 import { Luggage, Flame } from 'lucide-react';
 
@@ -28,6 +29,7 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
   const [selectedDayId, setSelectedDayId] = useState<string>('all');
   const [expandedSegmentId, setExpandedSegmentId] = useState<string>('seg-1');
   const [editingSegment, setEditingSegment] = useState<TripSegment | null>(null);
+  const [isRajdhaniDrawerOpen, setIsRajdhaniDrawerOpen] = useState<boolean>(false);
 
   // Cycle segment status: UPCOMING -> IN_TRANSIT -> COMPLETED -> UPCOMING
   const cycleStatus = (e: React.MouseEvent, segmentId: string, currentStatus: SegmentStatus) => {
@@ -94,6 +96,7 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
           segment={activeHeroSegment}
           onCycleStatus={cycleStatus}
           onEditLogistics={(seg) => setEditingSegment(seg)}
+          onOpenTrainTracker={() => setIsRajdhaniDrawerOpen(true)}
         />
       )}
 
@@ -162,6 +165,7 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
             onToggleCheckpoint={toggleCheckpoint}
             onCycleStatus={cycleStatus}
             onEditLogistics={(seg) => setEditingSegment(seg)}
+            onOpenTrainTracker={() => setIsRajdhaniDrawerOpen(true)}
           />
         ))}
       </div>
@@ -177,6 +181,12 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
           }}
         />
       )}
+
+      {/* 6. Live 12441 Rajdhani & IRCTC Confirmed Bay Tracker Drawer */}
+      <RajdhaniTrackerDrawer
+        isOpen={isRajdhaniDrawerOpen}
+        onClose={() => setIsRajdhaniDrawerOpen(false)}
+      />
     </div>
   );
 };

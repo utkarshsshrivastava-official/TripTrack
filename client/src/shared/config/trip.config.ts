@@ -11,17 +11,19 @@ export const TRIP_SEED_SEGMENTS: TripSegment[] = [
     mode: "TRAIN",
     status: "UPCOMING",
     logistics: {
-      serviceName: "12441 Bilaspur Rajdhani Express",
-      identifier: "PNR: Pre-booked (2AC / 3AC Berths)",
+      serviceName: "12441 / BSP NDLS RAJ EX (2AC)",
+      identifier: "PNR: 6709136735 (Coach A2: 19, 20, 21, 22)",
       pickupLocation: "Durg Junction Platform 1",
-      driverPhone: "N/A"
+      driverPhone: "139 (Railway Helpline)"
     },
     elevationMeters: 216,
     isHighAltitude: false,
     checkpoints: [
-      { id: "cp-1-1", name: "Boarding at Durg Jn (PF 1)", estimatedTime: "16:30", done: false, elderComfortNote: "Settle fathers in lower berths immediately" },
-      { id: "cp-1-2", name: "Dinner & Evening Meds", estimatedTime: "20:30", done: false, elderComfortNote: "Warm pantry dinner & on-time blood pressure medicines" },
-      { id: "cp-1-3", name: "Arrival at NDLS (PF 1)", estimatedTime: "10:40", done: false, elderComfortNote: "Arrange coolie / wheel assistance if required" }
+      { id: "cp-1-1", name: "Boarding Durg Jn (PF 1)", estimatedTime: "16:30", done: false, elderComfortNote: "Coach A2: Sanjay Ji (19-LB), Rajnish Ji (21-LB), Shreyas (20-UB), Utkarsh (22-UB)" },
+      { id: "cp-1-2", name: "Nagpur Halt & Dinner Meds", estimatedTime: "19:40", done: false, elderComfortNote: "Pantry Dinner: Jain meal for Rajnish Ji, Veg for all + evening BP medicines" },
+      { id: "cp-1-3", name: "Bhopal Night Sleep Halt", estimatedTime: "00:05", done: false, elderComfortNote: "Restful sleep across Central India" },
+      { id: "cp-1-4", name: "Agra Cantt Morning Tea", estimatedTime: "07:15", done: false, elderComfortNote: "Morning refreshments in coach cabin" },
+      { id: "cp-1-5", name: "Arrival at NDLS (PF 1)", estimatedTime: "10:40", done: false, elderComfortNote: "1362 KM completed. Coolie assistance towards Ajmeri Gate Cab Bay" }
     ]
   },
   {

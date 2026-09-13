@@ -17,6 +17,12 @@ export interface ServerChatMessage {
   status: 'sent' | 'delivered';
 }
 
+let ioInstance: SocketIOServer | null = null;
+
+export function getIO(): SocketIOServer | null {
+  return ioInstance;
+}
+
 export function initSocketServer(httpServer: HttpServer): SocketIOServer {
   const io = new SocketIOServer(httpServer, {
     cors: {
@@ -24,6 +30,8 @@ export function initSocketServer(httpServer: HttpServer): SocketIOServer {
       methods: ['GET', 'POST']
     }
   });
+
+  ioInstance = io;
 
   io.on('connection', (socket: Socket) => {
     console.log(`🔌 [Socket.io] Member connected: ${socket.id}`);

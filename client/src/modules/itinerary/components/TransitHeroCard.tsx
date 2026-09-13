@@ -18,12 +18,14 @@ interface TransitHeroCardProps {
   segment: TripSegment;
   onCycleStatus: (e: React.MouseEvent, segmentId: string, currentStatus: SegmentStatus) => void;
   onEditLogistics: (segment: TripSegment) => void;
+  onOpenTrainTracker?: () => void;
 }
 
 export const TransitHeroCard: React.FC<TransitHeroCardProps> = ({
   segment,
   onCycleStatus,
-  onEditLogistics
+  onEditLogistics,
+  onOpenTrainTracker
 }) => {
   const getModeIcon = (mode: TransitMode) => {
     switch (mode) {
@@ -215,6 +217,25 @@ export const TransitHeroCard: React.FC<TransitHeroCardProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Live Train Tracker Quick Action for Day 1 Rajdhani */}
+      {segment.id === 'seg-1' && onOpenTrainTracker && (
+        <button
+          type="button"
+          onClick={onOpenTrainTracker}
+          className="w-full mt-3 py-2.5 px-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-stone-950 font-bold text-xs flex items-center justify-between shadow-lg shadow-amber-500/20 active:scale-98 transition-all hover:brightness-105"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-stone-950 text-amber-400 flex items-center justify-center shadow-xs">
+              <Train className="w-3.5 h-3.5" />
+            </div>
+            <span className="tracking-tight">Live 12441 Rajdhani & Coach A2 Bay</span>
+          </div>
+          <span className="font-mono text-[10px] bg-stone-950/15 px-2 py-0.5 rounded-md font-black">
+            PNR: 6709136735 →
+          </span>
+        </button>
+      )}
     </div>
   );
 };

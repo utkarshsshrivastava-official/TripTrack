@@ -28,6 +28,7 @@
 | **Phase 13** | **Fintech-Grade Gullak 50/50 Shared Pool Redesign** | ✅ **DONE** | 100% | Completed |
 | **Phase 14** | **Voice Studio, Audio Waveforms & Sacred Chants Redesign** | ✅ **DONE** | 100% | Completed |
 | **Phase 15** | **MongoDB Atlas Family Chat Persistence & WhatsApp Engine** | ✅ **DONE** | 100% | Completed |
+| **Phase 16** | **Zero-Cost Train 12441 Smart Transit Engine & IRCTC Berth Pass** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -376,6 +377,30 @@
   - [x] WhatsApp-grade delivery receipt indicators: Gray clock for `queued`, single gray tick for `sent`, double bold emerald checkmarks for `delivered`.
   - [x] High-contrast elder typography, quick status chips (*"Reached safely 🙏"*, *"Tea break ☕"*, etc.), and live typing indicators.
 
+---
+
+### ✅ Phase 16: Zero-Cost Train 12441 Smart Transit Engine & Official IRCTC Ticket Integration
+*Status: Completed & Verified on Sep 13, 2026 (100%)*
+
+- [x] **16.1 Official IRCTC Ticket & Passenger Bay Data Grounding**
+  - [x] Ground official confirmed PNR `6709136735` (Class 2A, Durg to New Delhi, 1362 km) in `trip.config.ts` and `vaultStorage.ts`.
+  - [x] Store confirmed 4-berth private bay assignments in Coach A2:
+    - Sanjay Shrivasta (62, Family B Elder): Berth 19 (Lower, Veg)
+    - Shreyas Shrivast (28, Family B Son): Berth 20 (Upper, Veg)
+    - Rajnish Shrivast (65, Family A Elder): Berth 21 (Lower, Jain Meal)
+    - Utkarsh Shrivast (30, Family A Son): Berth 22 (Upper, Veg)
+- [x] **16.2 Zero-Cost 12441 Timetable & Real-Time Interpolation Engine (`rajdhani12441.ts`)**
+  - [x] 11 key stations with exact scheduled timings, distances, and elder comfort markers (Dinner, BP meds, night sleep, morning tea).
+  - [x] Real-time timetable interpolation calculating current station stretch, speed, and ETA to Delhi based on clock.
+  - [x] Optional free-tier sandbox API slot with automatic offline fallback.
+- [x] **16.3 Family Delay Synchronization & Cloud Persistence**
+  - [x] Server endpoint `/api/train/12441/delay` and `/api/train/12441/status` with MongoDB persistence and WebSockets sync.
+  - [x] Quick buttons (`+15m`, `+30m`, `Reset On-Time`) to recalculate Delhi arrival and cab pickup across all family devices.
+- [x] **16.4 Interactive Live Rajdhani Transit Drawer (`RajdhaniTrackerDrawer.tsx`)**
+  - [x] Full-bleed responsive sheet accessible from Day 1 Itinerary card.
+  - [x] Official IRCTC Confirmed Bay card with 1-tap PNR copy.
+  - [x] Vertical station journey line with passed/current/upcoming stations.
+  - [x] 1-tap RailMadad (139) & "Where Is My Train" deep launcher.
 
 ---
 

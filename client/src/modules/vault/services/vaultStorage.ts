@@ -62,16 +62,16 @@ startxref
 export const INITIAL_SEED_DOCS: Omit<CachedDocRecord, 'blobData'>[] = [
   {
     id: 'doc-1',
-    title: 'Rajdhani Express e-Ticket (Durg to NDLS)',
+    title: '12441 Rajdhani Express e-Ticket (Durg to NDLS)',
     category: 'TRAIN_TICKET',
     passengerId: 'traveller-utkarsh',
     mimeType: 'application/pdf',
     parsedData: {
       docType: 'TRAIN_TICKET',
-      pnr: '645-1284920',
-      seatNumber: 'B1-21 (Lower Berth), B1-24 (Lower Berth)',
+      pnr: '6709136735',
+      seatNumber: 'Coach A2: 19(LB), 20(UB), 21(LB-Jain), 22(UB)',
       validDate: '2026-09-24',
-      destinationOrHotel: 'New Delhi (NDLS)'
+      destinationOrHotel: 'New Delhi (NDLS) - 1362 KM'
     },
     updatedAt: Date.now()
   },

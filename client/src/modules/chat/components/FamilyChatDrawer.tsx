@@ -12,6 +12,7 @@ interface FamilyChatDrawerProps {
 const QUICK_STATUS_CHIPS = [
   'Reached safely 🙏',
   'Tea break ☕',
+  'Mani Bewakoof 🤯',
   'Taking BP meds 💊',
   'Gorge route, low signal 👍',
   'Jai Badri Vishal! 🏔️',
@@ -22,7 +23,7 @@ function formatChatDateDivider(dateStr: string): string {
   const d = new Date(dateStr);
   const now = new Date();
   const isToday = d.toDateString() === now.toDateString();
-  
+
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   const isYesterday = d.toDateString() === yesterday.toDateString();
@@ -67,7 +68,7 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div 
+      <div
         className="w-full max-w-md h-full bg-stone-900 border-l border-stone-800 flex flex-col shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
@@ -141,7 +142,7 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
             messages.map((msg, index) => {
               const isMe = msg.senderId === activeUser.id;
               const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              
+
               // Check if we need date divider
               const currentDateDivider = formatChatDateDivider(msg.timestamp);
               const prevMessage = index > 0 ? messages[index - 1] : null;
@@ -150,60 +151,59 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
 
               return (
                 <React.Fragment key={msg.id}>
-                {showDateDivider && (
-                  <div className="flex justify-center my-2">
-                    <span className="px-3 py-0.5 rounded-full text-[10px] font-semibold tracking-wide bg-stone-800/90 text-stone-400 border border-stone-700/60 shadow-sm">
-                      {currentDateDivider}
-                    </span>
-                  </div>
-                )}
-                <div
-                  className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                >
-                  {!isMe && (
-                    <div className="flex items-center gap-1.5 mb-1 px-1">
-                      <div
-                        className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-xs"
-                        style={{ backgroundColor: msg.senderAvatarColor }}
-                      >
-                        {msg.senderName.charAt(0)}
-                      </div>
-                      <span className="text-[11px] font-bold text-stone-300">
-                        {msg.senderName}
+                  {showDateDivider && (
+                    <div className="flex justify-center my-2">
+                      <span className="px-3 py-0.5 rounded-full text-[10px] font-semibold tracking-wide bg-stone-800/90 text-stone-400 border border-stone-700/60 shadow-sm">
+                        {currentDateDivider}
                       </span>
-                      {msg.senderDuo && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-stone-800 border border-stone-700/50 text-stone-400">
-                          {msg.senderDuo === 'DUO_A' ? 'Family A' : msg.senderDuo === 'DUO_B' ? 'Family B' : msg.senderDuo}
-                        </span>
-                      )}
                     </div>
                   )}
-
                   <div
-                    className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm break-words shadow-md transition-all ${
-                      isMe
+                    className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
+                  >
+                    {!isMe && (
+                      <div className="flex items-center gap-1.5 mb-1 px-1">
+                        <div
+                          className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-xs"
+                          style={{ backgroundColor: msg.senderAvatarColor }}
+                        >
+                          {msg.senderName.charAt(0)}
+                        </div>
+                        <span className="text-[11px] font-bold text-stone-300">
+                          {msg.senderName}
+                        </span>
+                        {msg.senderDuo && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-stone-800 border border-stone-700/50 text-stone-400">
+                            {msg.senderDuo === 'DUO_A' ? 'Family A' : msg.senderDuo === 'DUO_B' ? 'Family B' : msg.senderDuo}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <div
+                      className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm break-words shadow-md transition-all ${isMe
                         ? 'bg-amber-500 text-stone-950 font-medium rounded-tr-xs'
                         : 'bg-stone-800 text-stone-100 border border-stone-700/60 rounded-tl-xs'
-                    }`}
-                  >
-                    <p className="leading-relaxed select-text">{msg.text}</p>
-                    <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isMe ? 'text-stone-800' : 'text-stone-400'}`}>
-                      <span className="font-mono text-[9px]">{timeStr}</span>
-                      {isMe && (
-                        msg.status === 'queued' ? (
-                          <span title="Queued in Dexie (Offline)"><Clock className="w-3 h-3 text-stone-700 animate-pulse" /></span>
-                        ) : msg.status === 'delivered' ? (
-                          <span title="Delivered to family & MongoDB Atlas"><CheckCheck className="w-3.5 h-3.5 text-emerald-950 stroke-[2.5]" /></span>
-                        ) : (
-                          <span title="Sent to cloud"><Check className="w-3.5 h-3.5 text-stone-700" /></span>
-                        )
-                      )}
+                        }`}
+                    >
+                      <p className="leading-relaxed select-text">{msg.text}</p>
+                      <div className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isMe ? 'text-stone-800' : 'text-stone-400'}`}>
+                        <span className="font-mono text-[9px]">{timeStr}</span>
+                        {isMe && (
+                          msg.status === 'queued' ? (
+                            <span title="Queued in Dexie (Offline)"><Clock className="w-3 h-3 text-stone-700 animate-pulse" /></span>
+                          ) : msg.status === 'delivered' ? (
+                            <span title="Delivered to family & MongoDB Atlas"><CheckCheck className="w-3.5 h-3.5 text-emerald-950 stroke-[2.5]" /></span>
+                          ) : (
+                            <span title="Sent to cloud"><Check className="w-3.5 h-3.5 text-stone-700" /></span>
+                          )
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </React.Fragment>
-            );
-          }))}
+                </React.Fragment>
+              );
+            }))}
 
           {typingUser && (
             <div className="text-xs text-stone-400 italic flex items-center gap-1.5 px-2 py-1">
