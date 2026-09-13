@@ -1,5 +1,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
+import { ChatMessageModel } from '../../models/chatMessage.model';
+import { isMongoConnected } from '../../shared/lib/mongodb';
 
 export const FAMILY_ROOM = 'badrinath-family-2026';
 
@@ -39,9 +41,33 @@ export function initSocketServer(httpServer: HttpServer): SocketIOServer {
       });
     });
 
-    // Handle chat message broadcast
-    socket.on('send_chat_message', (msg: ServerChatMessage) => {
+    // Handle chat message broadcast with MongoDB persistence
+    socket.on('send_chat_message', async (msg: ServerChatMessage) => {
       console.log(`💬 [Chat] ${msg.senderName}: "${msg.text.slice(0, 40)}..."`);
+      
+      // Asynchronously persist to MongoDB Atlas if connected
+      try {
+        if (isMongoConnected()) {
+          await ChatMessageModel.findOneAndUpdate(
+            { id: msg.id },
+            {
+              id: msg.id,
+              senderId: msg.senderId,
+              senderName: msg.senderName,
+              senderAvatarColor: msg.senderAvatarColor || '#2563eb',
+              senderType: msg.senderType || 'PILGRIM',
+              senderDuo: msg.senderDuo,
+              text: msg.text,
+              timestamp: new Date(msg.timestamp || Date.now()),
+              status: 'delivered'
+            },
+            { upsert: true, new: true }
+          );
+        }
+      } catch (dbErr) {
+        console.error('⚠️ [Socket.io Chat] Failed to persist message to MongoDB Atlas:', dbErr);
+      }
+
       // Broadcast to all other room members
       socket.to(FAMILY_ROOM).emit('receive_chat_message', {
         ...msg,

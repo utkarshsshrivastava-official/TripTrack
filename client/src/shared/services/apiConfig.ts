@@ -27,3 +27,9 @@ export const getApiHeaders = (extra: Record<string, string> = {}): Record<string
     ...extra
   };
 };
+
+export const getBackendUrl = (): string => {
+  return (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_BACKEND_URL) ||
+    (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5000' : (typeof window !== 'undefined' ? window.location.origin : ''));
+};
+

@@ -6,7 +6,9 @@ import {
   getLocalChatMessages,
   saveLocalChatMessage,
   getQueuedMessages,
-  updateMessageStatus
+  updateMessageStatus,
+  syncWithCloudHistory,
+  bulkSyncQueuedMessages
 } from '../services/chatStorage';
 
 export function useFamilySocket(activeUser: UserProfile) {
@@ -24,6 +26,10 @@ export function useFamilySocket(activeUser: UserProfile) {
 
   useEffect(() => {
     loadMessages();
+    // Hydrate from MongoDB Atlas cloud history
+    syncWithCloudHistory().then(() => {
+      loadMessages();
+    });
   }, [loadMessages]);
 
   // Connect socket
@@ -53,16 +59,20 @@ export function useFamilySocket(activeUser: UserProfile) {
         userName: activeUser.name
       });
 
-      // Flush offline messages
+      // 1. Sync latest chat history from MongoDB Atlas
+      await syncWithCloudHistory();
+
+      // 2. Flush offline queued messages
       const queued = await getQueuedMessages();
       if (queued.length > 0) {
-        console.log(`📡 Replaying ${queued.length} queued messages...`);
+        console.log(`📡 Replaying ${queued.length} queued messages to family room...`);
         for (const msg of queued) {
           socket.emit('send_chat_message', msg);
           await updateMessageStatus(msg.id, 'sent');
         }
-        loadMessages();
+        await bulkSyncQueuedMessages();
       }
+      loadMessages();
     });
 
     socket.on('disconnect', () => {
@@ -73,8 +83,10 @@ export function useFamilySocket(activeUser: UserProfile) {
     socket.on('receive_chat_message', async (incoming: OfflineChatMessageRecord) => {
       await saveLocalChatMessage(incoming);
       setMessages(prev => {
-        if (prev.some(m => m.id === incoming.id)) return prev;
-        return [...prev, incoming];
+        if (prev.some(m => m.id === incoming.id)) {
+          return prev.map(m => m.id === incoming.id ? incoming : m);
+        }
+        return [...prev, incoming].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
       });
     });
 
@@ -95,7 +107,17 @@ export function useFamilySocket(activeUser: UserProfile) {
       }
     });
 
+    const handleOnline = async () => {
+      console.log('🌐 Network restored: syncing chat with cloud...');
+      await syncWithCloudHistory();
+      await bulkSyncQueuedMessages();
+      loadMessages();
+    };
+
+    window.addEventListener('online', handleOnline);
+
     return () => {
+      window.removeEventListener('online', handleOnline);
       socket.disconnect();
     };
   }, [activeUser.id, activeUser.name, loadMessages]);

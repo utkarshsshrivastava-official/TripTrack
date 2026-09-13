@@ -27,6 +27,7 @@
 | **Phase 12** | **Immersive Full-Bleed Map & Mountain Telemetry Redesign** | ✅ **DONE** | 100% | Completed |
 | **Phase 13** | **Fintech-Grade Gullak 50/50 Shared Pool Redesign** | ✅ **DONE** | 100% | Completed |
 | **Phase 14** | **Voice Studio, Audio Waveforms & Sacred Chants Redesign** | ✅ **DONE** | 100% | Completed |
+| **Phase 15** | **MongoDB Atlas Family Chat Persistence & WhatsApp Engine** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -352,6 +353,28 @@
   - [x] Authentic brass temple bell striker with acoustic decay and haptic vibration feedback.
   - [x] Synchronized Sanskrit & Hindi lyric teleprompter with auto-scroll speed controls (`1x` / `2x`) and Elder A+ high-contrast font zoom ([OfflineStotraPlayer.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/sacred/components/OfflineStotraPlayer.tsx)).
   - [x] Tactile 108 Japa Mala counter with circular completion ring, progress percentage, milestone haptic pulses at 27, 54, 81, and 108 beads, and celebratory chime on completion.
+
+---
+
+### ✅ Phase 15: MongoDB Atlas Family Chat Persistence & WhatsApp Engine
+*Status: Completed & Verified on Sep 13, 2026 (100%)*
+
+- [x] **15.1 MongoDB Atlas M0 Chat Schema & Persistence API**
+  - [x] Implement [chatMessage.model.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/models/chatMessage.model.ts) Mongoose schema with unique client-side message IDs, indexed timestamps, sender metadata, and delivered status.
+  - [x] Implement [chat.controller.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/modules/chat/chat.controller.ts) (`GET /api/chat/history`, `POST /api/chat/sync`) with bulk upsert operations.
+  - [x] Mount `/api/chat` with `familyPinMutationsOnly` auth in [app.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/app.ts).
+- [x] **15.2 Real-Time Dual-Layer Sync Engine**
+  - [x] Update [socket.service.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/modules/chat/socket.service.ts) to asynchronously persist incoming messages to MongoDB Atlas before broadcasting.
+  - [x] Emit `message_ack` with `status: 'delivered'` back to the sender.
+  - [x] Update [chatStorage.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/chat/services/chatStorage.ts) with `syncWithCloudHistory()` to merge cloud messages into local Dexie without overwriting local queued messages.
+  - [x] Implement `bulkSyncQueuedMessages()` HTTP fallback to flush dead-zone queued messages.
+  - [x] Enhance [useFamilySocket.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/chat/hooks/useFamilySocket.ts) to hydrate from MongoDB on mount, reconnect, and `online` window events.
+- [x] **15.3 WhatsApp-Grade Visual Polish & Group Chat Ergonomics**
+  - [x] Floating bottom-left chat bubble launcher ([FloatingChatButton.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/components/FloatingChatButton.tsx)) coexisting frictionlessly with Gullak FAB and zero header crowding.
+  - [x] Date divider chips ("Today", "Yesterday", or formatted Indian calendar date) grouping messages ([FamilyChatDrawer.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/chat/components/FamilyChatDrawer.tsx)).
+  - [x] WhatsApp-grade delivery receipt indicators: Gray clock for `queued`, single gray tick for `sent`, double bold emerald checkmarks for `delivered`.
+  - [x] High-contrast elder typography, quick status chips (*"Reached safely 🙏"*, *"Tea break ☕"*, etc.), and live typing indicators.
+
 
 ---
 
