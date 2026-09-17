@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Radio, 
-  Sparkles, 
-  MapPin, 
-  User, 
-  Layers, 
-  Send, 
-  Mic, 
-  MicOff, 
-  Clock, 
+import {
+  Radio,
+  Sparkles,
+  MapPin,
+  User,
+  Layers,
+  Send,
+  Mic,
+  MicOff,
+  Clock,
   Trash2,
   Calendar
 } from 'lucide-react';
@@ -17,11 +17,11 @@ import { DuoId } from '../../../shared/types';
 import { WebAudioRecorder } from '../services/audioRecorder';
 import { saveVoiceLogToDexie, deleteVoiceLogFromDexie } from '../services/voiceLogStorage';
 import { AudioWaveformCard } from './AudioWaveformCard';
-import { 
-  FamilyFeedItem, 
-  getUnifiedFamilyFeed, 
-  addFamilyFeedItem, 
-  deleteFamilyFeedItem 
+import {
+  FamilyFeedItem,
+  getUnifiedFamilyFeed,
+  addFamilyFeedItem,
+  deleteFamilyFeedItem
 } from '../services/familyFeedStorage';
 
 interface FamilyFeedTabProps {
@@ -32,7 +32,7 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
   const [feedItems, setFeedItems] = useState<FamilyFeedItem[]>([]);
   const [selectedDuoFilter, setSelectedDuoFilter] = useState<DuoId | 'ALL'>(initialActiveDuo);
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'MILESTONE' | 'VOICE_NOTE' | 'TRANSIT_UPDATE'>('ALL');
-  
+
   // Quick Post State
   const [quickPostText, setQuickPostText] = useState('');
   const [selectedSpeakerId, setSelectedSpeakerId] = useState(TRAVELLERS_CONFIG[0].id);
@@ -235,7 +235,7 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
             <h3 className="text-xs font-black text-white flex items-center gap-1.5">
               <span>Pilgrimage Live Feed & Timeline</span>
               <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
-                100% Offline Dexie
+                100% Offline
               </span>
             </h3>
             <p className="text-[11px] text-purple-200/80">
@@ -248,11 +248,10 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
         <button
           type="button"
           onClick={() => setIsVoiceStudioOpen(!isVoiceStudioOpen)}
-          className={`px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md tap-active shrink-0 min-h-[42px] ${
-            isVoiceStudioOpen 
-              ? 'bg-purple-600 text-white shadow-purple-950/80 border border-purple-400' 
+          className={`px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md tap-active shrink-0 min-h-[42px] ${isVoiceStudioOpen
+              ? 'bg-purple-600 text-white shadow-purple-950/80 border border-purple-400'
               : 'bg-purple-950/80 hover:bg-purple-900 border border-purple-600/50 text-purple-200'
-          }`}
+            }`}
         >
           <Mic className="w-3.5 h-3.5" />
           <span>{isVoiceStudioOpen ? 'Close Mic' : 'Voice Studio'}</span>
@@ -330,11 +329,10 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
             <button
               type="button"
               onClick={isRecording ? handleStopVoiceRecord : handleStartVoiceRecord}
-              className={`tap-active w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl border-4 ${
-                isRecording
+              className={`tap-active w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl border-4 ${isRecording
                   ? 'bg-rose-600 border-rose-400 text-white animate-pulse scale-105 shadow-rose-900/80'
                   : 'bg-gradient-to-tr from-purple-700 via-indigo-600 to-purple-600 border-purple-400/50 text-white shadow-purple-950/70 hover:scale-105'
-              }`}
+                }`}
             >
               {isRecording ? (
                 <MicOff className="w-8 h-8 animate-bounce" />
@@ -467,11 +465,10 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
                 key={f}
                 type="button"
                 onClick={() => setSelectedDuoFilter(f)}
-                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all tap-active ${
-                  selectedDuoFilter === f
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all tap-active ${selectedDuoFilter === f
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-white'
-                }`}
+                  }`}
               >
                 {f === 'ALL' ? 'All' : f === 'DUO_A' ? 'Family A' : 'Family B'}
               </button>
@@ -484,36 +481,32 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
           <button
             type="button"
             onClick={() => setTypeFilter('ALL')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${
-              typeFilter === 'ALL' ? 'bg-white text-slate-950' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
-            }`}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'ALL' ? 'bg-white text-slate-950' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
+              }`}
           >
             All Stream
           </button>
           <button
             type="button"
             onClick={() => setTypeFilter('MILESTONE')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${
-              typeFilter === 'MILESTONE' ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
-            }`}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'MILESTONE' ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
+              }`}
           >
             🏁 Milestones
           </button>
           <button
             type="button"
             onClick={() => setTypeFilter('VOICE_NOTE')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${
-              typeFilter === 'VOICE_NOTE' ? 'bg-purple-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
-            }`}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'VOICE_NOTE' ? 'bg-purple-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
+              }`}
           >
             🎙️ Voice Notes
           </button>
           <button
             type="button"
             onClick={() => setTypeFilter('TRANSIT_UPDATE')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${
-              typeFilter === 'TRANSIT_UPDATE' ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
-            }`}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'TRANSIT_UPDATE' ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
+              }`}
           >
             🚗 Cab & Transit
           </button>
@@ -531,15 +524,14 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
           return (
             <div key={item.id} className="relative group">
               {/* Timeline Node Icon */}
-              <div className={`absolute -left-6 top-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-lg border-2 ${
-                isMilestone 
-                  ? 'bg-amber-500 border-amber-300 text-slate-950 shadow-amber-500/50' 
-                  : isVoice 
-                  ? 'bg-purple-600 border-purple-400 text-white shadow-purple-500/50'
-                  : isTransit
-                  ? 'bg-emerald-500 border-emerald-300 text-slate-950 shadow-emerald-500/50'
-                  : 'bg-slate-800 border-slate-600 text-slate-200'
-              }`}>
+              <div className={`absolute -left-6 top-3 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-lg border-2 ${isMilestone
+                  ? 'bg-amber-500 border-amber-300 text-slate-950 shadow-amber-500/50'
+                  : isVoice
+                    ? 'bg-purple-600 border-purple-400 text-white shadow-purple-500/50'
+                    : isTransit
+                      ? 'bg-emerald-500 border-emerald-300 text-slate-950 shadow-emerald-500/50'
+                      : 'bg-slate-800 border-slate-600 text-slate-200'
+                }`}>
                 {isMilestone ? '🏁' : isVoice ? '🎙️' : isTransit ? '🚗' : '📍'}
               </div>
 
@@ -560,27 +552,24 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
                   onDelete={handleDeleteVoiceLog}
                 />
               ) : (
-                <div className={`p-4 rounded-3xl border shadow-xl backdrop-blur-xl transition-all ${
-                  isMilestone 
-                    ? 'bg-gradient-to-br from-amber-950/40 via-slate-900 to-stone-950 border-amber-600/40' 
-                    : isTransit 
-                    ? 'bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border-emerald-600/40'
-                    : 'bg-slate-900/90 border-white/10'
-                }`}>
+                <div className={`p-4 rounded-3xl border shadow-xl backdrop-blur-xl transition-all ${isMilestone
+                    ? 'bg-gradient-to-br from-amber-950/40 via-slate-900 to-stone-950 border-amber-600/40'
+                    : isTransit
+                      ? 'bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border-emerald-600/40'
+                      : 'bg-slate-900/90 border-white/10'
+                  }`}>
                   {/* Top Meta Header */}
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0 ${
-                        speaker?.duoId === 'DUO_A' ? 'bg-indigo-600' : 'bg-emerald-600'
-                      }`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0 ${speaker?.duoId === 'DUO_A' ? 'bg-indigo-600' : 'bg-emerald-600'
+                        }`}>
                         {speaker?.name?.charAt(0) || 'P'}
                       </div>
                       <span className="text-xs font-bold text-white truncate">
                         {speaker?.name || 'Pilgrim'}
                       </span>
-                      <span className={`text-[9px] px-1.5 py-0.2 rounded-md font-mono ${
-                        speaker?.duoId === 'DUO_A' ? 'bg-indigo-950 text-indigo-300 border border-indigo-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                      }`}>
+                      <span className={`text-[9px] px-1.5 py-0.2 rounded-md font-mono ${speaker?.duoId === 'DUO_A' ? 'bg-indigo-950 text-indigo-300 border border-indigo-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                        }`}>
                         {speaker?.duoId === 'DUO_A' ? 'Family A' : 'Family B'}
                       </span>
                     </div>
@@ -593,17 +582,15 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
 
                   {/* Title & Badge */}
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <h4 className={`text-sm font-black leading-snug ${
-                      isMilestone ? 'text-amber-300' : isTransit ? 'text-emerald-300' : 'text-white'
-                    }`}>
+                    <h4 className={`text-sm font-black leading-snug ${isMilestone ? 'text-amber-300' : isTransit ? 'text-emerald-300' : 'text-white'
+                      }`}>
                       {item.title}
                     </h4>
                     {item.statusBadge && (
-                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                        isMilestone ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                        isTransit ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                        'bg-slate-800 text-slate-300 border border-slate-700'
-                      }`}>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${isMilestone ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                          isTransit ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                            'bg-slate-800 text-slate-300 border border-slate-700'
+                        }`}>
                         {item.statusBadge}
                       </span>
                     )}

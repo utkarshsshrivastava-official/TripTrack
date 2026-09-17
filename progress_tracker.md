@@ -499,6 +499,11 @@
   - [x] Streamlined `Header.tsx` layout with responsive padding (`px-2.5 sm:px-3.5`) and component spacing (`gap-1.5 sm:gap-2`).
   - [x] Added `whitespace-nowrap` protection and compact sizing for `TripTrack '26` and `Badrinath Dham` branding text.
   - [x] Scaled hamburger button, brand crest, and Duo filter pills (`px-1.5 py-1 text-[10px] sm:text-[11px]`) so the entire header fits comfortably on screens down to 320px–360px without truncation.
+- [x] **20.4 News Feed Year Normalization & Real-time Relative Timestamps**
+  - [x] Diagnosed `18697h ago` bug: Real-world Google News RSS pubDates (calendar year 2024) compared against the app's target pilgrimage clock (`2026-09-17`) created a 2-year difference ($18,697\text{ hours}$).
+  - [x] Fixed in `routeAlert.service.ts`: Anchored intelligence synthesis timestamps directly to current scan time (`new Date().toISOString()`).
+  - [x] Updated `RouteGuardTab.tsx`: Added hours/days capping and graceful `"Recent Intel"` fallback so multi-year differences never display raw hour counts.
+  - [x] Automated Dexie cleanup: Auto-purges route alerts older than 48 hours on startup to prevent lingering multi-year cached records.
 
 ---
 

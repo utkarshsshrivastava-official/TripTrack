@@ -80,16 +80,18 @@ export const RouteGuardTab: React.FC = () => {
   };
 
   useEffect(() => {
-    // Purge test spotters on load to keep only authentic feeds
-    localDB.offlineRouteAlerts.toArray().then(items => {
-      const testItems = items.filter(i => 
-        i.isFamilyReport && (i.location?.includes('Helang') || i.headline?.includes('Helang') || i.id?.includes('test'))
-      );
-      if (testItems.length > 0) {
-        localDB.offlineRouteAlerts.bulkDelete(testItems.map(t => t.id)).then(() => loadAlerts());
-      } else {
-        loadAlerts();
+    // Purge test spotters or stale alerts from prior years to keep only fresh real-time feeds
+    localDB.offlineRouteAlerts.toArray().then(async items => {
+      const now = Date.now();
+      const staleItems = items.filter(i => {
+        const itemTime = new Date(i.timestamp).getTime();
+        const diffHours = (now - itemTime) / (1000 * 60 * 60);
+        return isNaN(diffHours) || diffHours > 48; // Older than 48h or from previous year
+      });
+      if (staleItems.length > 0) {
+        await localDB.offlineRouteAlerts.bulkDelete(staleItems.map(t => t.id));
       }
+      loadAlerts();
     });
   }, []);
 
@@ -172,13 +174,18 @@ export const RouteGuardTab: React.FC = () => {
 
   const formatRelativeTime = (isoString: string) => {
     try {
-      const diffMinutes = Math.floor((Date.now() - new Date(isoString).getTime()) / (60 * 1000));
-      if (diffMinutes < 1) return 'Just now';
+      const alertTime = new Date(isoString).getTime();
+      const now = Date.now();
+      const diffMinutes = Math.floor((now - alertTime) / (60 * 1000));
+      if (isNaN(diffMinutes) || diffMinutes < 1) return 'Just now';
       if (diffMinutes < 60) return `${diffMinutes}m ago`;
       const hours = Math.floor(diffMinutes / 60);
-      return `${hours}h ${diffMinutes % 60}m ago`;
+      if (hours < 24) return `${hours}h ${diffMinutes % 60}m ago`;
+      const days = Math.floor(hours / 24);
+      if (days <= 3) return `${days}d ago`;
+      return 'Recent Intel';
     } catch {
-      return 'Recent';
+      return 'Recent Intel';
     }
   };
 

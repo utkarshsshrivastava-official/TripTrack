@@ -165,7 +165,7 @@ async function classifyWithGemini(
       : 'No recent breaking disruption items found in RSS.';
 
     const prompt = `
-You are the Himalayan Road Safety Officer & Route Dispatcher for the Badrinath Dham pilgrimage corridor along NH-7 / NH-58 (Haridwar -> Rishikesh -> Devprayag -> Rudraprayag -> Chamoli -> Joshimath -> Badrinath).
+You are the Himalayan Road Safety Officer & Route Dispatcher for the Badrinath Dham pilgrimage corridor along NH-7 / NH-58 (Haridwar -> Rishikesh -> Devprayag -> Rudraprayag -> Chamoli -> Joshimath -> Badrinath). Current date/time: ${new Date().toISOString()}.
 
 Analyze these recent news headlines and synthesize up-to-date, actionable travel news for pilgrims and cab drivers.
 You MUST provide at least 2 to 4 high-signal news updates:
@@ -199,7 +199,7 @@ Return strict JSON array with schema:
     "broClearanceETA": string (e.g. "Normal Two-Way Flow", "30-45 mins clearance", "Regular Yatra Hours (05:00 - 20:00)"),
     "source": string (e.g. "BRO Project Shivalik", "Uttarakhand Police Traffic Control", "IMD Dehradun", "BKTC Temple Committee"),
     "sourceUrl": string (link if available or official authority bulletin),
-    "timestamp": string (ISO 8601 string)
+    "timestamp": "${new Date().toISOString()}"
   }
 ]
 `;
@@ -214,7 +214,12 @@ Return strict JSON array with schema:
 
     const parsed = JSON.parse(response.text || '[]');
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
+      const nowIso = new Date().toISOString();
+      return parsed.map((item: any, idx: number) => ({
+        ...item,
+        id: item.id || `gemini-alert-${Date.now()}-${idx}`,
+        timestamp: nowIso
+      }));
     }
   } catch (err) {
     console.warn('⚠️ [RouteAlertService] Gemini classification failed:', err);
@@ -265,12 +270,19 @@ export async function getLiveRouteStatus(forceRefresh: boolean = false): Promise
 
   // Check memory cache unless forceRefresh requested
   if (!forceRefresh && memoryCache && memoryCache.expiresAt > now) {
-    const combinedAlerts = [...familySpotterReports, ...memoryCache.data.alerts];
-    return {
-      alerts: combinedAlerts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-      stretches: computeStretches(combinedAlerts),
-      lastRefreshed: memoryCache.data.lastRefreshed
-    };
+    const hasStaleYear = memoryCache.data.alerts.some(a => {
+      const t = new Date(a.timestamp).getTime();
+      return isNaN(t) || (now - t) > 48 * 60 * 60 * 1000;
+    });
+
+    if (!hasStaleYear) {
+      const combinedAlerts = [...familySpotterReports, ...memoryCache.data.alerts];
+      return {
+        alerts: combinedAlerts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+        stretches: computeStretches(combinedAlerts),
+        lastRefreshed: memoryCache.data.lastRefreshed
+      };
+    }
   }
 
   console.log(`📡 [RouteAlertService] Fetching fresh news & route intel via Gemini 2.5 Flash (forceRefresh=${forceRefresh})...`);
