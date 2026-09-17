@@ -59,16 +59,17 @@ export async function syncWithCloudHistory(): Promise<{ synced: number; total: n
     const data = await res.json();
     if (data.success && Array.isArray(data.messages)) {
       const existing = await localDB.offlineChatMessages.toArray();
-      const localMap = new Map(existing.map(m => [m.id, m]));
+      const cloudIds = new Set(data.messages.map((m: any) => m.id));
+
+      // Reconcile: Purge any local message that was deleted in MongoDB Atlas
+      const toDelete = existing.filter(local => local.status !== 'queued' && !cloudIds.has(local.id));
+      if (toDelete.length > 0) {
+        await localDB.offlineChatMessages.bulkDelete(toDelete.map(d => d.id));
+        console.log(`🧹 [Chat Storage] Reconciled and purged ${toDelete.length} messages deleted from MongoDB Atlas.`);
+      }
 
       let newCount = 0;
       for (const cloudMsg of data.messages) {
-        const local = localMap.get(cloudMsg.id);
-        // Do not overwrite a locally queued message that hasn't finished dispatching
-        if (local && local.status === 'queued') {
-          continue;
-        }
-
         await localDB.offlineChatMessages.put({
           id: cloudMsg.id,
           senderId: cloudMsg.senderId,
@@ -94,6 +95,27 @@ export async function syncWithCloudHistory(): Promise<{ synced: number; total: n
     console.warn('⚠️ [Chat Storage] Offline or error syncing with cloud history:', err);
     const count = await localDB.offlineChatMessages.count();
     return { synced: 0, total: count };
+  }
+}
+
+/**
+ * Completely clears all chat history both locally in Dexie and on MongoDB Atlas
+ */
+export async function clearAllChatHistory(): Promise<boolean> {
+  try {
+    const backendUrl = getBackendUrl();
+    await fetch(`${backendUrl}/api/chat/history`, {
+      method: 'DELETE',
+      headers: getApiHeaders()
+    }).catch(e => console.warn('Cloud chat delete failed or offline', e));
+
+    await localDB.offlineChatMessages.clear();
+    console.log('🧹 [Chat Storage] Cleared all chat messages locally in Dexie and on MongoDB Atlas.');
+    return true;
+  } catch (err) {
+    console.error('Failed to clear chat history', err);
+    await localDB.offlineChatMessages.clear();
+    return false;
   }
 }
 

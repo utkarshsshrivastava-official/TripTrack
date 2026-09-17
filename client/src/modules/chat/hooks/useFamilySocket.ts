@@ -8,7 +8,8 @@ import {
   getQueuedMessages,
   updateMessageStatus,
   syncWithCloudHistory,
-  bulkSyncQueuedMessages
+  bulkSyncQueuedMessages,
+  clearAllChatHistory
 } from '../services/chatStorage';
 
 export function useFamilySocket(activeUser: UserProfile) {
@@ -95,6 +96,12 @@ export function useFamilySocket(activeUser: UserProfile) {
       setMessages(prev => prev.map(m => m.id === data.id ? { ...m, status: data.status } : m));
     });
 
+    socket.on('chat_history_cleared', async () => {
+      console.log('🧹 [Socket] Received chat_history_cleared from server');
+      await clearAllChatHistory();
+      setMessages([]);
+    });
+
     socket.on('member_typing', (data: { userId: string; userName: string; isTyping: boolean }) => {
       if (data.userId !== activeUser.id && data.isTyping) {
         setTypingUser(data.userName);
@@ -131,37 +138,43 @@ export function useFamilySocket(activeUser: UserProfile) {
       senderName: activeUser.name,
       senderAvatarColor: activeUser.avatarColor,
       senderType: activeUser.type,
-      senderDuo: activeUser.duoId,
+      senderDuo: activeUser.type === 'PILGRIM' ? activeUser.duoId : undefined,
       text: text.trim(),
       timestamp: new Date().toISOString(),
-      status: socketRef.current?.connected ? 'sent' : 'queued'
+      status: isConnected ? 'sent' : 'queued'
     };
 
-    // 1. Immediately save to local Dexie (Offline-First!)
+    // Save locally
     await saveLocalChatMessage(newMsg);
     setMessages(prev => [...prev, newMsg]);
 
-    // 2. Broadcast via Socket if connected
-    if (socketRef.current?.connected) {
+    // Emit if socket is connected
+    if (socketRef.current && isConnected) {
       socketRef.current.emit('send_chat_message', newMsg);
     }
-  }, [activeUser]);
+  }, [activeUser, isConnected]);
 
   const sendTyping = useCallback((isTyping: boolean) => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit('typing_indicator', {
+    if (socketRef.current && isConnected) {
+      socketRef.current.emit('typing', {
         userId: activeUser.id,
         userName: activeUser.name,
         isTyping
       });
     }
-  }, [activeUser]);
+  }, [activeUser, isConnected]);
+
+  const clearChat = useCallback(async () => {
+    await clearAllChatHistory();
+    setMessages([]);
+  }, []);
 
   return {
     messages,
     isConnected,
     typingUser,
     sendMessage,
-    sendTyping
+    sendTyping,
+    clearChat
   };
 }

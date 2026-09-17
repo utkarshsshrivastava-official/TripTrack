@@ -82,7 +82,6 @@ export async function syncOfflineMessages(req: Request, res: Response): Promise<
     const result = await ChatMessageModel.bulkWrite(operations);
     const syncedCount = (result.upsertedCount || 0) + (result.modifiedCount || 0);
 
-    console.log(`💬 [Chat Controller] Synced ${syncedCount} queued messages from client.`);
     res.json({
       success: true,
       syncedCount,
@@ -90,6 +89,38 @@ export async function syncOfflineMessages(req: Request, res: Response): Promise<
     });
   } catch (error: any) {
     console.error('❌ [Chat Controller] Error syncing offline messages:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+export async function clearChatHistory(req: Request, res: Response): Promise<void> {
+  try {
+    if (!isMongoConnected()) {
+      res.json({ success: true, message: 'Database offline.' });
+      return;
+    }
+
+    const deleteResult = await ChatMessageModel.deleteMany({});
+    console.log(`🧹 [Chat Controller] Cleared all chat history from MongoDB Atlas (${deleteResult.deletedCount} messages deleted).`);
+
+    // Broadcast chat_history_cleared to all connected family socket clients
+    try {
+      const { getIO } = require('./socket.service');
+      const io = getIO();
+      if (io) {
+        io.to('badrinath-family-2026').emit('chat_history_cleared');
+      }
+    } catch (socketErr) {
+      console.warn('Socket broadcast for chat clear failed', socketErr);
+    }
+
+    res.json({
+      success: true,
+      deletedCount: deleteResult.deletedCount,
+      message: 'Chat history cleared successfully across all devices.'
+    });
+  } catch (error: any) {
+    console.error('❌ [Chat Controller] Error clearing chat history:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 }

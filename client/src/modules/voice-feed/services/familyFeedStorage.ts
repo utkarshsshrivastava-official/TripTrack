@@ -34,86 +34,31 @@ export interface FamilyFeedItem {
 
 const STORAGE_KEY = 'triptrack_family_feed_timeline';
 
-export const INITIAL_FEED_SEEDS: FamilyFeedItem[] = [
-  {
-    id: 'feed-init-1',
-    type: 'MILESTONE',
-    title: 'Departure: Boarded Rajdhani Express 12441',
-    description: 'All 4 pilgrims boarded Coach A2 at Durg Jn PF 1. Lower Berths 19 & 21 safely occupied by Sanjay Ji & Rajnish Ji. Pantry dinner ordered.',
-    timestamp: '2026-09-24T16:35:00+05:30',
-    speakerId: 'traveller-utkarsh',
-    locationName: 'Durg Junction (PF 1)',
-    duoId: 'ALL',
-    category: 'TRAIN',
-    statusBadge: 'Transit On Schedule'
-  },
-  {
-    id: 'feed-init-2',
-    type: 'TRANSIT_UPDATE',
-    title: 'Delhi to Haridwar Cab Confirmed',
-    description: 'Pre-booked Toyota Innova Crysta (Commercial White-Plate) for comfortable legroom from NDLS Ajmeri Gate Cab Bay direct to Haridwar hotel.',
-    timestamp: '2026-09-25T08:30:00+05:30',
-    speakerId: 'traveller-shreyas',
-    locationName: 'New Delhi Railway Station (Ajmeri Gate)',
-    duoId: 'DUO_B',
-    category: 'CAB',
-    statusBadge: 'Cab Reserved',
-    metadata: {
-      cabPlate: 'DL-01-YC-9823',
-      driverPhone: '+91 98110 23456'
-    }
-  },
-  {
-    id: 'feed-init-3',
-    type: 'TRAVELER_NOTE',
-    title: 'Expressway Lunch Halt: Cheetal Grand',
-    description: 'Smooth driving on Delhi-Meerut expressway. 40-minute tea and hot south Indian lunch break. Elder restroom break completed cleanly.',
-    timestamp: '2026-09-25T14:15:00+05:30',
-    speakerId: 'traveller-utkarsh',
-    locationName: 'Namaste Midway / Khatauli',
-    duoId: 'DUO_A',
-    category: 'MEAL',
-    statusBadge: 'Halt Cleared'
-  },
-  {
-    id: 'feed-init-4',
-    type: 'MILESTONE',
-    title: 'Arrived at Haridwar Hotel & Rest',
-    description: 'Checked into family rooms at Haridwar. Fathers resting comfortably after 220 km plains transit. Evening Ganga Aarti plan prepared.',
-    timestamp: '2026-09-25T17:10:00+05:30',
-    speakerId: 'traveller-rajnish',
-    locationName: 'Haridwar Hotel Porch',
-    duoId: 'DUO_A',
-    category: 'HOTEL',
-    statusBadge: 'Checked In'
-  },
-  {
-    id: 'feed-init-5',
-    type: 'TRAVELER_NOTE',
-    title: 'Early Morning Ascent Flag-off',
-    description: 'Dedicated Hill Innova Crysta loaded with luggage. Motion sickness medicines taken with warm water. NH-7 hill route begun towards Joshimath.',
-    timestamp: '2026-09-26T06:15:00+05:30',
-    speakerId: 'traveller-shreyas',
-    locationName: 'Haridwar By-Pass (NH-7)',
-    duoId: 'ALL',
-    category: 'CAB',
-    statusBadge: 'In Transit'
-  }
-];
+export const INITIAL_FEED_SEEDS: FamilyFeedItem[] = [];
 
-// Helper to load manual and milestone feed items
+// Helper to load manual and milestone feed items (purges legacy mockup items)
 export function loadSavedTimelineItems(): FamilyFeedItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_FEED_SEEDS));
-      return INITIAL_FEED_SEEDS;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+      return [];
     }
     const items = JSON.parse(raw);
-    return Array.isArray(items) ? items : INITIAL_FEED_SEEDS;
+    if (!Array.isArray(items)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+      return [];
+    }
+
+    // Clean out legacy mock seeds if present
+    const cleaned = items.filter((item: FamilyFeedItem) => !item.id?.startsWith('feed-init-'));
+    if (cleaned.length !== items.length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch (err) {
     console.warn('Failed to parse saved family timeline items', err);
-    return INITIAL_FEED_SEEDS;
+    return [];
   }
 }
 

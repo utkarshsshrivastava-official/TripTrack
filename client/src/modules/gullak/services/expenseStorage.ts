@@ -2,44 +2,10 @@ import { localDB, OfflineExpenseRecord } from '../../../shared/db/dexie';
 import { Expense, ExpenseCategory } from '../../../shared/types';
 import { DUO_A_SON, DUO_B_SON } from '../../../shared/config/travellers.config';
 
-const INITIAL_EXPENSE_SEEDS: OfflineExpenseRecord[] = [
-  {
-    id: 'exp-1',
-    title: 'Haridwar to Joshimath Mountain Cab Advance',
-    amountINR: 12500,
-    paidBy: DUO_A_SON.name,
-    category: 'TOLL_TAXI',
-    createdAt: '2026-09-24T18:00:00Z',
-    isSynced: true
-  },
-  {
-    id: 'exp-2',
-    title: 'Brahma Kapal Ritual Samagri & Dakshina Advance',
-    amountINR: 5100,
-    paidBy: DUO_B_SON.name,
-    category: 'RITUAL',
-    createdAt: '2026-09-25T14:30:00Z',
-    isSynced: true
-  },
-  {
-    id: 'exp-3',
-    title: 'Cheetal Grand Lunch (4 Satvik Thalis + Chai)',
-    amountINR: 1840,
-    paidBy: DUO_A_SON.name,
-    category: 'FOOD',
-    createdAt: '2026-09-25T14:45:00Z',
-    isSynced: true
-  },
-  {
-    id: 'exp-4',
-    title: 'Warm Woolen Shawls & Thermal Gloves for Elders',
-    amountINR: 3200,
-    paidBy: DUO_B_SON.name,
-    category: 'MISC',
-    createdAt: '2026-09-26T17:00:00Z',
-    isSynced: true
-  }
-];
+const INITIAL_EXPENSE_SEEDS: OfflineExpenseRecord[] = [];
+
+// Legacy mock expense IDs to scrub clean
+const LEGACY_MOCK_EXPENSE_IDS = ['exp-1', 'exp-2', 'exp-3', 'exp-4'];
 
 export interface GullakFinancialSummary {
   totalSpentINR: number;
@@ -56,39 +22,40 @@ export interface GullakFinancialSummary {
 }
 
 /**
- * Initialize Dexie with sample expenses if empty
+ * Initialize Dexie with sample expenses if empty, and scrub legacy dummy data
  */
 export async function initializeExpenseStorage(): Promise<OfflineExpenseRecord[]> {
   try {
+    // Purge any legacy mock seeds from previous builds
+    await localDB.offlineExpenses.bulkDelete(LEGACY_MOCK_EXPENSE_IDS);
+
     const count = await localDB.offlineExpenses.count();
-    if (count === 0) {
+    if (count === 0 && INITIAL_EXPENSE_SEEDS.length > 0) {
       await localDB.offlineExpenses.bulkAdd(INITIAL_EXPENSE_SEEDS);
-      console.log(`💰 [Dexie Gullak] Initialized ${INITIAL_EXPENSE_SEEDS.length} sample pilgrimage expenses.`);
       return INITIAL_EXPENSE_SEEDS;
     }
     const saved = await localDB.offlineExpenses.toArray();
     return saved.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (err) {
     console.warn('⚠️ [Dexie Gullak] Failed to load offline expenses', err);
-    return INITIAL_EXPENSE_SEEDS;
+    return [];
   }
 }
 
 /**
- * Fetch all expenses from Dexie
+ * Fetch all expenses from Dexie (ensures clean state without mock seeds)
  */
 export async function getExpensesFromDexie(): Promise<Expense[]> {
   try {
+    // Scrub legacy mock seeds
+    await localDB.offlineExpenses.bulkDelete(LEGACY_MOCK_EXPENSE_IDS);
+
     const records = await localDB.offlineExpenses.toArray();
-    if (!records || records.length === 0) {
-      const initialized = await initializeExpenseStorage();
-      return initialized.map(toExpense);
-    }
     records.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return records.map(toExpense);
   } catch (err) {
     console.error('Failed to get expenses from Dexie', err);
-    return INITIAL_EXPENSE_SEEDS.map(toExpense);
+    return [];
   }
 }
 
