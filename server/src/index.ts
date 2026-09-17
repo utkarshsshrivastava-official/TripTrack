@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load environment configuration
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Load environment configuration (override stale OS environment variables with local .env)
+dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
 
 import http from 'http';
 import { app } from './app';

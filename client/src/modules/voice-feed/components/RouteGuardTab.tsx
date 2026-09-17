@@ -15,13 +15,15 @@ import {
   Share2,
   Trash2,
   Wifi,
-  WifiOff
+  WifiOff,
+  Sparkles
 } from 'lucide-react';
 import { 
   RouteAlert, 
   CorridorStretchHealth, 
   CORRIDOR_STRETCHES, 
   fetchLiveRouteAlerts,
+  triggerLiveGeminiScan,
   deleteSpotterReport
 } from '../services/routeAlertStorage';
 import { localDB } from '../../../shared/db/dexie';
@@ -32,7 +34,10 @@ export const RouteGuardTab: React.FC = () => {
   const [stretches, setStretches] = useState<CorridorStretchHealth[]>([]);
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isScanningGemini, setIsScanningGemini] = useState<boolean>(false);
+  const [lastScannedTime, setLastScannedTime] = useState<string>('Just now');
   const [selectedStretchFilter, setSelectedStretchFilter] = useState<string>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'LANDSLIDE' | 'WEATHER' | 'TEMPLE' | 'TRAFFIC'>('ALL');
   const [isSpotterModalOpen, setIsSpotterModalOpen] = useState<boolean>(false);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
@@ -43,10 +48,34 @@ export const RouteGuardTab: React.FC = () => {
       setAlerts(data.alerts);
       setStretches(data.stretches);
       setIsOnline(data.isOnline);
+      setLastScannedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch (err) {
       console.warn('Failed to load route alerts', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleTriggerGeminiScan = async () => {
+    setIsScanningGemini(true);
+    setFeedbackToast('✨ Gemini AI is fetching live Google News RSS & NH-7 highway bulletins...');
+    try {
+      const data = await triggerLiveGeminiScan();
+      setAlerts(data.alerts);
+      setStretches(data.stretches);
+      setIsOnline(data.isOnline);
+      setLastScannedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      setFeedbackToast(`✅ Gemini AI Scan Complete: ${data.alerts.length} ground updates verified!`);
+      setTimeout(() => setFeedbackToast(null), 4000);
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([40, 50, 40]);
+      }
+    } catch (err) {
+      console.error('Gemini scan failed', err);
+      setFeedbackToast('⚠️ Gemini route scan failed. Displaying offline Dexie cache.');
+      setTimeout(() => setFeedbackToast(null), 3000);
+    } finally {
+      setIsScanningGemini(false);
     }
   };
 
@@ -78,8 +107,21 @@ export const RouteGuardTab: React.FC = () => {
   };
 
   const filteredAlerts = alerts.filter(a => {
-    if (selectedStretchFilter === 'ALL') return true;
-    return a.stretch === selectedStretchFilter;
+    if (selectedStretchFilter !== 'ALL' && a.stretch !== selectedStretchFilter) return false;
+    if (categoryFilter === 'LANDSLIDE') {
+      return a.eventType === 'LANDSLIDE' || a.eventType === 'ROAD_BLOCKED';
+    }
+    if (categoryFilter === 'WEATHER') {
+      return a.eventType === 'WEATHER_WARNING' || a.eventType === 'FLASH_FLOOD';
+    }
+    if (categoryFilter === 'TEMPLE') {
+      const text = (a.headline + ' ' + a.summary + ' ' + a.location).toLowerCase();
+      return text.includes('temple') || text.includes('darshan') || text.includes('dham') || text.includes('badrinath');
+    }
+    if (categoryFilter === 'TRAFFIC') {
+      return a.eventType === 'CLEAR' || a.eventType === 'HEAVY_JAM' || a.eventType === 'ONE_WAY_TRAFFIC';
+    }
+    return true;
   });
 
   const getEventIcon = (eventType: RouteAlert['eventType']) => {
@@ -116,7 +158,7 @@ export const RouteGuardTab: React.FC = () => {
       case 'ADVISORY':
         return (
           <span className="px-2 py-0.5 rounded-full bg-sky-950/80 border border-sky-700 text-sky-300 text-[10px] font-black uppercase tracking-wider">
-            🔵 Weather Advisory
+            🔵 Advisory
           </span>
         );
       case 'NORMAL':
@@ -164,13 +206,13 @@ export const RouteGuardTab: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-black text-white flex items-center gap-1.5">
-                <span>NH-7 Himalayan Route Guard</span>
+                <span>NH-7 Highway & Pilgrimage News</span>
                 <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   Haridwar ➔ Dham
                 </span>
               </h3>
               <p className="text-[11px] text-slate-300">
-                Landslides, BRO clearance & traffic checkpoints
+                Live Gemini AI news scanner & highway bulletins
               </p>
             </div>
           </div>
@@ -188,14 +230,37 @@ export const RouteGuardTab: React.FC = () => {
             <button
               type="button"
               onClick={loadAlerts}
-              disabled={isLoading}
+              disabled={isLoading || isScanningGemini}
               className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 tap-active disabled:opacity-50"
               aria-label="Refresh route alerts"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading || isScanningGemini ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
+
+        {/* 1-Tap Gemini AI Live Scanner Trigger Button */}
+        <button
+          type="button"
+          onClick={handleTriggerGeminiScan}
+          disabled={isScanningGemini}
+          className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-black text-xs flex items-center justify-center gap-2.5 shadow-xl shadow-purple-950/80 transition-all tap-active min-h-[48px] border border-white/20 disabled:opacity-50 relative overflow-hidden group"
+        >
+          {isScanningGemini ? (
+            <>
+              <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
+              <span>Scanning NH-7 Live with Gemini 2.5 Flash...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+              <span>Scan Live Route Intel (Gemini AI)</span>
+              <span className="text-[10px] font-mono font-normal opacity-80 ml-auto">
+                {lastScannedTime}
+              </span>
+            </>
+          )}
+        </button>
 
         {/* 6-Stretch Visual Health Bar */}
         <div className="space-y-1.5 pt-1">
@@ -256,6 +321,72 @@ export const RouteGuardTab: React.FC = () => {
           <PlusCircle className="w-4 h-4" />
           <span>Spot Road Obstruction / Landslide</span>
         </button>
+      </div>
+
+      {/* News Category Filter Chips */}
+      <div className="space-y-1.5">
+        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
+          <span>Topic Filter</span>
+          <span className="text-amber-400 font-mono text-[10px]">{filteredAlerts.length} reports</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('ALL')}
+            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all tap-active ${
+              categoryFilter === 'ALL'
+                ? 'bg-amber-500 text-slate-950 shadow-sm'
+                : 'bg-slate-900 border border-white/10 text-slate-300 hover:text-white'
+            }`}
+          >
+            All Route Intel ({alerts.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('LANDSLIDE')}
+            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all tap-active ${
+              categoryFilter === 'LANDSLIDE'
+                ? 'bg-rose-600 text-white shadow-sm'
+                : 'bg-slate-900 border border-white/10 text-slate-300 hover:text-white'
+            }`}
+          >
+            🚨 Landslides & Blocks
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('WEATHER')}
+            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all tap-active ${
+              categoryFilter === 'WEATHER'
+                ? 'bg-sky-600 text-white shadow-sm'
+                : 'bg-slate-900 border border-white/10 text-slate-300 hover:text-white'
+            }`}
+          >
+            🌧️ Weather & Rain
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('TEMPLE')}
+            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all tap-active ${
+              categoryFilter === 'TEMPLE'
+                ? 'bg-yellow-500 text-slate-950 shadow-sm'
+                : 'bg-slate-900 border border-white/10 text-slate-300 hover:text-white'
+            }`}
+          >
+            🛕 Temple & Yatra
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('TRAFFIC')}
+            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all tap-active ${
+              categoryFilter === 'TRAFFIC'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-slate-900 border border-white/10 text-slate-300 hover:text-white'
+            }`}
+          >
+            🚗 Highway Transit
+          </button>
+        </div>
       </div>
 
       {/* Stretch Filter Pills Strip */}

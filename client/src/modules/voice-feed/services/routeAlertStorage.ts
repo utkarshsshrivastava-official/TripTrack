@@ -122,6 +122,47 @@ export async function fetchLiveRouteAlerts(apiBaseUrl: string = ''): Promise<{
   };
 }
 
+/**
+ * Trigger manual live Gemini 2.5 Flash scan for real-time Haridwar-Badrinath highway intelligence
+ */
+export async function triggerLiveGeminiScan(apiBaseUrl: string = ''): Promise<{
+  alerts: RouteAlert[];
+  stretches: CorridorStretchHealth[];
+  isOnline: boolean;
+}> {
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/alerts/scan-live`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      }
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const serverAlerts: RouteAlert[] = data.alerts || [];
+
+      const localAlerts = await localDB.offlineRouteAlerts.toArray();
+      const unsyncedReports = localAlerts.filter(a => a.isFamilyReport && !a.isSynced);
+
+      const merged = [...unsyncedReports, ...serverAlerts];
+      await localDB.offlineRouteAlerts.clear();
+      await localDB.offlineRouteAlerts.bulkPut(merged);
+
+      return {
+        alerts: merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+        stretches: data.stretches || computeCorridorStretchHealth(merged),
+        isOnline: true
+      };
+    }
+  } catch (err) {
+    console.warn('Live Gemini scan failed or offline; falling back to standard fetch', err);
+  }
+
+  return fetchLiveRouteAlerts(apiBaseUrl);
+}
+
 export async function submitFamilySpotterReport(
   report: Omit<RouteAlert, 'id' | 'timestamp' | 'isSynced'>,
   apiBaseUrl: string = ''

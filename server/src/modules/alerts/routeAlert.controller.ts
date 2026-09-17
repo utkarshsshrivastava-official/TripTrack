@@ -5,10 +5,12 @@ import { getIO } from '../chat/socket.service';
 /**
  * GET /api/alerts/route-status
  * Fetches current NH-7 corridor health, landslides, and BRO clearances
+ * Supports ?forceRefresh=true to bypass cache on demand
  */
 export async function getRouteStatusHandler(req: Request, res: Response): Promise<void> {
   try {
-    const status = await getLiveRouteStatus();
+    const forceRefresh = req.query.forceRefresh === 'true';
+    const status = await getLiveRouteStatus(forceRefresh);
     res.status(200).json({
       success: true,
       ...status
@@ -18,6 +20,28 @@ export async function getRouteStatusHandler(req: Request, res: Response): Promis
     res.status(500).json({
       success: false,
       error: 'Failed to fetch route status'
+    });
+  }
+}
+
+/**
+ * POST /api/alerts/scan-live
+ * Forces fresh Gemini 2.5 Flash scan of Google News RSS & route conditions
+ */
+export async function scanLiveRouteIntelHandler(req: Request, res: Response): Promise<void> {
+  try {
+    console.log('⚡ [RouteAlertController] Triggering manual live route scan via Gemini AI...');
+    const status = await getLiveRouteStatus(true);
+    res.status(200).json({
+      success: true,
+      scannedAt: new Date().toISOString(),
+      ...status
+    });
+  } catch (err: any) {
+    console.error('Error scanning live route intel:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Live Gemini route scan failed'
     });
   }
 }

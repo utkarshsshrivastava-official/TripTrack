@@ -12,6 +12,7 @@ export function getGeminiClient(): GoogleGenAI | null {
 
   if (!aiInstance) {
     aiInstance = new GoogleGenAI({ apiKey });
+    console.log(`✨ [Gemini AI] Successfully initialized with key: ${apiKey.substring(0, 8)}...`);
   }
 
   return aiInstance;

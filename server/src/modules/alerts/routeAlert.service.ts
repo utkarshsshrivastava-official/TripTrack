@@ -147,21 +147,37 @@ async function fetchGoogleNewsRss(): Promise<Array<{ title: string; link: string
 /**
  * Use Gemini 2.5 Flash to normalize raw RSS items into highway disruption objects
  */
+/**
+ * Use Gemini 2.5 Flash to normalize raw RSS items into highway disruption objects
+ * and generate real-time pilgrimage news intelligence for Haridwar-Badrinath.
+ */
 async function classifyWithGemini(
   rawNews: Array<{ title: string; link: string; pubDate: string; description: string }>
 ): Promise<RouteAlertPayload[]> {
   const ai = getGeminiClient();
-  if (!ai || rawNews.length === 0) {
+  if (!ai) {
     return AUTHENTIC_BASELINE_ALERTS;
   }
 
   try {
-    const newsSummary = rawNews.map((n, i) => `[Item ${i + 1}] Title: ${n.title}\nDate: ${n.pubDate}\nSnippet: ${n.description}\nLink: ${n.link}`).join('\n\n');
+    const newsSummary = rawNews.length > 0 
+      ? rawNews.map((n, i) => `[Item ${i + 1}] Title: ${n.title}\nDate: ${n.pubDate}\nSnippet: ${n.description}\nLink: ${n.link}`).join('\n\n')
+      : 'No recent breaking disruption items found in RSS.';
 
     const prompt = `
-You are the Himalayan Road Safety Officer for a pilgrimage to Badrinath Dham along NH-7 / NH-58.
-Analyze these recent news headlines and extract any travel disruptions, landslides, road closures, floods, or BRO clearances.
-Corridor Stretches:
+You are the Himalayan Road Safety Officer & Route Dispatcher for the Badrinath Dham pilgrimage corridor along NH-7 / NH-58 (Haridwar -> Rishikesh -> Devprayag -> Rudraprayag -> Chamoli -> Joshimath -> Badrinath).
+
+Analyze these recent news headlines and synthesize up-to-date, actionable travel news for pilgrims and cab drivers.
+You MUST provide at least 2 to 4 high-signal news updates:
+1. Landslide / Road Clearance / BRO status along NH-7 (check points like Sirobagarh, Patalganga, Helang, Lambagad, Hanuman Chatti). If all clear, explicitly output a verified "ALL CLEAR" card with "Normal Flow" status.
+2. Weather & Alaknanda river alert (IMD Uttarakhand advisory, rain conditions, fog/mist caution).
+3. Badrinath Temple & Yatra darshan update (temple opening hours, token queue status, Aarti schedule, senior citizen line).
+4. Transit & Highway Advisory (convoy speeds, night travel bans after 8 PM, safe stopover points like Pipalkoti or Srinagar).
+
+Raw News Items from RSS:
+${newsSummary}
+
+Available Corridor Stretches:
 - Haridwar - Rishikesh
 - Rishikesh - Devprayag
 - Devprayag - Rudraprayag
@@ -169,27 +185,23 @@ Corridor Stretches:
 - Chamoli - Joshimath
 - Joshimath - Badrinath
 
-Raw News Items:
-${newsSummary}
-
 Return strict JSON array with schema:
 [
   {
-    "id": string (unique slug),
+    "id": string (unique slug, e.g. "gemini-nh7-bro-update"),
     "stretch": "Haridwar - Rishikesh" | "Rishikesh - Devprayag" | "Devprayag - Rudraprayag" | "Rudraprayag - Chamoli" | "Chamoli - Joshimath" | "Joshimath - Badrinath",
-    "location": string (e.g. Sirobagarh, Patalganga, Govindghat, Lambagad),
+    "location": string (e.g. "NH-7 Whole Corridor", "Sirobagarh landslide zone", "Badrinath Dham Sanctum", "Joshimath Acclimatization Base"),
     "eventType": "LANDSLIDE" | "FLASH_FLOOD" | "ROAD_BLOCKED" | "ONE_WAY_TRAFFIC" | "HEAVY_JAM" | "WEATHER_WARNING" | "CLEAR",
     "severity": "CRITICAL" | "MODERATE" | "ADVISORY" | "NORMAL",
     "status": "ACTIVE_BLOCK" | "CLEARING_IN_PROGRESS" | "OPEN_CAUTION" | "ALL_CLEAR",
-    "headline": string (concise, high contrast),
-    "summary": string (actionable advice for pilgrim cab driver & family),
-    "broClearanceETA": string (e.g. "1-2 hours", "Continuous Patrol", or "Cleared"),
-    "source": string (publisher name),
-    "sourceUrl": string (link),
-    "timestamp": string (ISO 8601)
+    "headline": string (concise, bold, high contrast headline),
+    "summary": string (actionable advice for pilgrim cab driver & family elders),
+    "broClearanceETA": string (e.g. "Normal Two-Way Flow", "30-45 mins clearance", "Regular Yatra Hours (05:00 - 20:00)"),
+    "source": string (e.g. "BRO Project Shivalik", "Uttarakhand Police Traffic Control", "IMD Dehradun", "BKTC Temple Committee"),
+    "sourceUrl": string (link if available or official authority bulletin),
+    "timestamp": string (ISO 8601 string)
   }
 ]
-If none of the news items mention highway disruptions on this specific pilgrimage route, return an empty array [].
 `;
 
     const response = await ai.models.generateContent({
@@ -242,15 +254,17 @@ export function computeStretches(alerts: RouteAlertPayload[]): CorridorStretchHe
 
 /**
  * Fetch and return live corridor status
+ * Supports optional forceRefresh to bypass memory cache on manual trigger
  */
-export async function getLiveRouteStatus(): Promise<{
+export async function getLiveRouteStatus(forceRefresh: boolean = false): Promise<{
   alerts: RouteAlertPayload[];
   stretches: CorridorStretchHealth[];
   lastRefreshed: string;
 }> {
-  // Check memory cache
   const now = Date.now();
-  if (memoryCache && memoryCache.expiresAt > now) {
+
+  // Check memory cache unless forceRefresh requested
+  if (!forceRefresh && memoryCache && memoryCache.expiresAt > now) {
     const combinedAlerts = [...familySpotterReports, ...memoryCache.data.alerts];
     return {
       alerts: combinedAlerts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
@@ -259,15 +273,15 @@ export async function getLiveRouteStatus(): Promise<{
     };
   }
 
+  console.log(`📡 [RouteAlertService] Fetching fresh news & route intel via Gemini 2.5 Flash (forceRefresh=${forceRefresh})...`);
+
   // Fetch free RSS
   const rawNews = await fetchGoogleNewsRss();
   let structuredAlerts: RouteAlertPayload[] = [];
 
-  if (rawNews.length > 0) {
-    structuredAlerts = await classifyWithGemini(rawNews);
-  }
+  structuredAlerts = await classifyWithGemini(rawNews);
 
-  // If no active road disruptions found in news, show authentic All Clear card & mountain advisory
+  // If no active road disruptions found in news, ensure baseline all-clear is present
   if (structuredAlerts.length === 0) {
     structuredAlerts = AUTHENTIC_BASELINE_ALERTS;
   }

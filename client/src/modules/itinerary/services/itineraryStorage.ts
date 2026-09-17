@@ -1,6 +1,7 @@
 import { localDB, OfflineSegmentRecord } from '../../../shared/db/dexie';
 import { TRIP_SEED_SEGMENTS } from '../../../shared/config/trip.config';
 import { TripSegment, SegmentStatus, LogisticsInfo } from '../../../shared/types';
+import { logItineraryMilestoneToFeed, addFamilyFeedItem } from '../../voice-feed/services/familyFeedStorage';
 
 /**
  * Initialize Dexie with Seed Segments if empty
@@ -65,9 +66,13 @@ export async function toggleCheckpointInDexie(
   if (!record) return null;
 
   const segment = record.segmentData;
+  let toggledCheckpoint: any = null;
+  let isNowDone = false;
+
   const updatedCheckpoints = segment.checkpoints.map(cp => {
     if (cp.id !== checkpointId) return cp;
-    const isNowDone = !cp.done;
+    isNowDone = !cp.done;
+    toggledCheckpoint = cp;
     return {
       ...cp,
       done: isNowDone,
@@ -81,6 +86,21 @@ export async function toggleCheckpointInDexie(
   };
 
   await saveSegmentToDexie(updatedSegment);
+
+  // Auto-post milestone event to Family Feed when completed
+  if (isNowDone && toggledCheckpoint) {
+    try {
+      logItineraryMilestoneToFeed(
+        toggledCheckpoint.name,
+        segment.title,
+        segment.destination || segment.origin,
+        'traveller-utkarsh',
+        toggledCheckpoint.elderComfortNote
+      );
+    } catch (feedErr) {
+      console.warn('Failed to auto-log milestone to Family Feed', feedErr);
+    }
+  }
 
   // Background sync if online
   if (navigator.onLine) {
@@ -113,6 +133,26 @@ export async function updateSegmentStatusInDexie(
   };
 
   await saveSegmentToDexie(updatedSegment);
+
+  // Auto-log status transition in Family Feed
+  try {
+    addFamilyFeedItem({
+      type: 'MILESTONE',
+      title: status === 'COMPLETED' 
+        ? `Arrived: ${record.segmentData.title}` 
+        : `Departed: ${record.segmentData.title}`,
+      description: status === 'COMPLETED'
+        ? `Successfully arrived at ${record.segmentData.destination}. Elders resting comfortably.`
+        : `En route from ${record.segmentData.origin} towards ${record.segmentData.destination}.`,
+      speakerId: 'traveller-utkarsh',
+      locationName: record.segmentData.origin,
+      duoId: 'ALL',
+      category: record.segmentData.mode === 'TRAIN' ? 'TRAIN' : 'CAB',
+      statusBadge: status === 'COMPLETED' ? 'Arrived' : 'In Transit'
+    });
+  } catch (feedErr) {
+    console.warn('Failed to log segment status to Family Feed', feedErr);
+  }
 
   if (navigator.onLine) {
     fetch(`/api/segments/${segmentId}/status`, {
@@ -147,6 +187,27 @@ export async function updateLogisticsInDexie(
   };
 
   await saveSegmentToDexie(updatedSegment);
+
+  // Auto-log cab booking/logistics update in Family Feed
+  try {
+    addFamilyFeedItem({
+      type: 'TRANSIT_UPDATE',
+      title: `Cab / Transit Confirmed: ${record.segmentData.title}`,
+      description: `Cab service: ${logisticsUpdate.serviceName || record.segmentData.logistics.serviceName} • Vehicle / PNR: ${logisticsUpdate.identifier || record.segmentData.logistics.identifier} • Pickup: ${logisticsUpdate.pickupLocation || record.segmentData.logistics.pickupLocation}`,
+      speakerId: 'traveller-shreyas',
+      locationName: record.segmentData.origin,
+      duoId: 'ALL',
+      category: 'CAB',
+      statusBadge: 'Cab Assigned',
+      metadata: {
+        segmentId,
+        cabPlate: logisticsUpdate.identifier,
+        driverPhone: logisticsUpdate.driverPhone
+      }
+    });
+  } catch (feedErr) {
+    console.warn('Failed to log cab update to Family Feed', feedErr);
+  }
 
   if (navigator.onLine) {
     fetch(`/api/segments/${segmentId}/logistics`, {

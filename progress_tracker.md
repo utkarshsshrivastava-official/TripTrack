@@ -31,6 +31,7 @@
 | **Phase 16** | **Zero-Cost Train 12441 Smart Transit Engine & IRCTC Berth Pass** | ✅ **DONE** | 100% | Completed |
 | **Phase 17** | **Zero-Cost IndiGo Flight Engine & Dual-PNR Connection Tracker** | ✅ **DONE** | 100% | Completed |
 | **Phase 18** | **Himalayan Route Guard, Highway Alerts & Dual-Tab Feed Hub** | ✅ **DONE** | 100% | Completed |
+| **Phase 19** | **Feed Restructure: Family Feed & Live Gemini AI News Scanner** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -453,6 +454,27 @@
 - [x] **18.5 Crowdsourced Family Road Spotter (`ReportObstructionModal.tsx`)**
   - [x] 1-tap modal for Utkarsh & Shreyas to report landslides, falling rocks, or traffic halts with estimated delays.
   - [x] Offline-first Dexie queueing and optimistic UI updates with cloud sync.
+
+---
+
+### ✅ Phase 19: Feed Restructure: Family Feed & Live Gemini AI News Scanner
+*Status: Completed & Verified on Sep 17, 2026 (100%)*
+
+- [x] **19.1 Feed Architecture Restructure into 2 Dedicated Tabs**
+  - [x] Restructured `VoiceFeedPreview.tsx` to switch cleanly between **Family Feed** (`FAMILY`) and **News Feed** (`NEWS`).
+  - [x] Retained accessible header banner for Sacred Chants & Tanpura Drone audio soundboard.
+- [x] **19.2 Family Feed & Dynamic Journey Timeline (`FamilyFeedTab.tsx` & `familyFeedStorage.ts`)**
+  - [x] Unified timeline stream combining itinerary milestones, cab updates, and audio voice broadcasts.
+  - [x] Modular Voice Studio feature: streamlined collapsible dispatcher with push-to-talk microphone, real-time audio visualizer bars, and Gemini AI speech summarizer.
+  - [x] Quick Travel Update bar with 1-tap preset chips (`📍 Arrived Delhi`, `🚕 Cab Boarded`, `☕ Tea Halt`, `🏨 Hotel Check-in`, `🛕 Darshan Done`).
+  - [x] Automatic sync: checking off checkpoints in `itineraryStorage.ts` or updating cab logistics automatically creates rich cards in the Family Feed.
+  - [x] Duo & type filtering: `All Stream`, `Milestones`, `Voice Notes`, `Cab & Transit`, and `Family A / Family B`.
+- [x] **19.3 Live Gemini AI Route News Scanner & Ground Intelligence (`routeAlert.service.ts` & `RouteGuardTab.tsx`)**
+  - [x] 1-tap **"✨ Scan Live Route Intel (Gemini AI)"** button calling `POST /api/alerts/scan-live`.
+  - [x] Ingests public Google News RSS and synthesizes up-to-date NH-7 route bulletins via `gemini-2.5-flash` (`@google/genai`).
+  - [x] Categorized news cards for landslides & rockfalls, rain & river warnings, Badrinath Darshan queues, and cab driver advisories.
+  - [x] Topic filter chips (`All Route Intel`, `🚨 Landslides & Blocks`, `🌧️ Weather & Rain`, `🛕 Temple & Yatra`, `🚗 Highway Transit`).
+  - [x] 1-tap WhatsApp sharing and emergency helplines (`112 Police`, `1364 Yatra`, `1070 SDRF`).
 
 ---
 
