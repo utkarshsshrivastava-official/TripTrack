@@ -489,8 +489,11 @@
   - [x] Added "Clear All Chat" (`Trash2`) button with confirmation banner (`Delete all messages for everyone?`) in `FamilyChatDrawer.tsx`.
 - [x] **20.2 Complete Mockup Dummy Data Scrub Across App Modules**
   - [x] Gullak (`expenseStorage.ts`): Emptied `INITIAL_EXPENSE_SEEDS = []` and added auto-purge for legacy `exp-1`..`exp-4` IDs, ensuring initial balance starts at clean ₹0.
-  - [x] Voice Studio (`voiceLogStorage.ts`): Emptied `INITIAL_VOICE_SEEDS = []` and added auto-purge for legacy `voice-1`..`voice-3` logs.
-  - [x] Family Feed (`familyFeedStorage.ts`): Emptied `INITIAL_FEED_SEEDS = []` and purged legacy `feed-init-` mockup cards from `localStorage`.
+  - [x] Voice Studio (`voiceLogStorage.ts` & `AudioWaveformCard.tsx`):
+    - [x] Purged all unwanted demo offline voice blobs (Devprayag / NH-7 test audio notes) from Dexie `offlineVoiceLogs`.
+    - [x] Replaced the technical jargon badge `"Offline Blob"` with `"Voice Broadcast"`.
+    - [x] Added `deleteVoiceLogFromDexie(id)` and `clearAllVoiceLogsFromDexie()` with 1-tap delete button (`Trash2`) and confirmation modal on audio cards.
+  - [x] Family Feed (`familyFeedStorage.ts`): Emptied `INITIAL_FEED_SEEDS = []` and purged legacy `feed-init-` and cached `voice-feed-` mockup cards from `localStorage`.
   - [x] Protected genuine pilgrimage documents in `vaultStorage.ts` (Train 12441 PNR `6709136735`, IndiGo PNRs `VGLHWK` & `L8CM7C`, and Yatra Biometric Passes).
 - [x] **20.3 Responsive Mobile Header Redesign (Eliminating Squeeze on Narrow Devices)**
   - [x] Streamlined `Header.tsx` layout with responsive padding (`px-2.5 sm:px-3.5`) and component spacing (`gap-1.5 sm:gap-2`).

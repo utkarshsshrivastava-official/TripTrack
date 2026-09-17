@@ -15,7 +15,7 @@ import {
 import { TRAVELLERS_CONFIG, getTravellerById } from '../../../shared/config/travellers.config';
 import { DuoId } from '../../../shared/types';
 import { WebAudioRecorder } from '../services/audioRecorder';
-import { saveVoiceLogToDexie } from '../services/voiceLogStorage';
+import { saveVoiceLogToDexie, deleteVoiceLogFromDexie } from '../services/voiceLogStorage';
 import { AudioWaveformCard } from './AudioWaveformCard';
 import { 
   FamilyFeedItem, 
@@ -52,6 +52,15 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
   const loadFeed = async () => {
     const items = await getUnifiedFamilyFeed();
     setFeedItems(items);
+  };
+
+  const handleDeleteVoiceLog = async (id: string) => {
+    await deleteVoiceLogFromDexie(id);
+    deleteFamilyFeedItem(`voice-feed-${id}`);
+    deleteFamilyFeedItem(id);
+    setToastNote('🗑️ Voice note removed');
+    setTimeout(() => setToastNote(null), 3000);
+    await loadFeed();
   };
 
   useEffect(() => {
@@ -548,6 +557,7 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
                   }}
                   isPlaying={playingAudioId === item.id}
                   onTogglePlay={togglePlayAudio}
+                  onDelete={handleDeleteVoiceLog}
                 />
               ) : (
                 <div className={`p-4 rounded-3xl border shadow-xl backdrop-blur-xl transition-all ${

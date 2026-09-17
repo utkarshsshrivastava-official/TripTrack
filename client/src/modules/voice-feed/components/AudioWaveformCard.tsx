@@ -8,7 +8,8 @@ import {
   ChevronDown, 
   ChevronUp, 
   ShieldCheck, 
-  Radio
+  Radio,
+  Trash2
 } from 'lucide-react';
 import { VoiceUpdate } from '../../../shared/types';
 import { getTravellerById } from '../../../shared/config/travellers.config';
@@ -17,6 +18,7 @@ interface AudioWaveformCardProps {
   update: VoiceUpdate;
   isPlaying: boolean;
   onTogglePlay: (id: string, audioUrl?: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 // Deterministic seed-based pseudo-random waveform bar heights (so same message has consistent waveform)
@@ -39,10 +41,12 @@ const generateWaveformBars = (id: string, count: number = 32): number[] => {
 export const AudioWaveformCard: React.FC<AudioWaveformCardProps> = ({
   update,
   isPlaying,
-  onTogglePlay
+  onTogglePlay,
+  onDelete
 }) => {
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [showTranscript, setShowTranscript] = useState<boolean>(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [progressPercent, setProgressPercent] = useState<number>(0);
   const [currentTimeSec, setCurrentTimeSec] = useState<number>(0);
   const durationSec = 24; // standard estimated recording duration in seconds
@@ -61,15 +65,14 @@ export const AudioWaveformCard: React.FC<AudioWaveformCardProps> = ({
             return 0;
           }
           const step = (100 / (durationSec * 10)) * playbackSpeed;
-          const next = prev + step;
-          setCurrentTimeSec(Math.floor((next / 100) * durationSec));
-          return Math.min(next, 100);
+          const next = Math.min(prev + step, 100);
+          setCurrentTimeSec(Math.round((next / 100) * durationSec));
+          return next;
         });
       }, 100);
     } else {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
       }
     }
     return () => {
@@ -77,19 +80,19 @@ export const AudioWaveformCard: React.FC<AudioWaveformCardProps> = ({
         clearInterval(progressIntervalRef.current);
       }
     };
-  }, [isPlaying, durationSec, playbackSpeed]);
+  }, [isPlaying, playbackSpeed, durationSec]);
 
-  const handleCycleSpeed = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCycleSpeed = () => {
     const speeds = [1.0, 1.25, 1.5, 2.0];
-    const nextIdx = (speeds.indexOf(playbackSpeed) + 1) % speeds.length;
+    const currIdx = speeds.indexOf(playbackSpeed);
+    const nextIdx = (currIdx + 1) % speeds.length;
     setPlaybackSpeed(speeds[nextIdx]);
   };
 
-  const handleWaveformClick = (index: number) => {
-    const targetPercent = Math.round((index / waveformBars.length) * 100);
-    setProgressPercent(targetPercent);
-    setCurrentTimeSec(Math.round((targetPercent / 100) * durationSec));
+  const handleWaveformClick = (barIndex: number) => {
+    const percent = (barIndex / waveformBars.length) * 100;
+    setProgressPercent(percent);
+    setCurrentTimeSec(Math.round((percent / 100) * durationSec));
     if (!isPlaying) {
       onTogglePlay(update.id, update.audioUrl);
     }
@@ -155,18 +158,59 @@ export const AudioWaveformCard: React.FC<AudioWaveformCardProps> = ({
           </div>
         </div>
 
-        {/* Reassurance Status Pill */}
+        {/* Reassurance Status Pill & Actions */}
         <div className="shrink-0 flex flex-col items-end gap-1">
-          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 flex items-center gap-1 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Safe & Rested</span>
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 flex items-center gap-1 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Safe & Rested</span>
+            </span>
+
+            {onDelete && !showConfirmDelete && (
+              <button
+                type="button"
+                onClick={() => setShowConfirmDelete(true)}
+                className="w-6 h-6 rounded-lg bg-slate-800/80 hover:bg-rose-950/80 hover:text-rose-400 text-slate-400 border border-slate-700/60 flex items-center justify-center transition-colors tap-active"
+                title="Delete voice recording"
+                aria-label="Delete voice recording"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
           <span className="text-[9px] font-mono text-purple-300/80 flex items-center gap-1">
             <ShieldCheck className="w-3 h-3 text-purple-400" />
-            <span>Offline Blob</span>
+            <span>Voice Broadcast</span>
           </span>
         </div>
       </div>
+
+      {/* Delete Confirmation Prompt Banner */}
+      {showConfirmDelete && (
+        <div className="p-2.5 rounded-xl bg-rose-950/90 border border-rose-700/80 flex items-center justify-between text-xs text-rose-200 animate-fade-in">
+          <span>Delete this voice recording?</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowConfirmDelete(false);
+                onDelete?.(update.id);
+              }}
+              className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[11px] rounded-md transition-all tap-active"
+            >
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowConfirmDelete(false)}
+              className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-md transition-all tap-active"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modern Waveform Player Deck */}
       <div className="p-3.5 rounded-2xl bg-black/60 border border-white/10 shadow-inner space-y-2.5">

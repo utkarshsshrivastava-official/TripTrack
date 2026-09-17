@@ -5,12 +5,21 @@ const INITIAL_VOICE_SEEDS: OfflineVoiceRecord[] = [];
 
 // Legacy mock voice IDs to scrub clean
 const LEGACY_MOCK_VOICE_IDS = ['voice-1', 'voice-2', 'voice-3'];
+const DEMO_BLOBS_PURGE_FLAG = 'triptrack_demo_voice_blobs_purged_v2';
 
 /**
  * Initialize Dexie with initial voice feed seeds if empty, and purge mock seeds
  */
 export async function initializeVoiceLogStorage(): Promise<OfflineVoiceRecord[]> {
   try {
+    // One-time purge of all unwanted demo offline voice blobs created in earlier testing
+    if (typeof window !== 'undefined' && !localStorage.getItem(DEMO_BLOBS_PURGE_FLAG)) {
+      await localDB.offlineVoiceLogs.clear();
+      localStorage.setItem(DEMO_BLOBS_PURGE_FLAG, 'true');
+      console.log('🧹 [Dexie Voice] Purged unwanted demo offline voice blobs.');
+      return [];
+    }
+
     // Purge any legacy mock seeds from previous builds
     await localDB.offlineVoiceLogs.bulkDelete(LEGACY_MOCK_VOICE_IDS);
 
@@ -32,6 +41,14 @@ export async function initializeVoiceLogStorage(): Promise<OfflineVoiceRecord[]>
  */
 export async function getVoiceLogsFromDexie(): Promise<VoiceUpdate[]> {
   try {
+    // One-time purge of demo blobs if not yet executed
+    if (typeof window !== 'undefined' && !localStorage.getItem(DEMO_BLOBS_PURGE_FLAG)) {
+      await localDB.offlineVoiceLogs.clear();
+      localStorage.setItem(DEMO_BLOBS_PURGE_FLAG, 'true');
+      console.log('🧹 [Dexie Voice] Purged unwanted demo offline voice blobs.');
+      return [];
+    }
+
     // Scrub legacy mock seeds
     await localDB.offlineVoiceLogs.bulkDelete(LEGACY_MOCK_VOICE_IDS);
 
@@ -41,6 +58,36 @@ export async function getVoiceLogsFromDexie(): Promise<VoiceUpdate[]> {
   } catch (err) {
     console.error('Failed to get voice logs from Dexie', err);
     return [];
+  }
+}
+
+/**
+ * Delete a specific voice log by ID from Dexie
+ */
+export async function deleteVoiceLogFromDexie(id: string): Promise<void> {
+  try {
+    await localDB.offlineVoiceLogs.delete(id);
+    console.log(`🗑️ [Dexie Voice] Deleted voice log ${id}`);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('triptrack_feed_update'));
+    }
+  } catch (err) {
+    console.error('Failed to delete voice log from Dexie', err);
+  }
+}
+
+/**
+ * Clear all voice logs from Dexie
+ */
+export async function clearAllVoiceLogsFromDexie(): Promise<void> {
+  try {
+    await localDB.offlineVoiceLogs.clear();
+    console.log('🧹 [Dexie Voice] Cleared all voice logs');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('triptrack_feed_update'));
+    }
+  } catch (err) {
+    console.error('Failed to clear voice logs from Dexie', err);
   }
 }
 

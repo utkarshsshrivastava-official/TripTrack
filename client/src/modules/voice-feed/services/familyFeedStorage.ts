@@ -50,8 +50,11 @@ export function loadSavedTimelineItems(): FamilyFeedItem[] {
       return [];
     }
 
-    // Clean out legacy mock seeds if present
-    const cleaned = items.filter((item: FamilyFeedItem) => !item.id?.startsWith('feed-init-'));
+    // Clean out legacy mock seeds or cached test voice feed entries if present
+    const cleaned = items.filter((item: FamilyFeedItem) => 
+      !item.id?.startsWith('feed-init-') && 
+      !item.id?.startsWith('voice-feed-')
+    );
     if (cleaned.length !== items.length) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
     }
