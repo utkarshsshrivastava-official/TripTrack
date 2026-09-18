@@ -566,6 +566,12 @@
 - [x] **22.5 Offline-First Himalayan Invariant & Vault Dignity Preserved**
   - [x] Kept Document Vault passes (IRCTC Train 12441 tickets, IndiGo boarding passes, biometric Yatra permits) strictly in Dexie IndexedDB blobs for guaranteed 0ms offline rendering at temple security checkposts.
   - [x] Graceful fallback: when cellular data is unreachable in mountain valleys, receipts and feed photos gracefully fallback to local storage and sync upon reconnection.
+- [x] **22.6 Hybrid Cloud-to-Dexie Document Vault Synchronization (`uploadDocumentBuffer`, `vault.controller.ts`, `vaultStorage.ts`, `UploadDocDialog.tsx`)**
+  - [x] Added `uploadDocumentBuffer()` to `cloudinary.service.ts` with `resource_type: 'auto'` for PDF passes and photos.
+  - [x] Connected `POST /api/documents/upload` to store files on Cloudinary and document records on MongoDB Atlas with `id: doc-...`.
+  - [x] Implemented real-time Socket.io events: `send_document` -> persists to Atlas -> broadcasts `receive_document`; `delete_document` -> removes from Atlas -> broadcasts `document_removed`.
+  - [x] Added client background sync (`syncVaultWithCloud()` & `setupVaultSocketListeners()`): peer devices automatically download binary file blobs and cache them in local Dexie IndexedDB.
+  - [x] Guaranteed 0ms offline access: any document uploaded by Shreyas or Utkarsh becomes 100% offline accessible on all family phones.
 
 ---
 

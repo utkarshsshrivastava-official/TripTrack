@@ -3,7 +3,8 @@ import multer from 'multer';
 import { 
   uploadDocumentHandler, 
   getDocumentsHandler, 
-  getDocumentByIdHandler 
+  getDocumentByIdHandler,
+  deleteDocumentHandler
 } from './vault.controller';
 import { verifyFamilyPin } from '../../shared/middleware/auth.middleware';
 
@@ -21,5 +22,6 @@ const upload = multer({
 router.post('/upload', verifyFamilyPin, upload.single('document'), uploadDocumentHandler);
 router.get('/', verifyFamilyPin, getDocumentsHandler);
 router.get('/:id', verifyFamilyPin, getDocumentByIdHandler);
+router.delete('/:id', verifyFamilyPin, deleteDocumentHandler);
 
 export default router;

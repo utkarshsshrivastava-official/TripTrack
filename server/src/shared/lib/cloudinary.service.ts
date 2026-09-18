@@ -136,3 +136,52 @@ export async function uploadAudioBuffer(
     uploadStream.end(buffer);
   });
 }
+
+/**
+ * Upload a document buffer (PDF or pass photo/scan) to Cloudinary
+ */
+export async function uploadDocumentBuffer(
+  buffer: Buffer,
+  mimeType: string = 'application/pdf',
+  folder: string = 'vault',
+  customFilename?: string
+): Promise<CloudinaryUploadResult> {
+  if (!isCloudinaryConfigured()) {
+    console.warn('⚠️ [Cloudinary] Credentials not set. Falling back to inline document data URL.');
+    const base64 = buffer.toString('base64');
+    return {
+      url: `data:${mimeType};base64,${base64}`,
+      publicId: customFilename || `mock-doc-${Date.now()}`,
+      format: mimeType.split('/')[1] || 'pdf',
+      bytes: buffer.length,
+      resourceType: 'auto'
+    };
+  }
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: `triptrack-badrinath-2026/${folder}`,
+        public_id: customFilename,
+        resource_type: 'auto'
+      },
+      (error, result: UploadApiResponse | undefined) => {
+        if (error || !result) {
+          console.error('❌ [Cloudinary] Document upload failed:', error);
+          reject(error || new Error('Document upload failed with empty result'));
+        } else {
+          console.log(`📄 [Cloudinary] Travel pass/document uploaded: ${result.secure_url} (${Math.round(result.bytes / 1024)} KB)`);
+          resolve({
+            url: result.secure_url,
+            publicId: result.public_id,
+            format: result.format || 'pdf',
+            bytes: result.bytes,
+            resourceType: result.resource_type
+          });
+        }
+      }
+    );
+
+    uploadStream.end(buffer);
+  });
+}

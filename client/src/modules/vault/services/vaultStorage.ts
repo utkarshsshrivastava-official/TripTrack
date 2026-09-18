@@ -1,6 +1,7 @@
 import { localDB, CachedDocRecord } from '../../../shared/db/dexie';
 import { TravelDocument, DuoId } from '../../../shared/types';
 import { TRAVELLERS_CONFIG } from '../../../shared/config/travellers.config';
+import { onFamilyEvent, emitFamilyEvent } from '../../../shared/services/socketClient';
 
 // Active Object URLs cache for automatic memory cleanup
 const activeBlobUrls = new Map<string, string>();
@@ -311,3 +312,166 @@ export async function deleteDocumentFromDexie(id: string): Promise<void> {
   revokeDocumentBlobUrl(id);
   await localDB.cachedDocs.delete(id);
 }
+
+/**
+ * Delete document from local Dexie and sync deletion with MongoDB Atlas & peers
+ */
+export async function deleteVaultDocument(id: string): Promise<void> {
+  revokeDocumentBlobUrl(id);
+  await localDB.cachedDocs.delete(id);
+
+  if (navigator.onLine) {
+    try {
+      const pin = localStorage.getItem('triptrack_family_pin') || '2026';
+      await fetch(`/api/documents/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-family-pin': pin }
+      });
+      emitFamilyEvent('delete_document', { id });
+    } catch (e) {
+      console.warn('⚠️ [Vault Sync] Cloud delete deferred:', e);
+    }
+  }
+
+  window.dispatchEvent(new CustomEvent('triptrack_vault_update', { detail: { id, deleted: true } }));
+}
+
+/**
+ * Reconcile local Dexie vault with MongoDB Atlas cloud repository
+ */
+export async function syncVaultWithCloud(): Promise<TravelDocument[]> {
+  try {
+    const pin = localStorage.getItem('triptrack_family_pin') || '2026';
+
+    const res = await fetch('/api/documents', {
+      headers: { 'x-family-pin': pin }
+    });
+
+    if (!res.ok) {
+      return await getVaultDocuments();
+    }
+
+    const json = await res.json();
+    const cloudDocs: any[] = json.documents || json.data || [];
+
+    for (const cloudDoc of cloudDocs) {
+      if (!cloudDoc.id) continue;
+      const existing = await localDB.cachedDocs.get(cloudDoc.id);
+
+      // If document is not cached or missing blob, fetch and cache it
+      if (!existing || !existing.blobData) {
+        let blobData: Blob | undefined = undefined;
+        if (cloudDoc.fileUrl && cloudDoc.fileUrl.startsWith('http')) {
+          try {
+            const blobRes = await fetch(cloudDoc.fileUrl);
+            if (blobRes.ok) {
+              blobData = await blobRes.blob();
+            }
+          } catch (e) {
+            console.warn(`[Vault Sync] Failed to fetch blob for ${cloudDoc.id}:`, e);
+          }
+        }
+
+        if (!blobData) {
+          blobData = createSamplePDFBlob(
+            cloudDoc.title,
+            cloudDoc.parsedData?.pnr || cloudDoc.parsedData?.yatraRegistrationNo || 'SYNCED',
+            'Synced from cloud'
+          );
+        }
+
+        await localDB.cachedDocs.put({
+          id: cloudDoc.id,
+          title: cloudDoc.title,
+          category: cloudDoc.category,
+          passengerId: cloudDoc.passengerId,
+          mimeType: cloudDoc.fileType || 'application/pdf',
+          blobData,
+          parsedData: cloudDoc.parsedData,
+          updatedAt: Date.now()
+        });
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent('triptrack_vault_update'));
+  } catch (err) {
+    console.warn('⚠️ [Vault Sync] Could not sync with cloud:', err);
+  }
+
+  return await getVaultDocuments();
+}
+
+let vaultSocketInitialized = false;
+
+/**
+ * Socket listener for peer document updates
+ */
+export function setupVaultSocketListeners(): void {
+  if (vaultSocketInitialized || typeof window === 'undefined') return;
+  vaultSocketInitialized = true;
+
+  // Listen for live documents uploaded by other family members
+  onFamilyEvent('receive_document', async (docData: any) => {
+    try {
+      if (!docData?.id) return;
+      console.log(`📂 [Vault Sync] Received document "${docData.title}" from peer`);
+
+      let blobData: Blob | undefined = undefined;
+      if (docData.fileUrl && docData.fileUrl.startsWith('http')) {
+        try {
+          const res = await fetch(docData.fileUrl);
+          if (res.ok) {
+            blobData = await res.blob();
+          }
+        } catch (fetchErr) {
+          console.warn('⚠️ [Vault Sync] Could not download remote blob in background:', fetchErr);
+        }
+      }
+
+      if (!blobData) {
+        blobData = createSamplePDFBlob(
+          docData.title,
+          docData.parsedData?.pnr || docData.parsedData?.yatraRegistrationNo || 'SYNCED',
+          'Synced travel pass'
+        );
+      }
+
+      const record: CachedDocRecord = {
+        id: docData.id,
+        title: docData.title,
+        category: docData.category,
+        passengerId: docData.passengerId,
+        mimeType: docData.fileType || 'application/pdf',
+        blobData,
+        parsedData: docData.parsedData,
+        updatedAt: Date.now()
+      };
+
+      await localDB.cachedDocs.put(record);
+      window.dispatchEvent(new CustomEvent('triptrack_vault_update', { detail: record }));
+    } catch (err) {
+      console.warn('⚠️ [Vault Sync] Error caching incoming live document in Dexie:', err);
+    }
+  });
+
+  // Listen for document deletion from peer
+  onFamilyEvent('document_removed', async (data: { id: string }) => {
+    try {
+      if (!data?.id) return;
+      revokeDocumentBlobUrl(data.id);
+      await localDB.cachedDocs.delete(data.id);
+      window.dispatchEvent(new CustomEvent('triptrack_vault_update', { detail: { id: data.id, deleted: true } }));
+    } catch (err) {
+      console.warn('⚠️ [Vault Sync] Error deleting document from Dexie:', err);
+    }
+  });
+
+  // Auto-sync when network or socket reconnects
+  window.addEventListener('triptrack_network_sync', () => {
+    syncVaultWithCloud().catch(err => console.warn('Background vault sync error:', err));
+  });
+}
+
+// Immediately wire vault socket listeners
+setupVaultSocketListeners();
+

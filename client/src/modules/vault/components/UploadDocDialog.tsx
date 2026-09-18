@@ -4,6 +4,7 @@ import { DocumentCategory, TravelDocument } from '../../../shared/types';
 import { TRAVELLERS_CONFIG } from '../../../shared/config/travellers.config';
 import { compressImageFile } from '../services/imageCompression';
 import { saveDocumentToDexie } from '../services/vaultStorage';
+import { emitFamilyEvent } from '../../../shared/services/socketClient';
 
 interface UploadDocDialogProps {
   isOpen: boolean;
@@ -73,35 +74,46 @@ export const UploadDocDialog: React.FC<UploadDocDialogProps> = ({
       // 2. Immediate Local-First Save to Dexie
       await saveDocumentToDexie(newDoc, finalBlob);
 
-      // 3. Attempt Server Gemini Ingest if Online
+      // 3. Attempt Server Gemini Ingest & Cloudinary Storage if Online
       if (navigator.onLine && selectedFile) {
-        setStatusMessage('Transmitting to Gemini 2.5 Flash for optical parsing...');
+        setStatusMessage('Syncing to Cloudinary & running Gemini OCR...');
         try {
+          const pin = localStorage.getItem('triptrack_family_pin') || '2026';
           const formData = new FormData();
           formData.append('document', selectedFile);
           formData.append('title', title);
           formData.append('passengerId', passengerId);
           formData.append('category', category);
+          formData.append('id', docId);
+          formData.append('parsedData', JSON.stringify(newDoc.parsedData || {}));
 
           const res = await fetch('/api/documents/upload', {
             method: 'POST',
             headers: {
-              'x-family-pin': '2026'
+              'x-family-pin': pin
             },
             body: formData
           });
 
           if (res.ok) {
             const apiResult = await res.json();
-            if (apiResult.document?.parsedData) {
-              newDoc.parsedData = apiResult.document.parsedData;
+            if (apiResult.document) {
+              if (apiResult.document.parsedData) {
+                newDoc.parsedData = apiResult.document.parsedData;
+              }
+              if (apiResult.document.fileUrl) {
+                newDoc.fileUrl = apiResult.document.fileUrl;
+              }
               await saveDocumentToDexie(newDoc, finalBlob);
+              emitFamilyEvent('send_document', apiResult.document);
             }
           }
-        } catch {
-          console.warn('Backend sync deferred; pass safely retained in Dexie');
+        } catch (cloudErr) {
+          console.warn('⚠️ [Vault Sync] Backend sync deferred; pass safely retained in Dexie:', cloudErr);
         }
       }
+
+      window.dispatchEvent(new CustomEvent('triptrack_vault_update', { detail: newDoc }));
 
       setStatusMessage('Pass saved! 100% offline accessible.');
       setTimeout(() => {

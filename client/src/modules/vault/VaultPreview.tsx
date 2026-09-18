@@ -9,7 +9,8 @@ import {
 import { 
   getVaultDocuments, 
   getVaultStorageMetrics, 
-  deleteDocumentFromDexie 
+  deleteVaultDocument,
+  syncVaultWithCloud 
 } from './services/vaultStorage';
 import { WalletPassCard } from './components/WalletPassCard';
 import { DocumentViewerModal } from './components/DocumentViewerModal';
@@ -45,12 +46,29 @@ export const VaultPreview: React.FC<VaultPreviewProps> = ({ activeDuo }) => {
 
   useEffect(() => {
     loadDocuments();
+
+    const handleUpdate = () => {
+      loadDocuments();
+    };
+
+    window.addEventListener('triptrack_vault_update', handleUpdate);
+
+    // Initial background sync with cloud if online
+    if (navigator.onLine) {
+      syncVaultWithCloud()
+        .then(() => loadDocuments())
+        .catch(err => console.warn('Vault cloud sync deferred:', err));
+    }
+
+    return () => {
+      window.removeEventListener('triptrack_vault_update', handleUpdate);
+    };
   }, [loadDocuments]);
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm('Delete this cached pass from phone storage?')) {
-      await deleteDocumentFromDexie(id);
+    if (confirm('Delete this travel pass from vault?')) {
+      await deleteVaultDocument(id);
       await loadDocuments();
     }
   };

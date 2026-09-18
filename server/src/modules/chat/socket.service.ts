@@ -4,6 +4,7 @@ import { ChatMessageModel } from '../../models/chatMessage.model';
 import { ExpenseModel } from '../../models/expense.model';
 import { FamilyFeedModel } from '../../models/familyFeed.model';
 import { SegmentModel } from '../../models/segment.model';
+import { DocumentModel } from '../../models/document.model';
 import { isMongoConnected } from '../../shared/lib/mongodb';
 
 export const FAMILY_ROOM = 'badrinath-family-2026';
@@ -215,6 +216,39 @@ export function initSocketServer(httpServer: HttpServer): SocketIOServer {
         segmentId: data.segmentId,
         checkpointId: data.checkpointId
       });
+    });
+
+    // ==========================================
+    // 5. DOCUMENT VAULT LIVE SYNC
+    // ==========================================
+    socket.on('send_document', async (docData: any) => {
+      console.log(`📂 [Socket.io Vault] New document from ${docData.passengerId}: "${docData.title}"`);
+      try {
+        if (isMongoConnected()) {
+          await DocumentModel.findOneAndUpdate(
+            { id: docData.id },
+            docData,
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
+        }
+      } catch (err) {
+        console.error('⚠️ [Socket.io Vault] Failed to persist document to MongoDB:', err);
+      }
+
+      socket.to(FAMILY_ROOM).emit('receive_document', docData);
+    });
+
+    socket.on('delete_document', async (data: { id: string }) => {
+      console.log(`🗑️ [Socket.io Vault] Delete document ${data.id}`);
+      try {
+        if (isMongoConnected()) {
+          await DocumentModel.deleteOne({ $or: [{ id: data.id }, { _id: data.id }] });
+        }
+      } catch (err) {
+        console.error('⚠️ [Socket.io Vault] Failed to delete document from MongoDB:', err);
+      }
+
+      socket.to(FAMILY_ROOM).emit('document_removed', { id: data.id });
     });
 
     // Handle typing indicator

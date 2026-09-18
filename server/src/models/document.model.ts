@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ITravelDocument extends Document {
+  id: string;
   title: string;
   category: 'ID_CARD' | 'TRAIN_TICKET' | 'FLIGHT_PASS' | 'YATRA_PASS' | 'HOTEL_VOUCHER';
   fileUrl: string;
@@ -18,6 +19,7 @@ export interface ITravelDocument extends Document {
 }
 
 const DocumentSchema = new Schema({
+  id: { type: String, required: true, unique: true, index: true },
   title: { type: String, required: true },
   category: { 
     type: String, 
