@@ -37,6 +37,9 @@ function setupExpenseSocketListeners() {
         paidBy: expenseData.paidBy,
         category: expenseData.category,
         receiptUrl: expenseData.receiptUrl,
+        paymentSplits: expenseData.paymentSplits,
+        splitMode: expenseData.splitMode,
+        owedSplits: expenseData.owedSplits,
         createdAt: expenseData.createdAt || new Date().toISOString(),
         isSynced: true
       };
@@ -139,6 +142,9 @@ export async function syncExpensesWithCloud(): Promise<Expense[]> {
         paidBy: c.paidBy,
         category: c.category,
         receiptUrl: c.receiptUrl,
+        paymentSplits: c.paymentSplits,
+        splitMode: c.splitMode,
+        owedSplits: c.owedSplits,
         createdAt: c.createdAt,
         isSynced: true
       });
@@ -275,6 +281,8 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
   let totalSpentINR = 0;
   let paidByUtkarshINR = 0;
   let paidByShreyasINR = 0;
+  let totalUtkarshFairShareINR = 0;
+  let totalShreyasFairShareINR = 0;
 
   expenses.forEach(e => {
     totalSpentINR += e.amountINR;
@@ -282,16 +290,51 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
       categoryTotals[e.category] += e.amountINR;
     }
 
-    if (e.paidBy === DUO_A_SON.name) {
-      paidByUtkarshINR += e.amountINR;
-    } else if (e.paidBy === DUO_B_SON.name) {
-      paidByShreyasINR += e.amountINR;
+    // 1. Calculate Actual Paid Contribution
+    let uPaid = 0;
+    let sPaid = 0;
+
+    if (e.paymentSplits) {
+      uPaid = Number(e.paymentSplits.utkarshPaidINR) || 0;
+      sPaid = Number(e.paymentSplits.shreyasPaidINR) || 0;
+    } else {
+      if (e.paidBy === DUO_A_SON.name) {
+        uPaid = e.amountINR;
+      } else if (e.paidBy === DUO_B_SON.name) {
+        sPaid = e.amountINR;
+      }
     }
+
+    paidByUtkarshINR += uPaid;
+    paidByShreyasINR += sPaid;
+
+    // 2. Calculate Fair Share Owed
+    let uOwes = 0;
+    let sOwes = 0;
+
+    if (e.owedSplits) {
+      uOwes = Number(e.owedSplits.utkarshOwesINR) || 0;
+      sOwes = Number(e.owedSplits.shreyasOwesINR) || 0;
+    } else if (e.splitMode === 'FULL_FAMILY_A') {
+      uOwes = e.amountINR;
+      sOwes = 0;
+    } else if (e.splitMode === 'FULL_FAMILY_B') {
+      uOwes = 0;
+      sOwes = e.amountINR;
+    } else {
+      // Default: 50/50 Equal Split
+      uOwes = e.amountINR / 2;
+      sOwes = e.amountINR / 2;
+    }
+
+    totalUtkarshFairShareINR += uOwes;
+    totalShreyasFairShareINR += sOwes;
   });
 
   const fairSharePerCoordinatorINR = Math.round(totalSpentINR / 2);
-  const diff = paidByUtkarshINR - paidByShreyasINR;
-  const halfDiff = Math.round(Math.abs(diff) / 2);
+
+  // Net Balance: (Utkarsh Paid) - (Utkarsh Fair Share)
+  const utkarshNet = Math.round(paidByUtkarshINR - totalUtkarshFairShareINR);
 
   let netSettlement = {
     debtorName: '',
@@ -300,18 +343,18 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
     isSettled: true
   };
 
-  if (diff > 0) {
+  if (utkarshNet > 0) {
     netSettlement = {
       debtorName: DUO_B_SON.name,
       creditorName: DUO_A_SON.name,
-      amountINR: halfDiff,
+      amountINR: utkarshNet,
       isSettled: false
     };
-  } else if (diff < 0) {
+  } else if (utkarshNet < 0) {
     netSettlement = {
       debtorName: DUO_A_SON.name,
       creditorName: DUO_B_SON.name,
-      amountINR: halfDiff,
+      amountINR: Math.abs(utkarshNet),
       isSettled: false
     };
   }
@@ -334,6 +377,9 @@ function toExpense(rec: OfflineExpenseRecord): Expense {
     paidBy: rec.paidBy,
     category: rec.category,
     receiptUrl: rec.receiptUrl,
+    paymentSplits: rec.paymentSplits,
+    splitMode: rec.splitMode,
+    owedSplits: rec.owedSplits,
     createdAt: rec.createdAt
   };
 }

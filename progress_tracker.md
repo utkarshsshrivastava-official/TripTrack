@@ -35,6 +35,7 @@
 | **Phase 20** | **Chat Sync Reconciliation, App Mockup Scrub & Mobile Header Polish** | ✅ **DONE** | 100% | Completed |
 | **Phase 21** | **Universal Live Data Sync: MongoDB Atlas, Socket.io & Dexie** | ✅ **DONE** | 100% | Completed |
 | **Phase 22** | **Cloudinary Media Integration: Receipts, Voice Streaming & Photo Moments** | ✅ **DONE** | 100% | Completed |
+| **Phase 23** | **Splitwise-Grade Multi-Payer & Custom Split Financial Engine in Gullak** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -572,6 +573,40 @@
   - [x] Implemented real-time Socket.io events: `send_document` -> persists to Atlas -> broadcasts `receive_document`; `delete_document` -> removes from Atlas -> broadcasts `document_removed`.
   - [x] Added client background sync (`syncVaultWithCloud()` & `setupVaultSocketListeners()`): peer devices automatically download binary file blobs and cache them in local Dexie IndexedDB.
   - [x] Guaranteed 0ms offline access: any document uploaded by Shreyas or Utkarsh becomes 100% offline accessible on all family phones.
+
+---
+
+### ✅ Phase 23: Splitwise-Grade Multi-Payer & Custom Split Financial Engine in Gullak
+*Status: Completed & Verified on Sep 18, 2026 (100%)*
+
+- [x] **23.1 Multi-Payer Data Modeling & TypeScript Typing (`types/index.ts`, `dexie.ts`, `expense.model.ts`)**
+  - [x] Defined `ExpenseSplitMode = 'EQUAL_50_50' | 'CUSTOM_AMOUNTS' | 'FULL_FAMILY_A' | 'FULL_FAMILY_B'`.
+  - [x] Extended `Expense` and `OfflineExpenseRecord` with `paymentSplits?: { utkarshPaidINR: number; shreyasPaidINR: number }`, `splitMode?: ExpenseSplitMode`, and `owedSplits?: { utkarshOwesINR: number; shreyasOwesINR: number }`.
+  - [x] Updated MongoDB `ExpenseSchema` and `IExpense` in `server/src/models/expense.model.ts` with typed subdocuments for split fields.
+- [x] **23.2 Mathematical Balance & Fair Share Computation Engine (`expenseStorage.ts`)**
+  - [x] Implemented exact net position formula: $\text{Net Position} = \text{Paid} - \text{Owed}$.
+  - [x] Multi-payer aggregation: accurately accumulates partial contributions per coordinator ($P_U$ and $P_S$).
+  - [x] Flexible fair share aggregation: correctly tallies custom shares or 100% single-family charges ($O_U$ and $O_S$).
+  - [x] Guaranteed zero-sum bilateral settlement: $\text{Net}_U + \text{Net}_S = 0$, accurately displaying who owes whom in `netSettlement`.
+  - [x] Maintained 100% backward compatibility with single-payer expenses.
+- [x] **23.3 Interactive Multi-Payer & Custom Split Bottom Sheet (`AddExpenseSheet.tsx`)**
+  - [x] Payer Selector: 3-way toggle between `[ Utkarsh Paid 100% ]`, `[ Shreyas Paid 100% ]`, and `[ Both Paid (Custom ₹) ]`.
+  - [x] Dual-rupee inputs with live auto-balance helper button (`"Auto-Balance ₹X"`) and real-time sum validator.
+  - [x] Split Mode Selector: 4-way segmented tabs for `50-50 Equal`, `Custom Share`, `100% Fam A`, and `100% Fam B`.
+  - [x] Live Splitwise Settlement Preview Banner: renders real-time settlement delta (e.g., *"Shreyas will owe Utkarsh ₹75"*) before the expense is logged.
+  - [x] Elder-friendly touch targets ($\ge 48\text{px}$) and clear high-contrast rupee buttons.
+- [x] **23.4 Ledger Visual Enhancements & Dynamic Filtering (`GullakPreview.tsx`)**
+  - [x] Expense Cards: renders payment contribution pill (`Paid: Utkarsh ₹200 • Shreyas ₹50`) when multiple payers contributed.
+  - [x] Split Badges: renders distinct pills for `100% Fam A`, `100% Fam B`, or `Split: ₹X / ₹Y`.
+  - [x] Receipt Modal: shows multi-payer breakdown alongside bill image.
+  - [x] Duo Filter Reconciliation: shows multi-payer expenses in `Duo A` or `Duo B` filters if that coordinator contributed.
+- [x] **23.5 Bilateral Settlement Gauge & WhatsApp Keepsake Updates (`SettlementGauge.tsx`)**
+  - [x] Needle Position: dynamically positions gauge pin based on net settlement balance rather than raw paid difference.
+  - [x] WhatsApp Export: generates clean markdown audit with bilateral balance.
+- [x] **23.6 Full-Stack Real-Time Persistence & Zero-Signal Resilience (`expense.controller.ts`, `expenseStorage.ts`)**
+  - [x] Preserved `paymentSplits`, `splitMode`, and `owedSplits` across REST API endpoints (`GET /api/expenses`, `POST /api/expenses`, `POST /api/expenses/sync`).
+  - [x] Real-time Socket.io events (`send_expense`, `receive_expense`) broadcast and sync split records instantaneously across devices.
+  - [x] Dexie IndexedDB stores split records locally first for complete offline operation in Alaknanda river gorges.
 
 ---
 

@@ -112,14 +112,27 @@ export type ExpenseCategory =
   | 'HOTEL'
   | 'MISC';
 
+export type ExpenseSplitMode = 'EQUAL_50_50' | 'CUSTOM_AMOUNTS' | 'FULL_FAMILY_A' | 'FULL_FAMILY_B';
+
 export interface Expense {
   id: string;
   title: string;
   amountINR: number;
-  paidBy: string; // Utkarsh or Cousin
+  paidBy: string; // Utkarsh, Shreyas, or Multiple
   category: ExpenseCategory;
   receiptUrl?: string;
   createdAt: string;
+
+  // Splitwise-Grade Multi-Payer & Custom Split Fields
+  paymentSplits?: {
+    utkarshPaidINR: number;
+    shreyasPaidINR: number;
+  };
+  splitMode?: ExpenseSplitMode;
+  owedSplits?: {
+    utkarshOwesINR: number;
+    shreyasOwesINR: number;
+  };
 }
 
 // Voice Note Feed

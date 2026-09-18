@@ -17,12 +17,14 @@ export const SettlementGauge: React.FC<SettlementGaugeProps> = ({ summary }) => 
   const [copied, setCopied] = useState<boolean>(false);
   const { netSettlement, totalSpentINR, paidByUtkarshINR, paidByShreyasINR, fairSharePerCoordinatorINR } = summary;
 
-  // Calculate percentage tilt for the balance needle (50% is dead center)
-  // Range: 10% (max Shreyas) to 90% (max Utkarsh)
+  // Calculate percentage tilt for the balance needle (50% is dead center / perfect equilibrium)
+  // Range: 10% (max Shreyas / Duo B) to 90% (max Utkarsh / Duo A)
   let needlePositionPercent = 50;
-  if (totalSpentINR > 0) {
-    const diff = paidByUtkarshINR - paidByShreyasINR;
-    const ratio = diff / totalSpentINR; // -1 to +1
+  if (totalSpentINR > 0 && !netSettlement.isSettled) {
+    const netUtkarsh = netSettlement.creditorName === DUO_A_SON.name 
+      ? netSettlement.amountINR 
+      : -netSettlement.amountINR;
+    const ratio = netUtkarsh / totalSpentINR; // -1 to +1
     needlePositionPercent = Math.min(90, Math.max(10, Math.round(50 + ratio * 40)));
   }
 

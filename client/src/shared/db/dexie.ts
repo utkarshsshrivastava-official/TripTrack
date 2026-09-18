@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { LocationPing, TripSegment, ExpenseCategory } from '../types';
+import { LocationPing, TripSegment, ExpenseCategory, ExpenseSplitMode } from '../types';
 
 export interface CachedDocRecord {
   id: string;
@@ -31,6 +31,15 @@ export interface OfflineExpenseRecord {
   paidBy: string;
   category: ExpenseCategory;
   receiptUrl?: string;
+  paymentSplits?: {
+    utkarshPaidINR: number;
+    shreyasPaidINR: number;
+  };
+  splitMode?: ExpenseSplitMode;
+  owedSplits?: {
+    utkarshOwesINR: number;
+    shreyasOwesINR: number;
+  };
   createdAt: string;
   isSynced?: boolean;
 }

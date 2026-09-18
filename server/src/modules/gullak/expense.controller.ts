@@ -20,6 +20,9 @@ export async function getExpensesHandler(_req: Request, res: Response): Promise<
           paidBy: e.paidBy,
           category: e.category,
           receiptUrl: e.receiptUrl,
+          paymentSplits: e.paymentSplits,
+          splitMode: e.splitMode,
+          owedSplits: e.owedSplits,
           createdAt: e.createdAt.toISOString()
         }))
       });
@@ -39,7 +42,7 @@ export async function getExpensesHandler(_req: Request, res: Response): Promise<
 
 export async function createExpenseHandler(req: Request, res: Response): Promise<void> {
   try {
-    const { id, title, amountINR, paidBy, category, receiptUrl, createdAt } = req.body;
+    const { id, title, amountINR, paidBy, category, receiptUrl, paymentSplits, splitMode, owedSplits, createdAt } = req.body;
 
     if (!id || !title || amountINR === undefined || !paidBy || !category) {
       res.status(400).json({ success: false, error: 'Missing required expense fields' });
@@ -53,6 +56,9 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
       paidBy,
       category,
       receiptUrl,
+      paymentSplits,
+      splitMode,
+      owedSplits,
       createdAt: createdAt ? new Date(createdAt) : new Date()
     };
 
@@ -113,6 +119,9 @@ export async function syncBulkExpensesHandler(req: Request, res: Response): Prom
           paidBy: item.paidBy,
           category: item.category,
           receiptUrl: item.receiptUrl,
+          paymentSplits: item.paymentSplits,
+          splitMode: item.splitMode,
+          owedSplits: item.owedSplits,
           createdAt: item.createdAt ? new Date(item.createdAt) : new Date()
         };
 

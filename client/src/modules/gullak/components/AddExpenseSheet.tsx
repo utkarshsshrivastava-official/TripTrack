@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { ExpenseCategory } from '../../../shared/types';
-import { COORDINATOR_MEMBERS, DUO_A_SON } from '../../../shared/config/travellers.config';
+import { ExpenseCategory, ExpenseSplitMode } from '../../../shared/types';
+import { DUO_A_SON, DUO_B_SON } from '../../../shared/config/travellers.config';
 import { uploadMedia } from '../../../shared/services/mediaService';
 import { 
   X, 
@@ -15,7 +15,11 @@ import {
   Sparkles,
   Camera,
   Trash2,
-  Receipt
+  Receipt,
+  Users,
+  Scale,
+  CheckCircle2,
+  ArrowRightLeft
 } from 'lucide-react';
 
 interface AddExpenseSheetProps {
@@ -27,6 +31,15 @@ interface AddExpenseSheetProps {
     paidBy: string;
     category: ExpenseCategory;
     receiptUrl?: string;
+    paymentSplits?: {
+      utkarshPaidINR: number;
+      shreyasPaidINR: number;
+    };
+    splitMode?: ExpenseSplitMode;
+    owedSplits?: {
+      utkarshOwesINR: number;
+      shreyasOwesINR: number;
+    };
   }) => Promise<void>;
 }
 
@@ -56,14 +69,63 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
-  const [paidBy, setPaidBy] = useState<string>(DUO_A_SON.name);
   const [category, setCategory] = useState<ExpenseCategory>('FOOD');
+
+  // Splitwise-Grade Multi-Payer State
+  const [payerMode, setPayerMode] = useState<'UTKARSH' | 'SHREYAS' | 'BOTH'>('UTKARSH');
+  const [utkarshPaid, setUtkarshPaid] = useState('');
+  const [shreyasPaid, setShreyasPaid] = useState('');
+
+  // Splitwise-Grade Split Mode State
+  const [splitMode, setSplitMode] = useState<ExpenseSplitMode>('EQUAL_50_50');
+  const [utkarshOwes, setUtkarshOwes] = useState('');
+  const [shreyasOwes, setShreyasOwes] = useState('');
+
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  const totalNum = Number(amount) || 0;
+
+  // Live Contribution Calculations
+  let liveUPaid = 0;
+  let liveSPaid = 0;
+  if (payerMode === 'UTKARSH') {
+    liveUPaid = totalNum;
+    liveSPaid = 0;
+  } else if (payerMode === 'SHREYAS') {
+    liveUPaid = 0;
+    liveSPaid = totalNum;
+  } else {
+    liveUPaid = Number(utkarshPaid) || 0;
+    liveSPaid = Number(shreyasPaid) || 0;
+  }
+
+  // Live Share Owed Calculations
+  let liveUOwes = 0;
+  let liveSOwes = 0;
+  if (splitMode === 'FULL_FAMILY_A') {
+    liveUOwes = totalNum;
+    liveSOwes = 0;
+  } else if (splitMode === 'FULL_FAMILY_B') {
+    liveUOwes = 0;
+    liveSOwes = totalNum;
+  } else if (splitMode === 'CUSTOM_AMOUNTS') {
+    liveUOwes = Number(utkarshOwes) || 0;
+    liveSOwes = Number(shreyasOwes) || 0;
+  } else {
+    // 50/50 Equal
+    liveUOwes = totalNum / 2;
+    liveSOwes = totalNum / 2;
+  }
+
+  const liveNetUtkarsh = Math.round(liveUPaid - liveUOwes);
+  const isPaidBalanced = payerMode !== 'BOTH' || (Math.round(liveUPaid + liveSPaid) === Math.round(totalNum) && totalNum > 0);
+  const isSplitBalanced = splitMode !== 'CUSTOM_AMOUNTS' || (Math.round(liveUOwes + liveSOwes) === Math.round(totalNum) && totalNum > 0);
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -88,6 +150,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
+    if (!isPaidBalanced || !isSplitBalanced) return;
 
     setIsSubmitting(true);
     let receiptUrl: string | undefined = undefined;
@@ -113,15 +176,42 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         }
       }
 
+      const computedPaidBy = payerMode === 'UTKARSH' 
+        ? DUO_A_SON.name 
+        : payerMode === 'SHREYAS' 
+          ? DUO_B_SON.name 
+          : 'Multiple';
+
       await onAddExpense({
         title: title.trim(),
-        amountINR: Math.round(Number(amount)),
-        paidBy,
+        amountINR: Math.round(totalNum),
+        paidBy: computedPaidBy,
         category,
-        receiptUrl
+        receiptUrl,
+        paymentSplits: payerMode === 'BOTH' ? {
+          utkarshPaidINR: Math.round(liveUPaid),
+          shreyasPaidINR: Math.round(liveSPaid)
+        } : undefined,
+        splitMode,
+        owedSplits: splitMode === 'CUSTOM_AMOUNTS' ? {
+          utkarshOwesINR: Math.round(liveUOwes),
+          shreyasOwesINR: Math.round(liveSOwes)
+        } : splitMode === 'FULL_FAMILY_A' ? {
+          utkarshOwesINR: Math.round(totalNum),
+          shreyasOwesINR: 0
+        } : splitMode === 'FULL_FAMILY_B' ? {
+          utkarshOwesINR: 0,
+          shreyasOwesINR: Math.round(totalNum)
+        } : undefined
       });
       setTitle('');
       setAmount('');
+      setPayerMode('UTKARSH');
+      setUtkarshPaid('');
+      setShreyasPaid('');
+      setSplitMode('EQUAL_50_50');
+      setUtkarshOwes('');
+      setShreyasOwes('');
       handleRemoveReceipt();
       onClose();
     } catch (err) {
@@ -133,6 +223,14 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
 
   const handleSelectPresetAmount = (val: number) => {
     setAmount(val.toString());
+    if (payerMode === 'BOTH') {
+      setUtkarshPaid(Math.round(val / 2).toString());
+      setShreyasPaid((val - Math.round(val / 2)).toString());
+    }
+    if (splitMode === 'CUSTOM_AMOUNTS') {
+      setUtkarshOwes(Math.round(val / 2).toString());
+      setShreyasOwes((val - Math.round(val / 2)).toString());
+    }
   };
 
   const handleSelectPresetTitle = (t: string) => {
@@ -238,40 +336,301 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             </div>
           </div>
 
-          {/* Paid By Coordinator Selector */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-              Paid By (Coordinator)
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {COORDINATOR_MEMBERS.map(member => {
-                const isSelected = paidBy === member.name;
-                return (
-                  <button
-                    key={member.id}
-                    type="button"
-                    onClick={() => setPaidBy(member.name)}
-                    className={`p-2.5 rounded-2xl border text-left flex items-center gap-2.5 transition-all tap-active ${
-                      isSelected
-                        ? 'bg-amber-500/15 border-amber-500 text-white shadow-md'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
-                      isSelected ? 'bg-temple-gold text-slate-950' : 'bg-slate-800 text-slate-300'
-                    }`}>
-                      {member.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold leading-tight">{member.name}</div>
-                      <div className="text-[10px] font-mono text-slate-400">
-                        {member.duoId === 'DUO_A' ? 'Family A' : 'Family B'}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+          {/* 1. Who Paid? (Splitwise Multi-Payer Selector) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                Who Paid for this Bill?
+              </label>
+              {payerMode === 'BOTH' && (
+                <span className="text-[10px] font-mono text-purple-300 font-bold flex items-center gap-1">
+                  <Users className="w-3 h-3 text-purple-400" /> Split Payment
+                </span>
+              )}
             </div>
+
+            <div className="grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                onClick={() => setPayerMode('UTKARSH')}
+                className={`p-2.5 rounded-2xl border text-center flex flex-col items-center gap-1 transition-all tap-active ${
+                  payerMode === 'UTKARSH'
+                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md font-bold'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span className="text-xs font-bold leading-tight truncate w-full">{DUO_A_SON.name}</span>
+                <span className="text-[9px] font-mono text-slate-400">Paid 100%</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPayerMode('SHREYAS')}
+                className={`p-2.5 rounded-2xl border text-center flex flex-col items-center gap-1 transition-all tap-active ${
+                  payerMode === 'SHREYAS'
+                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md font-bold'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span className="text-xs font-bold leading-tight truncate w-full">{DUO_B_SON.name}</span>
+                <span className="text-[9px] font-mono text-slate-400">Paid 100%</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPayerMode('BOTH');
+                  if (!utkarshPaid && !shreyasPaid && totalNum > 0) {
+                    setUtkarshPaid(Math.round(totalNum / 2).toString());
+                    setShreyasPaid((totalNum - Math.round(totalNum / 2)).toString());
+                  }
+                }}
+                className={`p-2.5 rounded-2xl border text-center flex flex-col items-center gap-1 transition-all tap-active ${
+                  payerMode === 'BOTH'
+                    ? 'bg-purple-500/25 border-purple-500 text-purple-200 shadow-md font-bold'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span className="text-xs font-bold leading-tight flex items-center justify-center gap-1">
+                  <Users className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Both Paid</span>
+                </span>
+                <span className="text-[9px] font-mono text-slate-400">Custom ₹ Shares</span>
+              </button>
+            </div>
+
+            {/* When BOTH is selected, show dual inputs with auto-balance */}
+            {payerMode === 'BOTH' && (
+              <div className="p-3 rounded-2xl bg-purple-950/40 border border-purple-800/60 space-y-2.5 animate-in fade-in">
+                <div className="flex items-center justify-between text-[11px] font-bold text-purple-200">
+                  <span>Enter contributions for ₹{totalNum || 0} bill:</span>
+                  {isPaidBalanced ? (
+                    <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-mono">
+                      <CheckCircle2 className="w-3 h-3" /> Exact Balance
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const diff = totalNum - (Number(utkarshPaid) || 0);
+                        setShreyasPaid(Math.max(0, diff).toString());
+                      }}
+                      className="text-[10px] text-amber-300 underline font-mono tap-active"
+                    >
+                      Auto-balance Shreyas
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-mono text-purple-300 block mb-1 font-bold">
+                      {DUO_A_SON.name} Paid
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-purple-400">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={utkarshPaid}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setUtkarshPaid(val);
+                          if (totalNum > 0 && val !== '') {
+                            setShreyasPaid(Math.max(0, totalNum - Number(val)).toString());
+                          }
+                        }}
+                        placeholder="0"
+                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-950 border border-purple-700/50 text-xs font-mono font-bold text-white focus:outline-none focus:border-purple-400 shadow-inner"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono text-purple-300 block mb-1 font-bold">
+                      {DUO_B_SON.name} Paid
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-purple-400">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={shreyasPaid}
+                        onChange={e => setShreyasPaid(e.target.value)}
+                        placeholder="0"
+                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-950 border border-purple-700/50 text-xs font-mono font-bold text-white focus:outline-none focus:border-purple-400 shadow-inner"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {!isPaidBalanced && totalNum > 0 && (
+                  <p className="text-[10px] text-rose-400 font-mono">
+                    ⚠️ Total contributions (₹{(Number(utkarshPaid) || 0) + (Number(shreyasPaid) || 0)}) must equal bill total (₹{totalNum}).
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 2. Split How? (Splitwise Split Mode) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Scale className="w-3.5 h-3.5 text-amber-400" />
+                <span>Split Between Families</span>
+              </label>
+              <span className="text-[10px] font-mono text-slate-400">
+                {splitMode === 'EQUAL_50_50' ? '50/50 Equal' : splitMode === 'FULL_FAMILY_A' ? '100% Family A' : splitMode === 'FULL_FAMILY_B' ? '100% Family B' : 'Custom'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              <button
+                type="button"
+                onClick={() => setSplitMode('EQUAL_50_50')}
+                className={`p-2 rounded-xl border text-center transition-all tap-active ${
+                  splitMode === 'EQUAL_50_50'
+                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="text-[11px] font-bold">⚖️ 50-50 Equal</div>
+                <div className="text-[9px] font-mono text-slate-400">Shared meal/cab</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSplitMode('CUSTOM_AMOUNTS');
+                  if (!utkarshOwes && !shreyasOwes && totalNum > 0) {
+                    setUtkarshOwes(Math.round(totalNum / 2).toString());
+                    setShreyasOwes((totalNum - Math.round(totalNum / 2)).toString());
+                  }
+                }}
+                className={`p-2 rounded-xl border text-center transition-all tap-active ${
+                  splitMode === 'CUSTOM_AMOUNTS'
+                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="text-[11px] font-bold">✏️ Custom Share</div>
+                <div className="text-[9px] font-mono text-slate-400">Exact amounts</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSplitMode('FULL_FAMILY_A')}
+                className={`p-2 rounded-xl border text-center transition-all tap-active ${
+                  splitMode === 'FULL_FAMILY_A'
+                    ? 'bg-indigo-950/60 border-indigo-500 text-indigo-300 font-bold'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="text-[11px] font-bold">🅰️ 100% Fam A</div>
+                <div className="text-[9px] font-mono text-slate-400">Utkarsh & Papa</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSplitMode('FULL_FAMILY_B')}
+                className={`p-2 rounded-xl border text-center transition-all tap-active ${
+                  splitMode === 'FULL_FAMILY_B'
+                    ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300 font-bold'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="text-[11px] font-bold">🅱️ 100% Fam B</div>
+                <div className="text-[9px] font-mono text-slate-400">Shreyas & Sanjay</div>
+              </button>
+            </div>
+
+            {/* Custom Share Inputs */}
+            {splitMode === 'CUSTOM_AMOUNTS' && (
+              <div className="p-3 rounded-2xl bg-slate-950 border border-amber-600/40 space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
+                  <span>Who was responsible for what share?</span>
+                  {!isSplitBalanced && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const diff = totalNum - (Number(utkarshOwes) || 0);
+                        setShreyasOwes(Math.max(0, diff).toString());
+                      }}
+                      className="text-amber-400 underline font-mono tap-active"
+                    >
+                      Auto-balance
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                      {DUO_A_SON.name} Share
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={utkarshOwes}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setUtkarshOwes(val);
+                          if (totalNum > 0 && val !== '') {
+                            setShreyasOwes(Math.max(0, totalNum - Number(val)).toString());
+                          }
+                        }}
+                        placeholder="0"
+                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 shadow-inner"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                      {DUO_B_SON.name} Share
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={shreyasOwes}
+                        onChange={e => setShreyasOwes(e.target.value)}
+                        placeholder="0"
+                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 shadow-inner"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Live Splitwise Settlement Result Banner */}
+            {totalNum > 0 && isPaidBalanced && isSplitBalanced && (
+              <div className={`p-2.5 rounded-2xl border flex items-center justify-between text-xs font-bold ${
+                liveNetUtkarsh === 0
+                  ? 'bg-slate-950/80 border-slate-800 text-slate-300'
+                  : liveNetUtkarsh > 0
+                    ? 'bg-amber-950/50 border-amber-500/40 text-amber-200'
+                    : 'bg-emerald-950/50 border-emerald-500/40 text-emerald-200'
+              }`}>
+                <div className="flex items-center gap-1.5 truncate">
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="truncate">
+                    {liveNetUtkarsh > 0
+                      ? `${DUO_B_SON.name} will owe ${DUO_A_SON.name} ₹${liveNetUtkarsh}`
+                      : liveNetUtkarsh < 0
+                        ? `${DUO_A_SON.name} will owe ${DUO_B_SON.name} ₹${Math.abs(liveNetUtkarsh)}`
+                        : 'Balanced: No debt created between families'}
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono text-slate-400 shrink-0 pl-1">
+                  Splitwise Math
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Category Selector Grid */}

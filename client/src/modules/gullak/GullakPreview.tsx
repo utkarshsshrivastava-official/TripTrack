@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Expense, ExpenseCategory, DuoId } from '../../shared/types';
+import { Expense, ExpenseCategory, ExpenseSplitMode, DuoId } from '../../shared/types';
 import { 
   Plus, 
   Car, 
@@ -45,16 +45,13 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
   } | null>(null);
 
   useEffect(() => {
-    const load = () => {
+    getExpensesFromDexie().then(setExpenses);
+
+    const handleUpdate = () => {
       getExpensesFromDexie().then(setExpenses);
     };
-
-    load();
-
-    window.addEventListener('triptrack_expense_update', load);
-    return () => {
-      window.removeEventListener('triptrack_expense_update', load);
-    };
+    window.addEventListener('triptrack_expense_update', handleUpdate);
+    return () => window.removeEventListener('triptrack_expense_update', handleUpdate);
   }, []);
 
   const summary = calculateGullakSummary(expenses);
@@ -65,6 +62,15 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
     paidBy: string;
     category: ExpenseCategory;
     receiptUrl?: string;
+    paymentSplits?: {
+      utkarshPaidINR: number;
+      shreyasPaidINR: number;
+    };
+    splitMode?: ExpenseSplitMode;
+    owedSplits?: {
+      utkarshOwesINR: number;
+      shreyasOwesINR: number;
+    };
   }) => {
     const added = await saveExpenseToDexie({
       title: data.title,
@@ -72,6 +78,9 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
       paidBy: data.paidBy,
       category: data.category,
       receiptUrl: data.receiptUrl,
+      paymentSplits: data.paymentSplits,
+      splitMode: data.splitMode,
+      owedSplits: data.owedSplits,
       createdAt: new Date().toISOString()
     });
 
@@ -98,8 +107,16 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
     const matchesCategory = selectedCategory === 'ALL' || e.category === selectedCategory;
     if (!matchesCategory) return false;
 
-    if (activeDuo === 'DUO_A') return e.paidBy === DUO_A_SON.name;
-    if (activeDuo === 'DUO_B') return e.paidBy === DUO_B_SON.name;
+    if (activeDuo === 'DUO_A') {
+      if (e.paidBy === DUO_A_SON.name) return true;
+      if (e.paidBy === 'Multiple' && (e.paymentSplits?.utkarshPaidINR ?? 0) > 0) return true;
+      return false;
+    }
+    if (activeDuo === 'DUO_B') {
+      if (e.paidBy === DUO_B_SON.name) return true;
+      if (e.paidBy === 'Multiple' && (e.paymentSplits?.shreyasPaidINR ?? 0) > 0) return true;
+      return false;
+    }
     return true;
   });
 
@@ -202,12 +219,35 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
                   <h4 className="text-xs font-extrabold text-white leading-tight truncate">
                     {expense.title}
                   </h4>
-                  <div className="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5 font-mono">
-                    <span className="text-amber-300/90 font-medium">
-                      Paid by {expense.paidBy}
-                    </span>
-                    <span>•</span>
-                    <span>{new Date(expense.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                  <div className="text-[10px] text-slate-400 flex flex-wrap items-center gap-1.5 mt-1 font-mono">
+                    {expense.paidBy === 'Multiple' && expense.paymentSplits ? (
+                      <span className="text-amber-300 font-bold bg-amber-500/15 px-1.5 py-0.5 rounded-md border border-amber-500/30">
+                        Paid: Utkarsh ₹{expense.paymentSplits.utkarshPaidINR} • Shreyas ₹{expense.paymentSplits.shreyasPaidINR}
+                      </span>
+                    ) : (
+                      <span className="text-amber-300/90 font-semibold">
+                        Paid by {expense.paidBy}
+                      </span>
+                    )}
+
+                    {expense.splitMode === 'FULL_FAMILY_A' && (
+                      <span className="text-emerald-300 font-bold bg-emerald-500/15 px-1.5 py-0.5 rounded-md border border-emerald-500/30">
+                        100% Fam A
+                      </span>
+                    )}
+                    {expense.splitMode === 'FULL_FAMILY_B' && (
+                      <span className="text-sky-300 font-bold bg-sky-500/15 px-1.5 py-0.5 rounded-md border border-sky-500/30">
+                        100% Fam B
+                      </span>
+                    )}
+                    {expense.splitMode === 'CUSTOM_AMOUNTS' && expense.owedSplits && (
+                      <span className="text-indigo-300 font-bold bg-indigo-500/15 px-1.5 py-0.5 rounded-md border border-indigo-500/30">
+                        Split: ₹{expense.owedSplits.utkarshOwesINR} / ₹{expense.owedSplits.shreyasOwesINR}
+                      </span>
+                    )}
+
+                    <span className="text-slate-600">•</span>
+                    <span className="text-slate-400">{new Date(expense.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                   </div>
                 </div>
               </div>
@@ -220,7 +260,9 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
                       url: expense.receiptUrl!,
                       title: expense.title,
                       amount: expense.amountINR,
-                      paidBy: expense.paidBy
+                      paidBy: expense.paidBy === 'Multiple' && expense.paymentSplits 
+                        ? `Utkarsh (₹${expense.paymentSplits.utkarshPaidINR}) & Shreyas (₹${expense.paymentSplits.shreyasPaidINR})` 
+                        : expense.paidBy
                     })}
                     className="p-1 px-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-500/20 tap-active"
                     title="View Receipt Proof"
