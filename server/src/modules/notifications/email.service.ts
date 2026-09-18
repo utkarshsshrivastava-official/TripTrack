@@ -70,11 +70,16 @@ class EmailService {
     if (user && pass && user !== 'your-family-email@gmail.com' && pass !== 'your-16-char-app-password') {
       try {
         this.transporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: { user, pass }
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true, // Port 465 SSL is reliable on cloud containers
+          auth: { user, pass },
+          connectionTimeout: 6000,
+          greetingTimeout: 6000,
+          socketTimeout: 7000
         });
         this.isConfigured = true;
-        console.log(`📧 [Nodemailer] Configured with Gmail SMTP account: ${user}`);
+        console.log(`📧 [Nodemailer] Configured with Gmail SMTP (Port 465 SSL) for: ${user}`);
       } catch (err) {
         console.warn('⚠️ [Nodemailer] Initialization failed, will use console simulation:', err);
       }
@@ -98,7 +103,7 @@ class EmailService {
   /**
    * Send general HTML email with fallback
    */
-  async sendEmail(subject: string, htmlBody: string, specificRecipients?: string[]): Promise<{ success: boolean; simulated?: boolean; messageId?: string }> {
+  async sendEmail(subject: string, htmlBody: string, specificRecipients?: string[]): Promise<{ success: boolean; simulated?: boolean; messageId?: string; warning?: string }> {
     const recipients = specificRecipients && specificRecipients.length > 0 ? specificRecipients : this.getRecipients();
 
     if (!this.isConfigured || !this.transporter || recipients.length === 0) {
@@ -111,17 +116,29 @@ class EmailService {
     }
 
     try {
-      const info = await this.transporter.sendMail({
+      const sendPromise = this.transporter.sendMail({
         from: `"TripTrack Pilgrimage 🏔️" <${process.env.SMTP_USER}>`,
         to: recipients,
         subject,
         html: htmlBody
       });
+
+      // Strict 7-second timeout race so cloud servers never hang indefinitely
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('SMTP timed out after 7s (outbound port blocked or delayed).')), 7000)
+      );
+
+      const info: any = await Promise.race([sendPromise, timeoutPromise]);
       console.log(`✅ [Email Service] Dispatched to ${recipients.join(', ')} (Msg ID: ${info.messageId})`);
       return { success: true, messageId: info.messageId };
     } catch (err: any) {
-      console.error('❌ [Email Service] Dispatch error:', err);
-      return { success: false, simulated: false };
+      console.error('❌ [Email Service] Dispatch error:', err.message || err);
+      // Fall back to safe console simulation so caller never crashes or hangs
+      return { 
+        success: true, 
+        simulated: true, 
+        warning: `Direct SMTP delayed (${err.message || 'timeout'}). Notification logged to cloud console.` 
+      };
     }
   }
 

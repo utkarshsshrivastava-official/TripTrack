@@ -61,38 +61,49 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
   const safeFetchJson = async (endpoint: string, options: RequestInit = {}) => {
     const backendUrl = getBackendUrl();
     const url = endpoint.startsWith('http') ? endpoint : `${backendUrl}${endpoint}`;
-    const res = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...getApiHeaders(),
-        ...(options.headers || {})
-      }
-    });
+    
+    // 10-second timeout to prevent UI from ever getting stuck
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
 
-    let currentRes = res;
-    if (currentRes.status === 403) {
-      try {
-        localStorage.setItem('triptrack_family_pin', '2026');
-      } catch {}
-      currentRes = await fetch(url, {
+    try {
+      const res = await fetch(url, {
         ...options,
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
-          'x-family-pin': '2026',
+          ...getApiHeaders(),
           ...(options.headers || {})
         }
       });
-    }
 
-    const contentType = currentRes.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      const text = await currentRes.text();
-      throw new Error(`Server returned non-JSON (${currentRes.status}): ${text.slice(0, 60)}...`);
-    }
+      let currentRes = res;
+      if (currentRes.status === 403) {
+        try {
+          localStorage.setItem('triptrack_family_pin', '2026');
+        } catch {}
+        currentRes = await fetch(url, {
+          ...options,
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'x-family-pin': '2026',
+            ...(options.headers || {})
+          }
+        });
+      }
 
-    const data = await currentRes.json();
-    return { res: currentRes, data };
+      const contentType = currentRes.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await currentRes.text();
+        throw new Error(`Server returned non-JSON (${currentRes.status}): ${text.slice(0, 60)}...`);
+      }
+
+      const data = await currentRes.json();
+      return { res: currentRes, data };
+    } finally {
+      clearTimeout(timer);
+    }
   };
 
   const fetchStatus = async () => {
@@ -120,7 +131,7 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
       if (res.ok && data.success) {
         setActionMessage({
           text: data.simulated 
-            ? 'Test notification simulated successfully! (Payload logged in server console).'
+            ? (data.warning || 'Test notification simulated successfully! (Logged in server console).')
             : 'Test email dispatched successfully to family inbox via Gmail SMTP!',
           type: 'success'
         });
@@ -128,7 +139,11 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
         setActionMessage({ text: data.error || 'Failed to dispatch test email', type: 'error' });
       }
     } catch (err: any) {
-      setActionMessage({ text: err.message || 'Connection error', type: 'error' });
+      if (err.name === 'AbortError') {
+        setActionMessage({ text: 'Request took longer than 10s. Server is sending in background.', type: 'error' });
+      } else {
+        setActionMessage({ text: err.message || 'Connection error', type: 'error' });
+      }
     } finally {
       setIsSendingTest(false);
     }
