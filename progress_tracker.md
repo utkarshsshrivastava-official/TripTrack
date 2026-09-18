@@ -636,6 +636,11 @@
   - [x] Emergency Modal: added prominent `"🚨 Broadcast Emergency GPS SOS Email Now"` button capturing live coordinates, battery level, and elders' medical dossier.
   - [x] Email Alerts Modal: dedicated modal displaying active recipients, 6 scheduled morning briefings with status pills, 8 GPS geofence waypoints, 1-tap "Send Today's Evening Digest Now", and "Send Test Email to Family".
   - [x] Sidebar integration: added `"Family Email Alerts"` drawer action with active mail icon and badge.
+- [x] **24.6 Live Field Verification & Durg CG Geofencing (`automation.service.ts`, `EmailAlertsModal.tsx`)**
+  - [x] Added `wp-durg` (Durg Junction & City, Chhattisgarh at $21.1904^\circ\text{N}, 81.2849^\circ\text{E}$, $25\text{km}$ radius).
+  - [x] Verified live geofence detection: triggered real arrival notification email via Gmail SMTP to `utkarshshrivastava.13@gmail.com`.
+  - [x] Verified automated 15-minute scheduled briefing countdown and active background server scheduler.
+  - [x] Added interactive "Trigger Durg GPS" and "Schedule (+15m)" controls to `EmailAlertsModal.tsx`.
 
 ---
 
