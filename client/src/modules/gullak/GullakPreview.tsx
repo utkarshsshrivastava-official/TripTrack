@@ -10,7 +10,9 @@ import {
   MoreHorizontal,
   Trash2,
   Award,
-  ReceiptText
+  ReceiptText,
+  ExternalLink,
+  X
 } from 'lucide-react';
 import { 
   DUO_A_SON, 
@@ -35,6 +37,12 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isAddSheetOpen, setIsAddSheetOpen] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'ALL'>('ALL');
+  const [viewingReceipt, setViewingReceipt] = useState<{
+    url: string;
+    title: string;
+    amount: number;
+    paidBy?: string;
+  } | null>(null);
 
   useEffect(() => {
     const load = () => {
@@ -56,12 +64,14 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
     amountINR: number;
     paidBy: string;
     category: ExpenseCategory;
+    receiptUrl?: string;
   }) => {
     const added = await saveExpenseToDexie({
       title: data.title,
       amountINR: data.amountINR,
       paidBy: data.paidBy,
       category: data.category,
+      receiptUrl: data.receiptUrl,
       createdAt: new Date().toISOString()
     });
 
@@ -203,6 +213,22 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
               </div>
 
               <div className="flex items-center gap-2 shrink-0 ml-2">
+                {expense.receiptUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setViewingReceipt({
+                      url: expense.receiptUrl!,
+                      title: expense.title,
+                      amount: expense.amountINR,
+                      paidBy: expense.paidBy
+                    })}
+                    className="p-1 px-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-500/20 tap-active"
+                    title="View Receipt Proof"
+                  >
+                    <ReceiptText className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Bill</span>
+                  </button>
+                )}
                 <span className="text-sm font-black font-mono text-white">
                   ₹{expense.amountINR.toLocaleString('en-IN')}
                 </span>
@@ -238,6 +264,71 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
         onClose={() => setIsAddSheetOpen(false)}
         onAddExpense={handleAddExpense}
       />
+
+      {/* 8. Receipt Proof Viewer Modal */}
+      {viewingReceipt && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/90 backdrop-blur-md animate-in fade-in"
+          onClick={() => setViewingReceipt(null)}
+        >
+          <div 
+            className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+              <div className="min-w-0 pr-2">
+                <h3 className="text-sm font-extrabold text-white truncate flex items-center gap-1.5">
+                  <ReceiptText className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{viewingReceipt.title}</span>
+                </h3>
+                <p className="text-[11px] font-mono text-amber-300 font-bold">
+                  ₹{viewingReceipt.amount.toLocaleString('en-IN')} {viewingReceipt.paidBy ? `• Paid by ${viewingReceipt.paidBy}` : ''}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={viewingReceipt.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 tap-active"
+                  title="Open Original"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setViewingReceipt(null)}
+                  className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 tap-active"
+                  title="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Receipt Image Display */}
+            <div className="p-3 overflow-y-auto flex-1 flex items-center justify-center bg-slate-950/80">
+              <img
+                src={viewingReceipt.url}
+                alt={viewingReceipt.title}
+                className="max-h-[65vh] w-auto max-w-full rounded-2xl object-contain border border-slate-800 shadow-lg"
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="p-3 border-t border-slate-800 bg-slate-950/50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setViewingReceipt(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs tap-active min-h-touch min-w-touch flex items-center justify-center"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -10,7 +10,10 @@ import {
   MicOff,
   Clock,
   Trash2,
-  Calendar
+  Calendar,
+  Camera,
+  ExternalLink,
+  X
 } from 'lucide-react';
 import { TRAVELLERS_CONFIG, getTravellerById } from '../../../shared/config/travellers.config';
 import { DuoId } from '../../../shared/types';
@@ -23,6 +26,7 @@ import {
   addFamilyFeedItem,
   deleteFamilyFeedItem
 } from '../services/familyFeedStorage';
+import { uploadMedia } from '../../../shared/services/mediaService';
 
 interface FamilyFeedTabProps {
   activeDuo: DuoId | 'ALL';
@@ -38,6 +42,14 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
   const [selectedSpeakerId, setSelectedSpeakerId] = useState(TRAVELLERS_CONFIG[0].id);
   const [currentLocation, setCurrentLocation] = useState('Devprayag / NH-7');
   const [toastNote, setToastNote] = useState<string | null>(null);
+  const [postPhotoFile, setPostPhotoFile] = useState<File | null>(null);
+  const [postPhotoPreviewUrl, setPostPhotoPreviewUrl] = useState<string | null>(null);
+  const [isPosting, setIsPosting] = useState(false);
+  const [viewingFeedPhoto, setViewingFeedPhoto] = useState<{
+    url: string;
+    title: string;
+    location?: string;
+  } | null>(null);
 
   // Modular Voice Studio Feature State (collapsible)
   const [isVoiceStudioOpen, setIsVoiceStudioOpen] = useState(false);
@@ -48,6 +60,7 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
   const recorderRef = useRef<WebAudioRecorder | null>(null);
   const timerRef = useRef<any>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const loadFeed = async () => {
     const items = await getUnifiedFamilyFeed();
@@ -78,27 +91,72 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
     setSelectedDuoFilter(initialActiveDuo);
   }, [initialActiveDuo]);
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPostPhotoFile(file);
+      const url = URL.createObjectURL(file);
+      setPostPhotoPreviewUrl(url);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    if (postPhotoPreviewUrl) {
+      URL.revokeObjectURL(postPhotoPreviewUrl);
+    }
+    setPostPhotoFile(null);
+    setPostPhotoPreviewUrl(null);
+    if (photoInputRef.current) {
+      photoInputRef.current.value = '';
+    }
+  };
+
   // Handle Quick Manual Post
-  const handleCreatePost = (e?: React.FormEvent, presetText?: string, presetCategory?: FamilyFeedItem['category'], presetBadge?: string) => {
+  const handleCreatePost = async (e?: React.FormEvent, presetText?: string, presetCategory?: FamilyFeedItem['category'], presetBadge?: string) => {
     if (e) e.preventDefault();
     const textToPost = presetText || quickPostText;
-    if (!textToPost.trim()) return;
+    if (!textToPost.trim() && !postPhotoFile) return;
 
     const speaker = getTravellerById(selectedSpeakerId);
     const duo = (speaker?.duoId as 'DUO_A' | 'DUO_B') || 'ALL';
 
+    setIsPosting(true);
+    let photoUrl: string | undefined = undefined;
+
+    if (postPhotoFile) {
+      if (navigator.onLine) {
+        try {
+          const uploadRes = await uploadMedia(postPhotoFile, 'feed_photo');
+          photoUrl = uploadRes.url;
+        } catch (uploadErr) {
+          console.warn('⚠️ [Family Feed] Photo upload failed, falling back to local data URL:', uploadErr);
+        }
+      }
+
+      if (!photoUrl) {
+        photoUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(postPhotoFile);
+        });
+      }
+    }
+
     addFamilyFeedItem({
       type: presetCategory === 'CAB' ? 'TRANSIT_UPDATE' : 'TRAVELER_NOTE',
       title: presetBadge ? `${presetBadge} Update` : `Update from ${speaker?.name || 'Pilgrim'}`,
-      description: textToPost.trim(),
+      description: textToPost.trim() || 'Shared a road snapshot from the highway.',
       speakerId: selectedSpeakerId,
       locationName: currentLocation,
       duoId: duo,
       category: presetCategory || 'GENERAL',
-      statusBadge: presetBadge || 'Pilgrim Update'
+      statusBadge: presetBadge || (photoUrl ? 'Photo Moment' : 'Pilgrim Update'),
+      metadata: photoUrl ? { photoUrl } : undefined
     });
 
     setQuickPostText('');
+    handleRemovePhoto();
+    setIsPosting(false);
     setToastNote('✅ Update posted to Family Feed!');
     setTimeout(() => setToastNote(null), 3500);
     loadFeed();
@@ -148,25 +206,53 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
 
     try {
       setIsRecording(false);
-      setToastNote('✨ Transcribing & logging with Gemini AI...');
+      setToastNote('✨ Transcribing & uploading to Cloudinary...');
 
       const result = await recorderRef.current.stopRecording();
       const speaker = getTravellerById(selectedSpeakerId);
       const speakerName = speaker ? speaker.name : 'Pilgrim';
 
+      let remoteAudioUrl: string | undefined = undefined;
+      if (navigator.onLine) {
+        try {
+          const uploadRes = await uploadMedia(result.audioBlob, 'voice', `voice-${Date.now()}.webm`);
+          remoteAudioUrl = uploadRes.url;
+        } catch (uploadErr) {
+          console.warn('⚠️ [Voice Studio] Cloud upload deferred:', uploadErr);
+        }
+      }
+
       // Save to Dexie
-      await saveVoiceLogToDexie(
+      const saved = await saveVoiceLogToDexie(
         {
           speakerId: selectedSpeakerId,
           transcription: `${speakerName}: [Audio Dispatch • ${result.durationSeconds}s] Sab log theek hain aur yatra aage badh rahi hai.`,
           summary: `Audio broadcast from ${speakerName} at ${currentLocation}. Family proceeding comfortably.`,
           recordedAt: new Date().toISOString(),
-          locationName: currentLocation
+          locationName: currentLocation,
+          audioUrl: remoteAudioUrl
         },
         result.audioBlob
       );
 
-      setToastNote('✅ Voice broadcast saved and added to timeline!');
+      // Add to Family Feed with remote audio URL so all family devices can stream it!
+      addFamilyFeedItem({
+        type: 'VOICE_NOTE',
+        title: `Voice Broadcast: ${currentLocation}`,
+        description: `Audio dispatch from ${speakerName} (${result.durationSeconds}s). Family proceeding comfortably.`,
+        speakerId: selectedSpeakerId,
+        locationName: currentLocation,
+        duoId: (speaker?.duoId as any) || 'ALL',
+        category: 'VOICE',
+        statusBadge: 'Audio Dispatch',
+        metadata: {
+          audioUrl: remoteAudioUrl || saved.audioUrl,
+          transcription: `${speakerName}: [Audio Dispatch • ${result.durationSeconds}s]`,
+          summary: `Audio broadcast from ${speakerName} at ${currentLocation}`
+        }
+      });
+
+      setToastNote('✅ Voice broadcast saved and published live!');
       setTimeout(() => setToastNote(null), 4000);
       loadFeed();
 
@@ -379,6 +465,35 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
             />
           </div>
 
+          {/* Photo Preview if attached */}
+          {postPhotoPreviewUrl && (
+            <div className="relative inline-block rounded-xl overflow-hidden border border-purple-500/40 bg-black/40 my-1">
+              <img
+                src={postPhotoPreviewUrl}
+                alt="Selected moment"
+                className="w-24 h-24 object-cover rounded-xl"
+              />
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                className="absolute top-1 right-1 p-1 rounded-full bg-rose-600 text-white hover:bg-rose-500 shadow-md tap-active"
+                title="Remove photo"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Hidden File Input for Camera/Gallery */}
+          <input
+            type="file"
+            ref={photoInputRef}
+            accept="image/*"
+            capture="environment"
+            onChange={handlePhotoSelect}
+            className="hidden"
+          />
+
           {/* Preset 1-Tap Chips */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             <button
@@ -419,23 +534,39 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
           </div>
 
           <div className="flex items-center justify-between pt-1">
-            <select
-              value={selectedSpeakerId}
-              onChange={e => setSelectedSpeakerId(e.target.value)}
-              className="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-white/10 text-[11px] text-slate-300 font-medium focus:outline-none"
-            >
-              {TRAVELLERS_CONFIG.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedSpeakerId}
+                onChange={e => setSelectedSpeakerId(e.target.value)}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-white/10 text-[11px] text-slate-300 font-medium focus:outline-none"
+              >
+                {TRAVELLERS_CONFIG.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 tap-active transition-all ${
+                  postPhotoFile
+                    ? 'bg-purple-950/80 border-purple-500 text-purple-200'
+                    : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
+                }`}
+                title="Attach photo from highway or shrine"
+              >
+                <Camera className="w-3.5 h-3.5 text-amber-400" />
+                <span>{postPhotoFile ? 'Photo Attached' : 'Photo'}</span>
+              </button>
+            </div>
 
             <button
               type="submit"
-              disabled={!quickPostText.trim()}
+              disabled={(!quickPostText.trim() && !postPhotoFile) || isPosting}
               className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-black flex items-center gap-1.5 tap-active min-h-[42px] shadow-lg shadow-purple-950/80"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>Publish to Feed</span>
+              <span>{isPosting ? 'Posting...' : 'Publish to Feed'}</span>
             </button>
           </div>
         </form>
@@ -601,6 +732,38 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
                     {item.description}
                   </p>
 
+                  {/* Highway / Shrine Photo Moment if attached */}
+                  {item.metadata?.photoUrl && (
+                    <div className="mb-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setViewingFeedPhoto({
+                          url: item.metadata!.photoUrl!,
+                          title: item.title,
+                          location: item.locationName
+                        })}
+                        className="relative group block w-full rounded-2xl overflow-hidden border border-white/10 bg-black/40 tap-active max-h-56"
+                      >
+                        <img
+                          src={item.metadata.photoUrl}
+                          alt={item.title}
+                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80" />
+                        <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-white text-[10px]">
+                          <span className="flex items-center gap-1 font-bold">
+                            <Camera className="w-3 h-3 text-amber-400" />
+                            <span>Tap to enlarge</span>
+                          </span>
+                          <span className="p-1 rounded-md bg-black/50 backdrop-blur-sm">
+                            <ExternalLink className="w-3 h-3" />
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Footer Location & Details */}
                   <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400">
                     <span className="flex items-center gap-1 truncate text-slate-300">
@@ -639,6 +802,66 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
           </div>
         )}
       </div>
+
+      {/* Hidden Audio Element for playback */}
+      <audio ref={audioPlayerRef} className="hidden" preload="none" />
+
+      {/* Feed Photo Enlarge Modal */}
+      {viewingFeedPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in"
+          onClick={() => setViewingFeedPhoto(null)}
+        >
+          <div
+            className="relative max-w-lg w-full bg-slate-900 border border-purple-500/30 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="p-3.5 border-b border-white/10 flex items-center justify-between bg-slate-950">
+              <div className="flex items-center gap-2 min-w-0">
+                <Camera className="w-4 h-4 text-amber-400 shrink-0" />
+                <div className="truncate">
+                  <h4 className="text-xs font-black text-white truncate">{viewingFeedPhoto.title}</h4>
+                  <p className="text-[10px] text-slate-400 truncate">{viewingFeedPhoto.location}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingFeedPhoto(null)}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center tap-active"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-2 flex-1 overflow-auto flex items-center justify-center bg-black/80 min-h-[260px]">
+              <img
+                src={viewingFeedPhoto.url}
+                alt={viewingFeedPhoto.title}
+                className="max-h-[70vh] w-auto max-w-full rounded-2xl object-contain shadow-lg"
+              />
+            </div>
+
+            <div className="p-3 border-t border-white/10 bg-slate-950 flex items-center justify-between">
+              <a
+                href={viewingFeedPhoto.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1 tap-active"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Open Full Resolution</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setViewingFeedPhoto(null)}
+                className="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold tap-active"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

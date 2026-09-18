@@ -34,6 +34,7 @@
 | **Phase 19** | **Feed Restructure: Family Feed & Live Gemini AI News Scanner** | ✅ **DONE** | 100% | Completed |
 | **Phase 20** | **Chat Sync Reconciliation, App Mockup Scrub & Mobile Header Polish** | ✅ **DONE** | 100% | Completed |
 | **Phase 21** | **Universal Live Data Sync: MongoDB Atlas, Socket.io & Dexie** | ✅ **DONE** | 100% | Completed |
+| **Phase 22** | **Cloudinary Media Integration: Receipts, Voice Streaming & Photo Moments** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -534,6 +535,37 @@
 - [x] **21.5 Offline-First Himalayan Resilience Invariant Maintained**
   - [x] All actions (logging expenses, publishing feed updates, toggling milestones) write optimistically to Dexie IndexedDB first with `isSynced: false` when offline.
   - [x] Auto-flush to MongoDB Atlas and broadcast over Socket.io upon cellular reconnection.
+
+---
+
+### ✅ Phase 22: Cloudinary Media Integration & Cross-Device Multimedia
+*Status: Completed & Verified on Sep 18, 2026 (100%)*
+
+- [x] **22.1 Cloudinary Server Architecture & Resilient Media Upload (`cloudinary.service.ts`, `media.controller.ts`, `media.routes.ts`)**
+  - [x] Installed `cloudinary` SDK in `server/`.
+  - [x] Implemented `cloudinary.service.ts` supporting `CLOUDINARY_URL` and `CLOUDINARY_CLOUD_NAME` / `API_KEY` / `API_SECRET`.
+  - [x] Configured image uploads (`quality: 'auto:good'`, `fetch_format: 'auto'`) and audio uploads (`resource_type: 'video'` for `.webm` / `.mp3` audio streams).
+  - [x] Implemented graceful offline/keyless fallback: returns data URLs if keys are missing or offline, preventing server crashes.
+  - [x] Created `POST /api/media/upload` with Multer memory storage (20MB limit) and `GET /api/media/status`.
+- [x] **22.2 Fintech-Grade Receipt Photography in Gullak (`AddExpenseSheet.tsx`, `GullakPreview.tsx`)**
+  - [x] Added mobile camera capture and photo gallery picker in `AddExpenseSheet.tsx` with thumbnail preview and 1-tap removal.
+  - [x] Integrated client-side canvas compression (`compressImage`) before uploading to optimize bandwidth on mountain 3G/4G networks.
+  - [x] Added `receiptUrl` support to `ExpenseModel`, `/api/expenses`, and `expenseStorage.ts`.
+  - [x] Added high-contrast `"🧾 Bill"` pill button in `GullakPreview.tsx` expense ledger items.
+  - [x] Built full-screen `ReceiptViewerModal` with zoom-in presentation, external link, and elder-friendly close buttons.
+- [x] **22.3 Cross-Device Voice Broadcast Audio Streaming (`FamilyFeedTab.tsx`, `uploadMedia`)**
+  - [x] Uploads recorded voice audio blob to Cloudinary upon stopping voice note in `FamilyFeedTab.tsx`.
+  - [x] Attaches remote CDN audio URL to the family feed broadcast so remote relatives can stream and listen to elders' voice notes on any device.
+  - [x] Preserved local Dexie `offlineVoiceLogs` blob storage for zero-signal playback.
+  - [x] Mounted `<audio ref={audioPlayerRef} />` element in `FamilyFeedTab.tsx` for audio playback.
+- [x] **22.4 Highway & Shrine Photo Moments in Family Feed (`FamilyFeedTab.tsx`, `familyFeedStorage.ts`)**
+  - [x] Extended `FamilyFeedItem['metadata']` with `photoUrl?: string`.
+  - [x] Added photo attachment button (`Camera`) and live image thumbnail preview with remove button in the Quick Post composer.
+  - [x] Rendered photo cards within feed cards with click-to-enlarge action.
+  - [x] Built `viewingFeedPhoto` modal displaying full-bleed photo, title, location, and link to high-resolution CDN asset.
+- [x] **22.5 Offline-First Himalayan Invariant & Vault Dignity Preserved**
+  - [x] Kept Document Vault passes (IRCTC Train 12441 tickets, IndiGo boarding passes, biometric Yatra permits) strictly in Dexie IndexedDB blobs for guaranteed 0ms offline rendering at temple security checkposts.
+  - [x] Graceful fallback: when cellular data is unreachable in mountain valleys, receipts and feed photos gracefully fallback to local storage and sync upon reconnection.
 
 ---
 

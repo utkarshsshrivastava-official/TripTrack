@@ -24,6 +24,7 @@ export interface FamilyFeedItem {
     checkpointId?: string;
     segmentId?: string;
     audioUrl?: string;
+    photoUrl?: string;
     transcription?: string;
     summary?: string;
     cabPlate?: string;

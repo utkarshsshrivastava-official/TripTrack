@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ExpenseCategory } from '../../../shared/types';
 import { COORDINATOR_MEMBERS, DUO_A_SON } from '../../../shared/config/travellers.config';
+import { uploadMedia } from '../../../shared/services/mediaService';
 import { 
   X, 
   PlusCircle, 
@@ -11,7 +12,10 @@ import {
   Accessibility, 
   MoreHorizontal,
   DollarSign,
-  Sparkles
+  Sparkles,
+  Camera,
+  Trash2,
+  Receipt
 } from 'lucide-react';
 
 interface AddExpenseSheetProps {
@@ -22,6 +26,7 @@ interface AddExpenseSheetProps {
     amountINR: number;
     paidBy: string;
     category: ExpenseCategory;
+    receiptUrl?: string;
   }) => Promise<void>;
 }
 
@@ -53,24 +58,71 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   const [amount, setAmount] = useState('');
   const [paidBy, setPaidBy] = useState<string>(DUO_A_SON.name);
   const [category, setCategory] = useState<ExpenseCategory>('FOOD');
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReceiptFile(file);
+      const url = URL.createObjectURL(file);
+      setReceiptPreviewUrl(url);
+    }
+  };
+
+  const handleRemoveReceipt = () => {
+    if (receiptPreviewUrl) {
+      URL.revokeObjectURL(receiptPreviewUrl);
+    }
+    setReceiptFile(null);
+    setReceiptPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
 
     setIsSubmitting(true);
+    let receiptUrl: string | undefined = undefined;
+
     try {
+      if (receiptFile) {
+        if (navigator.onLine) {
+          try {
+            const uploadRes = await uploadMedia(receiptFile, 'receipt');
+            receiptUrl = uploadRes.url;
+          } catch (uploadErr) {
+            console.warn('⚠️ [Gullak] Cloud upload failed, falling back to local data URL:', uploadErr);
+          }
+        }
+
+        // Offline or upload fallback: convert to base64 data URL
+        if (!receiptUrl) {
+          receiptUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(receiptFile);
+          });
+        }
+      }
+
       await onAddExpense({
         title: title.trim(),
         amountINR: Math.round(Number(amount)),
         paidBy,
-        category
+        category,
+        receiptUrl
       });
       setTitle('');
       setAmount('');
+      handleRemoveReceipt();
       onClose();
     } catch (err) {
       console.error('Failed to log expense', err);
@@ -248,6 +300,63 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                 );
               })}
             </div>
+          </div>
+
+          {/* Receipt Photo Attachment */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5 text-amber-400" />
+                <span>Bill / Receipt Proof</span>
+                <span className="text-[10px] text-slate-500 font-normal">(Optional • Cloudinary)</span>
+              </label>
+            </div>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+
+            {receiptPreviewUrl ? (
+              <div className="relative rounded-2xl bg-slate-950 border border-amber-500/40 p-2.5 flex items-center justify-between shadow-inner">
+                <div className="flex items-center gap-3 min-w-0">
+                  <img
+                    src={receiptPreviewUrl}
+                    alt="Receipt preview"
+                    className="w-12 h-12 rounded-xl object-cover border border-slate-700 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-white truncate">
+                      {receiptFile?.name || 'Receipt Photo Attached'}
+                    </p>
+                    <p className="text-[10px] font-mono text-emerald-400">
+                      Ready to upload ({Math.round((receiptFile?.size || 0) / 1024)} KB)
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveReceipt}
+                  className="p-2 text-slate-400 hover:text-rose-400 rounded-xl hover:bg-rose-950/30 tap-active shrink-0 min-h-touch min-w-touch flex items-center justify-center"
+                  title="Remove Receipt"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="tap-active min-h-touch w-full py-2.5 px-3 rounded-2xl bg-slate-950 border border-dashed border-slate-700 hover:border-amber-500/60 text-slate-300 font-bold text-xs flex items-center justify-center gap-2 transition-all hover:bg-slate-900"
+              >
+                <Camera className="w-4 h-4 text-amber-400" />
+                <span>Take Photo / Attach Receipt Bill</span>
+              </button>
+            )}
           </div>
 
           {/* Submit Button */}
