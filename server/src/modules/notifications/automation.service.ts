@@ -17,6 +17,15 @@ export interface GeofenceWaypoint {
 
 export const PILGRIMAGE_GEOFENCES: GeofenceWaypoint[] = [
   {
+    id: 'wp-durg',
+    name: 'Durg Junction & City (Home Base, Chhattisgarh)',
+    coords: [21.1904, 81.2849], // Durg, Chhattisgarh coordinates
+    radiusKm: 25, // 25 km covers Durg, Bhilai & surrounding departure hub
+    altitudeMeters: 290,
+    description: '📍 Live location detection triggered in Durg, Chhattisgarh! Utkarsh and family confirmed active at Durg home base / departure point.',
+    nextStop: 'Train 12441 BSP NDLS Rajdhani Express ➔ New Delhi'
+  },
+  {
     id: 'wp-delhi',
     name: 'New Delhi Railway Station (NDLS)',
     coords: [28.6139, 77.2090],
@@ -91,6 +100,20 @@ export const PILGRIMAGE_GEOFENCES: GeofenceWaypoint[] = [
 ];
 
 export const SCHEDULED_BRIEFINGS: ScheduledBriefing[] = [
+  {
+    id: 'briefing-test-15min',
+    dayTitle: 'Live Verification: 15-Minute Scheduled Briefing',
+    scheduledFor: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    subject: '⏰ [TripTrack Live Test] 15-Minute Scheduled Briefing Trigger',
+    transitInfo: 'Live automated schedule verification in Durg, Chhattisgarh. Background timer executed right on schedule!',
+    highlights: [
+      'Autonomous background heartbeat executed at exact target timestamp',
+      'Gmail SMTP transporter connected and delivered payload to family inboxes',
+      'Countdown verified: 15-minute scheduled trigger is fully operational'
+    ],
+    elderCareTip: 'Test briefing confirmed. Real briefings trigger at 6:00 AM / 7:00 AM on pilgrimage days.',
+    logisticsSummary: 'TripTrack Autonomous Notification Engine active and verified.'
+  },
   {
     id: 'briefing-sep24-morning',
     dayTitle: 'Day 1: Departure Day — Sep 24, 2026',
@@ -271,7 +294,9 @@ class AutomationService {
 
     // Map checkpoint keywords to geofence waypoints
     let matchedWp: GeofenceWaypoint | undefined;
-    if (lowerName.includes('ndls') || lowerName.includes('delhi')) {
+    if (lowerName.includes('durg') || lowerName.includes('bhilai') || lowerName.includes('chhattisgarh')) {
+      matchedWp = PILGRIMAGE_GEOFENCES.find(w => w.id === 'wp-durg');
+    } else if (lowerName.includes('ndls') || lowerName.includes('delhi')) {
       matchedWp = PILGRIMAGE_GEOFENCES.find(w => w.id === 'wp-delhi');
     } else if (lowerName.includes('haridwar')) {
       matchedWp = PILGRIMAGE_GEOFENCES.find(w => w.id === 'wp-haridwar');
@@ -473,6 +498,26 @@ class AutomationService {
       return await this.compileAndSendDailyDigest(new Date());
     }
     return { success: false, error: 'Unknown trigger type' };
+  }
+
+  /**
+   * Schedule a custom briefing dynamically
+   */
+  scheduleCustomBriefing(briefing: ScheduledBriefing): ScheduledBriefing {
+    // Unshift to place in prominent position
+    SCHEDULED_BRIEFINGS.unshift(briefing);
+    console.log(`⏱️ [Automation] Dynamically scheduled briefing "${briefing.subject}" for ${briefing.scheduledFor}`);
+    return briefing;
+  }
+
+  /**
+   * Reset a trigger so it can be re-tested
+   */
+  resetTrigger(triggerId: string): void {
+    this.dispatchedTriggers.delete(triggerId);
+    this.dispatchedTriggers.delete(`geofence-${triggerId}`);
+    this.dispatchedTriggers.delete(`briefing-${triggerId}`);
+    console.log(`🔄 [Automation] Reset trigger: ${triggerId}`);
   }
 }
 

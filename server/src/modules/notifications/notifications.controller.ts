@@ -119,3 +119,72 @@ export async function handleSimulateTrigger(req: Request, res: Response) {
     res.status(500).json({ success: false, error: err.message });
   }
 }
+
+export async function handleScheduleCustomBriefing(req: Request, res: Response) {
+  try {
+    const { minutesFromNow, subject, transitInfo, highlights, elderCareTip, dayTitle } = req.body;
+    const mins = Number(minutesFromNow) || 15;
+    const scheduledTime = new Date(Date.now() + mins * 60 * 1000);
+
+    const briefing = automationService.scheduleCustomBriefing({
+      id: `briefing-custom-${Date.now()}`,
+      dayTitle: dayTitle || `Test Briefing: ${mins} Mins Trigger`,
+      scheduledFor: scheduledTime.toISOString(),
+      subject: subject || `⏰ [TripTrack Test] Scheduled Briefing (${mins} Mins)`,
+      transitInfo: transitInfo || `Automated schedule trigger executing at ${scheduledTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`,
+      highlights: highlights || [
+        `Target execution time: ${scheduledTime.toLocaleTimeString()}`,
+        'Autonomous heartbeat checks every 60 seconds',
+        'Direct SMTP transport to family inboxes'
+      ],
+      elderCareTip: elderCareTip || 'Test timer active. Elders comfortable and well rested.',
+      logisticsSummary: 'Custom briefing queued in TripTrack Autonomous Engine.'
+    });
+
+    res.json({
+      success: true,
+      message: `Briefing scheduled for ${scheduledTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (in ${mins} minutes)`,
+      briefing
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function handleTriggerGeofenceCheck(req: Request, res: Response) {
+  try {
+    const { latitude, longitude, passengerId } = req.body;
+    if (latitude === undefined || longitude === undefined) {
+      return res.status(400).json({ success: false, error: 'latitude and longitude are required' });
+    }
+
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+
+    const arrival = await automationService.checkAndTriggerGeofence(lat, lng, passengerId);
+    res.json({
+      success: true,
+      detected: !!arrival,
+      arrival: arrival || null,
+      message: arrival 
+        ? `📍 Geofence arrival detected: ${arrival.name}! Email alert dispatched.`
+        : 'Coordinates processed, no new unnotified geofences matched.'
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function handleResetTrigger(req: Request, res: Response) {
+  try {
+    const { triggerId } = req.body;
+    if (!triggerId) {
+      return res.status(400).json({ success: false, error: 'triggerId is required' });
+    }
+    automationService.resetTrigger(triggerId);
+    res.json({ success: true, message: `Trigger ${triggerId} reset successfully.` });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+

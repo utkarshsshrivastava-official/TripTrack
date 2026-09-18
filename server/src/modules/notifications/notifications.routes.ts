@@ -6,7 +6,10 @@ import {
   handleSosNotification,
   handleGetAutomationStatus,
   handleDispatchEveningDigest,
-  handleSimulateTrigger
+  handleSimulateTrigger,
+  handleScheduleCustomBriefing,
+  handleTriggerGeofenceCheck,
+  handleResetTrigger
 } from './notifications.controller';
 
 const router = Router();
@@ -18,5 +21,8 @@ router.post('/dead-zone', handleDeadZoneNotification);
 router.post('/sos', handleSosNotification);
 router.post('/digest', handleDispatchEveningDigest);
 router.post('/trigger-simulation', handleSimulateTrigger);
+router.post('/schedule-custom', handleScheduleCustomBriefing);
+router.post('/trigger-geofence', handleTriggerGeofenceCheck);
+router.post('/reset-trigger', handleResetTrigger);
 
 export { router as notificationsRouter };

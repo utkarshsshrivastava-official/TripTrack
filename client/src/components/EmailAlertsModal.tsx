@@ -166,6 +166,89 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
     }
   };
 
+  const handleTriggerLocation = async (useCoords?: { lat: number; lng: number }) => {
+    setActionMessage(null);
+    try {
+      let lat = useCoords?.lat ?? 21.1904; // Durg, Chhattisgarh
+      let lng = useCoords?.lng ?? 81.2849;
+
+      if (!useCoords && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 });
+          });
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+        } catch {
+          // Fallback to Durg coordinates if geolocation permission not granted
+        }
+      }
+
+      const pin = localStorage.getItem('triptrack_family_pin') || '2026';
+      const res = await fetch('/api/notifications/trigger-geofence', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-family-pin': pin
+        },
+        body: JSON.stringify({ latitude: lat, longitude: lng, passengerId: 'traveller-utkarsh' })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (data.detected && data.arrival) {
+          setActionMessage({
+            text: `🎯 Location Detection Success: Touched ${data.arrival.name}! Automated arrival alert dispatched to family email.`,
+            type: 'success'
+          });
+        } else {
+          setActionMessage({
+            text: `📍 Location recorded (${lat.toFixed(4)}, ${lng.toFixed(4)}). ${data.message}`,
+            type: 'success'
+          });
+        }
+        fetchStatus();
+      } else {
+        setActionMessage({ text: data.error || 'Location detection failed', type: 'error' });
+      }
+    } catch (err: any) {
+      setActionMessage({ text: err.message || 'Error executing location check', type: 'error' });
+    }
+  };
+
+  const handleScheduleCustom = async (minutes: number = 15) => {
+    setActionMessage(null);
+    try {
+      const pin = localStorage.getItem('triptrack_family_pin') || '2026';
+      const res = await fetch('/api/notifications/schedule-custom', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-family-pin': pin
+        },
+        body: JSON.stringify({
+          minutesFromNow: minutes,
+          dayTitle: `Live Test: ${minutes}-Minute Scheduled Briefing`,
+          subject: `⏰ [TripTrack Live Test] ${minutes}-Minute Scheduled Briefing Trigger`,
+          transitInfo: `Automated schedule execution test in Durg, CG. Trigger time reached right on schedule!`
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActionMessage({
+          text: `⏱️ Scheduled! ${data.message}. TripTrack background engine will fire the email right on schedule.`,
+          type: 'success'
+        });
+        fetchStatus();
+      } else {
+        setActionMessage({ text: data.error || 'Failed to schedule custom briefing', type: 'error' });
+      }
+    } catch (err: any) {
+      setActionMessage({ text: err.message || 'Error scheduling briefing', type: 'error' });
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -281,6 +364,26 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
           </button>
         </div>
 
+        {/* Live Durg CG Location Test Banner */}
+        <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-300">
+              <Compass className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Location Trigger Test: Durg, CG</span>
+            </div>
+            <p className="text-[10px] text-slate-300 mt-0.5 leading-tight">
+              Simulates detection at Durg, CG (21.19°N, 81.28°E) to trigger arrival notification.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleTriggerLocation({ lat: 21.1904, lng: 81.2849 })}
+            className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shrink-0 shadow-lg tap-active flex items-center gap-1"
+          >
+            <span>Trigger Durg GPS</span>
+          </button>
+        </div>
+
         {/* Segmented Tab Selector */}
         <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800">
           <button
@@ -312,6 +415,26 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
         {/* Tab 1: Scheduled Briefings List */}
         {activeTab === 'briefings' && (
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            {/* Quick 15-min test scheduler */}
+            <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/40 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Schedule Test Briefing (+15 Mins)</span>
+                </span>
+                <p className="text-[10px] text-slate-400 leading-tight">
+                  Dispatches an automated email 15 minutes from now.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleScheduleCustom(15)}
+                className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[10px] shrink-0 tap-active shadow"
+              >
+                Schedule (+15m)
+              </button>
+            </div>
+
             {status?.scheduledBriefings.map((briefing) => (
               <div 
                 key={briefing.id}
