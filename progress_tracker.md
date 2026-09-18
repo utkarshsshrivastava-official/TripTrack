@@ -649,6 +649,11 @@
   - [x] Configured `family: 4` on Nodemailer transports to prevent `ENETUNREACH (:::0)` caused by cloud container lack of outbound IPv6 routing.
   - [x] Added `dns.setDefaultResultOrder('ipv4first')` and `--dns-result-order=ipv4first` in server startup to force IPv4 DNS resolution for Google SMTP endpoints.
   - [x] Implemented dual-port resilience: Port 465 SSL primary with automatic failover to Port 587 STARTTLS before logging console simulation fallback.
+- [x] **24.9 Brevo HTTPS REST API Engine & Client Resilient Dispatch (`email.service.ts`, `EmailAlertsModal.tsx`, `render.yaml`)**
+  - [x] Integrated Brevo HTTP REST API (`https://api.brevo.com/v3/smtp/email`) on Port 443 HTTPS, completely bypassing cloud container SMTP port blocks.
+  - [x] Added dynamic engine provider reporting (`status.provider.name`) in API and client UI modal badges.
+  - [x] Reduced direct SMTP probe timeout to 3.5s and increased client abort timeout to 15s with graceful error banners, eliminating `signal is aborted without reason` hangs.
+  - [x] Added `BREVO_API_KEY` to `render.yaml`, `server/.env`, and `server/.env.example`.
 
 ---
 

@@ -24,3 +24,5 @@ services:
         sync: false
       - key: FAMILY_NOTIFICATION_EMAILS
         sync: false
+      - key: BREVO_API_KEY
+        sync: false

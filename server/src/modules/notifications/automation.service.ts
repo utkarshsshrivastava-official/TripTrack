@@ -453,6 +453,7 @@ class AutomationService {
   getStatus() {
     return {
       schedulerActive: this.isRunning,
+      provider: emailService.getProviderInfo(),
       recipients: emailService.getRecipients(),
       activeGeofences: PILGRIMAGE_GEOFENCES.map(g => ({
         id: g.id,

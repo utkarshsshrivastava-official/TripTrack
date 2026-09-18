@@ -37,6 +37,11 @@ interface BriefingItem {
 
 interface AutomationStatus {
   schedulerActive: boolean;
+  provider?: {
+    type: 'BREVO_HTTPS' | 'GMAIL_SMTP' | 'SIMULATION';
+    name: string;
+    status: string;
+  };
   recipients: string[];
   activeGeofences: GeofenceItem[];
   scheduledBriefings: BriefingItem[];
@@ -62,9 +67,9 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
     const backendUrl = getBackendUrl();
     const url = endpoint.startsWith('http') ? endpoint : `${backendUrl}${endpoint}`;
     
-    // 10-second timeout to prevent UI from ever getting stuck
+    // 15-second timeout to prevent UI from ever getting stuck
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
+    const timer = setTimeout(() => controller.abort(), 15000);
 
     try {
       const res = await fetch(url, {
@@ -139,8 +144,11 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
         setActionMessage({ text: data.error || 'Failed to dispatch test email', type: 'error' });
       }
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        setActionMessage({ text: 'Request took longer than 10s. Server is sending in background.', type: 'error' });
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+        setActionMessage({ 
+          text: 'Request timed out after 15s. The server is processing in background.', 
+          type: 'error' 
+        });
       } else {
         setActionMessage({ text: err.message || 'Connection error', type: 'error' });
       }
@@ -166,7 +174,11 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
         setActionMessage({ text: data.error || 'Failed to dispatch digest', type: 'error' });
       }
     } catch (err: any) {
-      setActionMessage({ text: err.message || 'Connection error', type: 'error' });
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+        setActionMessage({ text: 'Digest dispatch timed out. Processing in background.', type: 'error' });
+      } else {
+        setActionMessage({ text: err.message || 'Connection error', type: 'error' });
+      }
     } finally {
       setIsDispatchingDigest(false);
     }
@@ -190,7 +202,11 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
         setActionMessage({ text: data.error || 'Simulation trigger failed', type: 'error' });
       }
     } catch (err: any) {
-      setActionMessage({ text: err.message || 'Error executing trigger', type: 'error' });
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+        setActionMessage({ text: 'Trigger timed out. Check server logs.', type: 'error' });
+      } else {
+        setActionMessage({ text: err.message || 'Error executing trigger', type: 'error' });
+      }
     } finally {
       setSimulatingId(null);
     }
@@ -233,10 +249,14 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
         }
         fetchStatus();
       } else {
-        setActionMessage({ text: data.error || 'Location detection failed', type: 'error' });
+        setActionMessage({ text: data.error || 'Failed to evaluate location triggers', type: 'error' });
       }
     } catch (err: any) {
-      setActionMessage({ text: err.message || 'Error executing location check', type: 'error' });
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+        setActionMessage({ text: 'Location request timed out. Checking in background.', type: 'error' });
+      } else {
+        setActionMessage({ text: err.message || 'Error triggering location detection', type: 'error' });
+      }
     }
   };
 
@@ -263,7 +283,11 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
         setActionMessage({ text: data.error || 'Failed to schedule custom briefing', type: 'error' });
       }
     } catch (err: any) {
-      setActionMessage({ text: err.message || 'Error scheduling briefing', type: 'error' });
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+        setActionMessage({ text: 'Schedule request timed out.', type: 'error' });
+      } else {
+        setActionMessage({ text: err.message || 'Error scheduling briefing', type: 'error' });
+      }
     }
   };
 
@@ -284,8 +308,12 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
             <div>
               <h2 className="text-sm sm:text-base font-extrabold text-white tracking-tight flex items-center gap-2">
                 <span>Family Email Alerts & Automation</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  Gmail SMTP
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                  status?.provider?.type === 'BREVO_HTTPS'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                }`}>
+                  {status?.provider?.name || 'Email Engine'}
                 </span>
               </h2>
               <p className="text-xs text-slate-400">

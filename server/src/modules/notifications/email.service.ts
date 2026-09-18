@@ -77,9 +77,9 @@ class EmailService {
           secure: true,
           auth: { user, pass },
           family: 4,
-          connectionTimeout: 8000,
-          greetingTimeout: 8000,
-          socketTimeout: 8000
+          connectionTimeout: 4000,
+          greetingTimeout: 4000,
+          socketTimeout: 4000
         } as any);
 
         // Fallback: Port 587 STARTTLS with strict IPv4
@@ -89,9 +89,9 @@ class EmailService {
           secure: false,
           auth: { user, pass },
           family: 4,
-          connectionTimeout: 8000,
-          greetingTimeout: 8000,
-          socketTimeout: 8000
+          connectionTimeout: 4000,
+          greetingTimeout: 4000,
+          socketTimeout: 4000
         } as any);
 
         this.isConfigured = true;
@@ -102,6 +102,32 @@ class EmailService {
     } else {
       console.log('ℹ️ [Nodemailer] SMTP_USER or SMTP_APP_PASSWORD unset. Running in Safe Simulation Mode (payloads logged to console).');
     }
+
+    if (process.env.BREVO_API_KEY) {
+      console.log('⚡ [Brevo API] Configured with Brevo HTTPS REST API (Port 443) — Immune to cloud SMTP port blocking!');
+    }
+  }
+
+  getProviderInfo() {
+    if (process.env.BREVO_API_KEY) {
+      return {
+        type: 'BREVO_HTTPS',
+        name: 'Brevo HTTPS (Port 443)',
+        status: 'Active (100% cloud deliverability)'
+      };
+    }
+    if (this.isConfigured) {
+      return {
+        type: 'GMAIL_SMTP',
+        name: 'Gmail SMTP',
+        status: 'Active (Port 465/587 - Local/Dedicated)'
+      };
+    }
+    return {
+      type: 'SIMULATION',
+      name: 'Safe Console Simulation',
+      status: 'Payloads logged to server console'
+    };
   }
 
   getRecipients(): string[] {
@@ -117,67 +143,109 @@ class EmailService {
   }
 
   /**
+   * Send via Brevo HTTPS REST API (Port 443)
+   * Completely immune to Render's outbound SMTP port blocking.
+   */
+  async sendViaBrevo(
+    subject: string, 
+    htmlBody: string, 
+    recipients: string[]
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    const apiKey = process.env.BREVO_API_KEY?.trim();
+    if (!apiKey) return { success: false, error: 'BREVO_API_KEY not configured' };
+
+    const senderEmail = process.env.SMTP_USER?.trim() || 'utkarshsofficial13@gmail.com';
+    const senderName = 'TripTrack Pilgrimage 🏔️';
+
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': apiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          sender: { name: senderName, email: senderEmail },
+          to: recipients.map(email => ({ email: email.trim() })),
+          subject,
+          htmlContent: htmlBody
+        })
+      });
+
+      const result: any = await response.json();
+
+      if (response.ok && (result.messageId || result.messageIds)) {
+        const id = result.messageId || (result.messageIds && result.messageIds[0]);
+        console.log(`✅ [Brevo HTTPS API] Dispatched to ${recipients.join(', ')} (Msg ID: ${id})`);
+        return { success: true, messageId: id };
+      } else {
+        const errMsg = result.message || result.error || JSON.stringify(result);
+        console.warn(`⚠️ [Brevo HTTPS API] Error response (${response.status}): ${errMsg}`);
+        return { success: false, error: errMsg };
+      }
+    } catch (err: any) {
+      console.warn(`⚠️ [Brevo HTTPS API] Network error:`, err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  /**
    * Send general HTML email with fallback
    */
   async sendEmail(subject: string, htmlBody: string, specificRecipients?: string[]): Promise<{ success: boolean; simulated?: boolean; messageId?: string; warning?: string }> {
     const recipients = specificRecipients && specificRecipients.length > 0 ? specificRecipients : this.getRecipients();
 
-    if (!this.isConfigured || !this.transporter || recipients.length === 0) {
-      console.log('\n================== 📧 SIMULATED FAMILY EMAIL ==================');
-      console.log(`To: ${recipients.join(', ') || '(No recipients configured)'}`);
-      console.log(`Subject: ${subject}`);
-      console.log('--- HTML Preview ---');
-      console.log(htmlBody.slice(0, 300) + '...\n===============================================================\n');
-      return { success: true, simulated: true };
+    if (recipients.length === 0) {
+      console.warn('⚠️ [Email Service] No recipients configured.');
+      return { success: false, warning: 'No family recipients configured.' };
     }
 
-    try {
-      const sendPromise = this.transporter.sendMail({
-        from: `"TripTrack Pilgrimage 🏔️" <${process.env.SMTP_USER}>`,
-        to: recipients,
-        subject,
-        html: htmlBody
-      });
-
-      // Strict 8-second timeout race so cloud servers never hang indefinitely
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Primary SMTP (Port 465) timed out after 8s.')), 8000)
-      );
-
-      const info: any = await Promise.race([sendPromise, timeoutPromise]);
-      console.log(`✅ [Email Service] Dispatched to ${recipients.join(', ')} (Msg ID: ${info.messageId})`);
-      return { success: true, messageId: info.messageId };
-    } catch (primaryErr: any) {
-      console.warn('⚠️ [Email Service] Primary SMTP (Port 465) delayed/failed, attempting Port 587 fallback:', primaryErr.message);
-
-      if (this.fallbackTransporter) {
-        try {
-          const fallbackPromise = this.fallbackTransporter.sendMail({
-            from: `"TripTrack Pilgrimage 🏔️" <${process.env.SMTP_USER}>`,
-            to: recipients,
-            subject,
-            html: htmlBody
-          });
-
-          const fallbackTimeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Fallback SMTP (Port 587) timed out after 8s.')), 8000)
-          );
-
-          const fallbackInfo: any = await Promise.race([fallbackPromise, fallbackTimeout]);
-          console.log(`✅ [Email Service] Dispatched via Port 587 fallback to ${recipients.join(', ')} (Msg ID: ${fallbackInfo.messageId})`);
-          return { success: true, messageId: fallbackInfo.messageId };
-        } catch (fallbackErr: any) {
-          console.error('❌ [Email Service] Fallback Port 587 also failed:', fallbackErr.message);
-        }
+    // 1. Prioritize Brevo HTTPS API (Port 443) if configured
+    if (process.env.BREVO_API_KEY) {
+      const brevoRes = await this.sendViaBrevo(subject, htmlBody, recipients);
+      if (brevoRes.success) {
+        return { success: true, messageId: brevoRes.messageId };
       }
-
-      // Safe console simulation fallback
-      return { 
-        success: true, 
-        simulated: true, 
-        warning: `Direct SMTP delayed (${primaryErr.message || 'timeout'}). Notification logged to cloud console.` 
-      };
+      console.warn('⚠️ [Email Service] Brevo HTTPS failed, falling back to secondary transport:', brevoRes.error);
     }
+
+    // 2. Fall back to direct SMTP (works on localhost / non-blocked networks)
+    if (this.isConfigured && this.transporter) {
+      try {
+        const sendPromise = this.transporter.sendMail({
+          from: `"TripTrack Pilgrimage 🏔️" <${process.env.SMTP_USER}>`,
+          to: recipients,
+          subject,
+          html: htmlBody
+        });
+
+        // Fast 3.5s timeout probe to avoid hanging when SMTP ports are dropped by cloud host
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Direct SMTP probe timed out (outbound port blocked).')), 3500)
+        );
+
+        const info: any = await Promise.race([sendPromise, timeoutPromise]);
+        console.log(`✅ [SMTP Service] Dispatched to ${recipients.join(', ')} (Msg ID: ${info.messageId})`);
+        return { success: true, messageId: info.messageId };
+      } catch (smtpErr: any) {
+        console.warn('⚠️ [SMTP Service] Direct SMTP delayed/blocked:', smtpErr.message);
+      }
+    }
+
+    // 3. Fall back to Safe Simulation Preview
+    console.log('\n================== 📧 SIMULATED FAMILY EMAIL ==================');
+    console.log(`To: ${recipients.join(', ')}`);
+    console.log(`Subject: ${subject}`);
+    console.log('--- HTML Preview ---');
+    console.log(htmlBody.slice(0, 300) + '...\n===============================================================\n');
+    return { 
+      success: true, 
+      simulated: true, 
+      warning: process.env.BREVO_API_KEY 
+        ? 'Brevo API call failed. Notification logged to cloud console.' 
+        : 'Outbound SMTP ports blocked on Render free tier. Add BREVO_API_KEY to enable live email delivery.' 
+    };
   }
 
   /**
