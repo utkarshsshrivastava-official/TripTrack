@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { SegmentModel } from '../../models/segment.model';
 import { isMongoConnected } from '../../shared/lib/mongodb';
+import { getIO, FAMILY_ROOM } from '../chat/socket.service';
 
 // In-memory fallback segments storage when MongoDB is not connected
 let memorySegments: any[] = [];
@@ -28,6 +29,8 @@ export async function toggleCheckpointHandler(req: Request, res: Response): Prom
   const { checkpointId } = req.body;
 
   try {
+    const io = getIO();
+
     if (isMongoConnected()) {
       const segment = await SegmentModel.findOne({ id });
       if (!segment) {
@@ -40,6 +43,16 @@ export async function toggleCheckpointHandler(req: Request, res: Response): Prom
         cp.done = !cp.done;
         cp.completedAt = cp.done ? new Date() : undefined;
         await segment.save();
+
+        if (io) {
+          io.to(FAMILY_ROOM).emit('checkpoint_updated', {
+            segmentId: id,
+            checkpointId,
+            done: cp.done,
+            completedAt: cp.completedAt ? cp.completedAt.toISOString() : undefined,
+            checkpointName: cp.name
+          });
+        }
       }
       res.json({ success: true, segment });
       return;
@@ -52,6 +65,15 @@ export async function toggleCheckpointHandler(req: Request, res: Response): Prom
       if (cp) {
         cp.done = !cp.done;
         cp.completedAt = cp.done ? new Date().toISOString() : undefined;
+
+        if (io) {
+          io.to(FAMILY_ROOM).emit('checkpoint_updated', {
+            segmentId: id,
+            checkpointId,
+            done: cp.done,
+            completedAt: cp.completedAt
+          });
+        }
       }
     }
     res.json({ success: true, segment: seg });

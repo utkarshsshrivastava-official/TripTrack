@@ -1,15 +1,18 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IExpense extends Document {
+  id: string;
   title: string;
   amountINR: number;
   paidBy: string;
   category: 'FOOD' | 'TOLL_TAXI' | 'RITUAL' | 'PORTER_DANDI' | 'HOTEL' | 'MISC';
   receiptUrl?: string;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 const ExpenseSchema = new Schema({
+  id: { type: String, required: true, unique: true, index: true },
   title: { type: String, required: true },
   amountINR: { type: Number, required: true },
   paidBy: { type: String, required: true },

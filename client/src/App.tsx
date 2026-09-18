@@ -1,7 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DuoId } from './shared/types';
 import { useNetworkStatus } from './shared/hooks/useNetworkStatus';
 import { useUserProfile } from './shared/hooks/useUserProfile';
+import { initSocket } from './shared/services/socketClient';
+import { syncExpensesWithCloud } from './modules/gullak/services/expenseStorage';
+import { syncFamilyFeedWithCloud } from './modules/voice-feed/services/familyFeedStorage';
+import { syncItineraryWithCloud } from './modules/itinerary/services/itineraryStorage';
+import { syncWithCloudHistory } from './modules/chat/services/chatStorage';
 import { Header } from './components/Header';
 import { BottomDock, ActiveTab } from './components/BottomDock';
 import { FloatingChatButton } from './components/FloatingChatButton';
@@ -52,6 +57,37 @@ export const App: React.FC = () => {
     setIsModalOpen: setIsProfileModalOpen
   } = useUserProfile();
 
+  // Initialize and maintain persistent Socket.io connection with active profile
+  useEffect(() => {
+    initSocket(activeUser);
+  }, [activeUser]);
+
+  // Initial cloud sync across all data modules on mount
+  useEffect(() => {
+    if (isOnline) {
+      Promise.allSettled([
+        syncExpensesWithCloud(),
+        syncFamilyFeedWithCloud(),
+        syncItineraryWithCloud(),
+        syncWithCloudHistory()
+      ]).then(() => {
+        console.log('🔄 [TripTrack Core] Initial multi-module cloud sync complete');
+      });
+    }
+  }, [isOnline]);
+
+  const handleUniversalSync = async () => {
+    await triggerSync();
+    if (navigator.onLine) {
+      await Promise.allSettled([
+        syncExpensesWithCloud(),
+        syncFamilyFeedWithCloud(),
+        syncItineraryWithCloud(),
+        syncWithCloudHistory()
+      ]);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex justify-center">
       {/* Mobile-First Frame: 100% on phones, max-w-md centered on desktop */}
@@ -64,7 +100,7 @@ export const App: React.FC = () => {
           isOnline={isOnline}
           queuedCount={queuedCount}
           isSyncing={isSyncing}
-          onManualSync={triggerSync}
+          onManualSync={handleUniversalSync}
           onOpenEmergency={() => setIsEmergencyOpen(true)}
           activeUser={activeUser}
         />
@@ -86,7 +122,7 @@ export const App: React.FC = () => {
           isOnline={isOnline}
           queuedCount={queuedCount}
           isSyncing={isSyncing}
-          onManualSync={triggerSync}
+          onManualSync={handleUniversalSync}
           onOpenEmergency={() => setIsEmergencyOpen(true)}
         />
 

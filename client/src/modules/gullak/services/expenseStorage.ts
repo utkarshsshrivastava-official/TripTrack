@@ -1,10 +1,9 @@
 import { localDB, OfflineExpenseRecord } from '../../../shared/db/dexie';
 import { Expense, ExpenseCategory } from '../../../shared/types';
 import { DUO_A_SON, DUO_B_SON } from '../../../shared/config/travellers.config';
+import { onFamilyEvent, emitFamilyEvent } from '../../../shared/services/socketClient';
 
 const INITIAL_EXPENSE_SEEDS: OfflineExpenseRecord[] = [];
-
-// Legacy mock expense IDs to scrub clean
 const LEGACY_MOCK_EXPENSE_IDS = ['exp-1', 'exp-2', 'exp-3', 'exp-4'];
 
 export interface GullakFinancialSummary {
@@ -21,13 +20,152 @@ export interface GullakFinancialSummary {
   categoryTotals: Record<ExpenseCategory, number>;
 }
 
+let socketListenersInitialized = false;
+
+function setupExpenseSocketListeners() {
+  if (socketListenersInitialized || typeof window === 'undefined') return;
+  socketListenersInitialized = true;
+
+  // Listen for real-time expenses added by other family members
+  onFamilyEvent('receive_expense', async (expenseData: any) => {
+    try {
+      if (!expenseData?.id) return;
+      const record: OfflineExpenseRecord = {
+        id: expenseData.id,
+        title: expenseData.title,
+        amountINR: Number(expenseData.amountINR),
+        paidBy: expenseData.paidBy,
+        category: expenseData.category,
+        receiptUrl: expenseData.receiptUrl,
+        createdAt: expenseData.createdAt || new Date().toISOString(),
+        isSynced: true
+      };
+      await localDB.offlineExpenses.put(record);
+      window.dispatchEvent(new CustomEvent('triptrack_expense_update', { detail: record }));
+    } catch (err) {
+      console.warn('⚠️ [Gullak Sync] Failed to store incoming live expense in Dexie:', err);
+    }
+  });
+
+  // Listen for expense deletions by other family members
+  onFamilyEvent('expense_removed', async (data: { id: string }) => {
+    try {
+      if (!data?.id) return;
+      await localDB.offlineExpenses.delete(data.id);
+      window.dispatchEvent(new CustomEvent('triptrack_expense_update', { detail: { id: data.id, deleted: true } }));
+    } catch (err) {
+      console.warn('⚠️ [Gullak Sync] Failed to delete expense from Dexie:', err);
+    }
+  });
+
+  // Listen for clear all
+  onFamilyEvent('expenses_cleared', async () => {
+    try {
+      await localDB.offlineExpenses.clear();
+      window.dispatchEvent(new CustomEvent('triptrack_expense_update', { detail: { cleared: true } }));
+    } catch (err) {
+      console.warn('⚠️ [Gullak Sync] Failed to clear expenses from Dexie:', err);
+    }
+  });
+
+  // Auto-sync whenever socket or network reconnects
+  window.addEventListener('triptrack_network_sync', () => {
+    syncExpensesWithCloud().catch(err => console.warn('Background expense sync error:', err));
+  });
+}
+
+// Immediately wire socket listeners
+setupExpenseSocketListeners();
+
+/**
+ * Reconcile local Dexie database with MongoDB Atlas cloud ledger
+ */
+export async function syncExpensesWithCloud(): Promise<Expense[]> {
+  try {
+    const pin = localStorage.getItem('triptrack_family_pin') || '2026';
+
+    // 1. First, push any locally created offline expenses that have not been synced yet
+    const unsynced = await localDB.offlineExpenses.filter(e => e.isSynced === false).toArray();
+    if (unsynced.length > 0 && navigator.onLine) {
+      try {
+        await fetch('/api/expenses/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-family-pin': pin
+          },
+          body: JSON.stringify({ expenses: unsynced })
+        });
+        // Mark as synced locally
+        for (const u of unsynced) {
+          await localDB.offlineExpenses.update(u.id, { isSynced: true });
+        }
+      } catch (syncErr) {
+        console.warn('⚠️ [Gullak Cloud Sync] Failed to flush offline expenses to cloud:', syncErr);
+      }
+    }
+
+    // 2. Fetch the latest complete ledger from MongoDB Atlas
+    const res = await fetch('/api/expenses', {
+      headers: { 'x-family-pin': pin }
+    });
+
+    if (!res.ok) {
+      return await getExpensesFromDexie();
+    }
+
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.data)) {
+      return await getExpensesFromDexie();
+    }
+
+    const cloudExpenses: any[] = json.data;
+    const cloudIds = new Set(cloudExpenses.map(e => e.id));
+
+    // Reconcile: Purge any local synced records that were deleted on cloud
+    const localRecords = await localDB.offlineExpenses.toArray();
+    for (const local of localRecords) {
+      if (local.isSynced && !cloudIds.has(local.id)) {
+        await localDB.offlineExpenses.delete(local.id);
+      }
+    }
+
+    // Upsert cloud expenses into local Dexie
+    for (const c of cloudExpenses) {
+      await localDB.offlineExpenses.put({
+        id: c.id,
+        title: c.title,
+        amountINR: Number(c.amountINR),
+        paidBy: c.paidBy,
+        category: c.category,
+        receiptUrl: c.receiptUrl,
+        createdAt: c.createdAt,
+        isSynced: true
+      });
+    }
+
+    const finalRecords = await localDB.offlineExpenses.toArray();
+    finalRecords.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return finalRecords.map(toExpense);
+  } catch (err) {
+    console.warn('⚠️ [Gullak Cloud Sync] Offline or API unreachable, using local Dexie:', err);
+    return await getExpensesFromDexie();
+  }
+}
+
 /**
  * Initialize Dexie with sample expenses if empty, and scrub legacy dummy data
  */
 export async function initializeExpenseStorage(): Promise<OfflineExpenseRecord[]> {
   try {
-    // Purge any legacy mock seeds from previous builds
     await localDB.offlineExpenses.bulkDelete(LEGACY_MOCK_EXPENSE_IDS);
+
+    // Initial background sync with cloud
+    syncExpensesWithCloud().then(() => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('triptrack_expense_update'));
+      }
+    }).catch(() => {});
 
     const count = await localDB.offlineExpenses.count();
     if (count === 0 && INITIAL_EXPENSE_SEEDS.length > 0) {
@@ -47,7 +185,6 @@ export async function initializeExpenseStorage(): Promise<OfflineExpenseRecord[]
  */
 export async function getExpensesFromDexie(): Promise<Expense[]> {
   try {
-    // Scrub legacy mock seeds
     await localDB.offlineExpenses.bulkDelete(LEGACY_MOCK_EXPENSE_IDS);
 
     const records = await localDB.offlineExpenses.toArray();
@@ -60,24 +197,66 @@ export async function getExpensesFromDexie(): Promise<Expense[]> {
 }
 
 /**
- * Save new expense to Dexie
+ * Save new expense to Dexie and broadcast live via Socket.io and REST
  */
 export async function saveExpenseToDexie(expense: Omit<Expense, 'id'>): Promise<Expense> {
   const newRecord: OfflineExpenseRecord = {
     ...expense,
-    id: `exp-${Date.now()}`,
+    id: `exp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    createdAt: expense.createdAt || new Date().toISOString(),
     isSynced: navigator.onLine
   };
 
-  await localDB.offlineExpenses.add(newRecord);
+  // 1. Optimistic local persistence
+  await localDB.offlineExpenses.put(newRecord);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('triptrack_expense_update', { detail: newRecord }));
+  }
+
+  // 2. Real-time broadcast and MongoDB persistence if online
+  if (navigator.onLine) {
+    // Broadcast via socket immediately
+    emitFamilyEvent('send_expense', newRecord);
+
+    // Persist via API
+    fetch('/api/expenses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      },
+      body: JSON.stringify(newRecord)
+    }).then(async (res) => {
+      if (res.ok) {
+        await localDB.offlineExpenses.update(newRecord.id, { isSynced: true });
+      }
+    }).catch(err => {
+      console.warn('⚠️ [Gullak] Deferred cloud expense sync:', err);
+    });
+  }
+
   return toExpense(newRecord);
 }
 
 /**
- * Delete expense from Dexie
+ * Delete expense from Dexie and broadcast deletion live
  */
 export async function deleteExpenseFromDexie(id: string): Promise<void> {
   await localDB.offlineExpenses.delete(id);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('triptrack_expense_update', { detail: { id, deleted: true } }));
+  }
+
+  if (navigator.onLine) {
+    emitFamilyEvent('delete_expense', { id });
+
+    fetch(`/api/expenses/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      }
+    }).catch(err => console.warn('⚠️ [Gullak] Deferred delete expense sync:', err));
+  }
 }
 
 /**
@@ -122,7 +301,6 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
   };
 
   if (diff > 0) {
-    // Utkarsh paid more -> Shreyas owes Utkarsh
     netSettlement = {
       debtorName: DUO_B_SON.name,
       creditorName: DUO_A_SON.name,
@@ -130,7 +308,6 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
       isSettled: false
     };
   } else if (diff < 0) {
-    // Shreyas paid more -> Utkarsh owes Shreyas
     netSettlement = {
       debtorName: DUO_A_SON.name,
       creditorName: DUO_B_SON.name,

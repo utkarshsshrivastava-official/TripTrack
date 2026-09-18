@@ -1,4 +1,5 @@
 import { getVoiceLogsFromDexie } from './voiceLogStorage';
+import { onFamilyEvent, emitFamilyEvent } from '../../../shared/services/socketClient';
 
 export type FamilyFeedItemType = 
   | 'MILESTONE'
@@ -35,6 +36,112 @@ export interface FamilyFeedItem {
 const STORAGE_KEY = 'triptrack_family_feed_timeline';
 
 export const INITIAL_FEED_SEEDS: FamilyFeedItem[] = [];
+
+let feedSocketListenersInitialized = false;
+
+function setupFeedSocketListeners() {
+  if (feedSocketListenersInitialized || typeof window === 'undefined') return;
+  feedSocketListenersInitialized = true;
+
+  // Listen for live feed posts broadcast by other family members
+  onFamilyEvent('receive_feed_post', (feedData: FamilyFeedItem) => {
+    try {
+      if (!feedData?.id) return;
+      const existing = loadSavedTimelineItems();
+      const idx = existing.findIndex(i => i.id === feedData.id);
+      let updated: FamilyFeedItem[];
+      if (idx >= 0) {
+        updated = [...existing];
+        updated[idx] = feedData;
+      } else {
+        updated = [feedData, ...existing];
+      }
+      saveTimelineItems(updated);
+      window.dispatchEvent(new CustomEvent('triptrack_feed_update', { detail: feedData }));
+    } catch (err) {
+      console.warn('⚠️ [Family Feed Sync] Failed to process incoming live feed post:', err);
+    }
+  });
+
+  // Listen for live feed post deletions
+  onFamilyEvent('feed_post_removed', (data: { id: string }) => {
+    try {
+      if (!data?.id) return;
+      const existing = loadSavedTimelineItems();
+      const filtered = existing.filter(i => i.id !== data.id);
+      saveTimelineItems(filtered);
+      window.dispatchEvent(new CustomEvent('triptrack_feed_update', { detail: { id: data.id, deleted: true } }));
+    } catch (err) {
+      console.warn('⚠️ [Family Feed Sync] Failed to delete feed post locally:', err);
+    }
+  });
+
+  // Listen for clear all feed
+  onFamilyEvent('feed_cleared', () => {
+    try {
+      saveTimelineItems([]);
+      window.dispatchEvent(new CustomEvent('triptrack_feed_update', { detail: { cleared: true } }));
+    } catch (err) {
+      console.warn('⚠️ [Family Feed Sync] Failed to clear feed items locally:', err);
+    }
+  });
+
+  // Auto-sync when socket/network reconnects
+  window.addEventListener('triptrack_network_sync', () => {
+    syncFamilyFeedWithCloud().catch(err => console.warn('Background feed sync error:', err));
+  });
+}
+
+// Wire socket listeners immediately
+setupFeedSocketListeners();
+
+/**
+ * Reconcile local timeline with MongoDB Atlas cloud feed
+ */
+export async function syncFamilyFeedWithCloud(): Promise<FamilyFeedItem[]> {
+  try {
+    const pin = localStorage.getItem('triptrack_family_pin') || '2026';
+    const res = await fetch('/api/feed', {
+      headers: { 'x-family-pin': pin }
+    });
+
+    if (!res.ok) {
+      return loadSavedTimelineItems();
+    }
+
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.data)) {
+      return loadSavedTimelineItems();
+    }
+
+    const cloudFeed: FamilyFeedItem[] = json.data;
+    const localItems = loadSavedTimelineItems();
+
+    // Map by ID and merge (cloud takes precedence for shared items)
+    const map = new Map<string, FamilyFeedItem>();
+    cloudFeed.forEach(item => map.set(item.id, item));
+    localItems.forEach(item => {
+      if (!map.has(item.id)) {
+        map.set(item.id, item);
+      }
+    });
+
+    const merged = Array.from(map.values()).sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    saveTimelineItems(merged);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('triptrack_feed_update'));
+    }
+
+    return merged;
+  } catch (err) {
+    console.warn('⚠️ [Family Feed Sync] Offline or server unreachable, using local storage:', err);
+    return loadSavedTimelineItems();
+  }
+}
 
 // Helper to load manual and milestone feed items (purges legacy mockup items)
 export function loadSavedTimelineItems(): FamilyFeedItem[] {
@@ -74,7 +181,7 @@ export function saveTimelineItems(items: FamilyFeedItem[]): void {
   }
 }
 
-// Add a new traveler update or note
+// Add a new traveler update or note and broadcast live
 export function addFamilyFeedItem(item: Omit<FamilyFeedItem, 'id' | 'timestamp'>): FamilyFeedItem {
   const fullItem: FamilyFeedItem = {
     ...item,
@@ -89,6 +196,20 @@ export function addFamilyFeedItem(item: Omit<FamilyFeedItem, 'id' | 'timestamp'>
   // Dispatch custom window event so open tabs react immediately
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('triptrack_feed_update', { detail: fullItem }));
+  }
+
+  // Broadcast live via Socket.io and persist to MongoDB Atlas
+  if (navigator.onLine) {
+    emitFamilyEvent('send_feed_post', fullItem);
+
+    fetch('/api/feed', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      },
+      body: JSON.stringify(fullItem)
+    }).catch(err => console.warn('⚠️ [Family Feed] Cloud save deferred:', err));
   }
 
   return fullItem;
@@ -120,13 +241,25 @@ export function logItineraryMilestoneToFeed(
   });
 }
 
-// Delete an item from timeline
+// Delete an item from timeline and broadcast live
 export function deleteFamilyFeedItem(id: string): void {
   const existing = loadSavedTimelineItems();
   const filtered = existing.filter(i => i.id !== id);
   saveTimelineItems(filtered);
+
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('triptrack_feed_update'));
+    window.dispatchEvent(new CustomEvent('triptrack_feed_update', { detail: { id, deleted: true } }));
+  }
+
+  if (navigator.onLine) {
+    emitFamilyEvent('delete_feed_post', { id });
+
+    fetch(`/api/feed/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      }
+    }).catch(err => console.warn('⚠️ [Family Feed] Cloud delete deferred:', err));
   }
 }
 

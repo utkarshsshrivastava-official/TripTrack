@@ -37,7 +37,16 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'ALL'>('ALL');
 
   useEffect(() => {
-    getExpensesFromDexie().then(setExpenses);
+    const load = () => {
+      getExpensesFromDexie().then(setExpenses);
+    };
+
+    load();
+
+    window.addEventListener('triptrack_expense_update', load);
+    return () => {
+      window.removeEventListener('triptrack_expense_update', load);
+    };
   }, []);
 
   const summary = calculateGullakSummary(expenses);

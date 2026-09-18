@@ -33,6 +33,7 @@
 | **Phase 18** | **Himalayan Route Guard, Highway Alerts & Dual-Tab Feed Hub** | ✅ **DONE** | 100% | Completed |
 | **Phase 19** | **Feed Restructure: Family Feed & Live Gemini AI News Scanner** | ✅ **DONE** | 100% | Completed |
 | **Phase 20** | **Chat Sync Reconciliation, App Mockup Scrub & Mobile Header Polish** | ✅ **DONE** | 100% | Completed |
+| **Phase 21** | **Universal Live Data Sync: MongoDB Atlas, Socket.io & Dexie** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -504,6 +505,35 @@
   - [x] Fixed in `routeAlert.service.ts`: Anchored intelligence synthesis timestamps directly to current scan time (`new Date().toISOString()`).
   - [x] Updated `RouteGuardTab.tsx`: Added hours/days capping and graceful `"Recent Intel"` fallback so multi-year differences never display raw hour counts.
   - [x] Automated Dexie cleanup: Auto-purges route alerts older than 48 hours on startup to prevent lingering multi-year cached records.
+
+---
+
+### ✅ Phase 21: Universal Live Data Sync: MongoDB Atlas, Socket.io & Dexie
+*Status: Completed & Verified on Sep 18, 2026 (100%)*
+
+- [x] **21.1 Global Application-Wide Socket.io Client (`socketClient.ts`)**
+  - [x] Replaced isolated hook-level socket connection with an app-wide persistent singleton initialized at root (`App.tsx`).
+  - [x] Automatically connects to MongoDB/Express backend and joins shared family room (`badrinath-family-2026`).
+  - [x] Emits `triptrack_network_sync` upon connection/reconnection to auto-reconcile all offline data stores with MongoDB Atlas.
+  - [x] Refactored `useFamilySocket.ts` so opening/closing the chat drawer no longer disconnects socket operations for other modules.
+- [x] **21.2 Full-Stack Gullak Expense Synchronization (`ExpenseModel`, `expense.controller.ts`, `expenseStorage.ts`)**
+  - [x] Added `id: string` indexed field to `ExpenseModel` in MongoDB Atlas.
+  - [x] Implemented `GET /api/expenses`, `POST /api/expenses`, `POST /api/expenses/sync`, and `DELETE /api/expenses/:id`.
+  - [x] Connected real-time Socket.io events: `send_expense` -> persists to Atlas -> broadcasts `receive_expense`; `delete_expense` -> removes from Atlas -> broadcasts `expense_removed`.
+  - [x] Reconciled Dexie with Atlas in `syncExpensesWithCloud()`.
+  - [x] Real-time UI updates: `GullakPreview.tsx` listens to `triptrack_expense_update`, recalculating 50/50 balance and ledger instantaneously.
+- [x] **21.3 Full-Stack Family Feed Journey Timeline Synchronization (`familyFeed.model.ts`, `feed.controller.ts`, `familyFeedStorage.ts`)**
+  - [x] Implemented Mongoose model `FamilyFeedModel` storing title, description, timestamp, speakerId, duoId, and transit metadata.
+  - [x] Created `GET /api/feed`, `POST /api/feed`, and `DELETE /api/feed/:id`.
+  - [x] Connected real-time Socket.io events: `send_feed_post` -> persists to Atlas -> broadcasts `receive_feed_post`; `delete_feed_post` -> removes from Atlas -> broadcasts `feed_post_removed`.
+  - [x] Automated sync: `FamilyFeedTab.tsx` reflects posts from all family devices instantaneously.
+- [x] **21.4 Real-time Itinerary Milestone Checkpoint Synchronization (`segment.controller.ts`, `itineraryStorage.ts`)**
+  - [x] Added `checkpoint_updated` socket broadcast in `socket.service.ts` and HTTP `toggleCheckpointHandler`.
+  - [x] Connected `itineraryStorage.ts` to broadcast checkpoint toggles and auto-reconcile with `/api/segments`.
+  - [x] Connected `useItinerary.ts` to `triptrack_itinerary_update` event so all open devices see completed milestones in real-time.
+- [x] **21.5 Offline-First Himalayan Resilience Invariant Maintained**
+  - [x] All actions (logging expenses, publishing feed updates, toggling milestones) write optimistically to Dexie IndexedDB first with `isSynced: false` when offline.
+  - [x] Auto-flush to MongoDB Atlas and broadcast over Socket.io upon cellular reconnection.
 
 ---
 

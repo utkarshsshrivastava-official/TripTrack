@@ -1,6 +1,9 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import { ChatMessageModel } from '../../models/chatMessage.model';
+import { ExpenseModel } from '../../models/expense.model';
+import { FamilyFeedModel } from '../../models/familyFeed.model';
+import { SegmentModel } from '../../models/segment.model';
 import { isMongoConnected } from '../../shared/lib/mongodb';
 
 export const FAMILY_ROOM = 'badrinath-family-2026';
@@ -27,7 +30,7 @@ export function initSocketServer(httpServer: HttpServer): SocketIOServer {
   const io = new SocketIOServer(httpServer, {
     cors: {
       origin: '*',
-      methods: ['GET', 'POST']
+      methods: ['GET', 'POST', 'PATCH', 'DELETE']
     }
   });
 
@@ -49,11 +52,12 @@ export function initSocketServer(httpServer: HttpServer): SocketIOServer {
       });
     });
 
-    // Handle chat message broadcast with MongoDB persistence
+    // ==========================================
+    // 1. CHAT PERSISTENCE & BROADCAST
+    // ==========================================
     socket.on('send_chat_message', async (msg: ServerChatMessage) => {
       console.log(`💬 [Chat] ${msg.senderName}: "${msg.text.slice(0, 40)}..."`);
       
-      // Asynchronously persist to MongoDB Atlas if connected
       try {
         if (isMongoConnected()) {
           await ChatMessageModel.findOneAndUpdate(
@@ -86,6 +90,130 @@ export function initSocketServer(httpServer: HttpServer): SocketIOServer {
       socket.emit('message_ack', {
         id: msg.id,
         status: 'delivered'
+      });
+    });
+
+    // ==========================================
+    // 2. GULLAK EXPENSES PERSISTENCE & BROADCAST
+    // ==========================================
+    socket.on('send_expense', async (expenseData: any) => {
+      console.log(`💰 [Socket.io Gullak] New expense from ${expenseData.paidBy}: ₹${expenseData.amountINR} (${expenseData.title})`);
+      try {
+        if (isMongoConnected() && expenseData.id) {
+          await ExpenseModel.findOneAndUpdate(
+            { id: expenseData.id },
+            {
+              id: expenseData.id,
+              title: expenseData.title,
+              amountINR: Number(expenseData.amountINR),
+              paidBy: expenseData.paidBy,
+              category: expenseData.category,
+              receiptUrl: expenseData.receiptUrl,
+              createdAt: expenseData.createdAt ? new Date(expenseData.createdAt) : new Date()
+            },
+            { upsert: true, new: true }
+          );
+        }
+      } catch (err) {
+        console.error('⚠️ [Socket.io Gullak] Failed to persist expense to MongoDB:', err);
+      }
+
+      // Broadcast to all devices in the room (including sender or others)
+      io.to(FAMILY_ROOM).emit('receive_expense', expenseData);
+    });
+
+    socket.on('delete_expense', async (data: { id: string }) => {
+      console.log(`💰 [Socket.io Gullak] Delete expense ${data.id}`);
+      try {
+        if (isMongoConnected() && data.id) {
+          await ExpenseModel.findOneAndDelete({ id: data.id });
+        }
+      } catch (err) {
+        console.error('⚠️ [Socket.io Gullak] Failed to delete expense from MongoDB:', err);
+      }
+
+      io.to(FAMILY_ROOM).emit('expense_removed', { id: data.id });
+    });
+
+    // ==========================================
+    // 3. FAMILY FEED PERSISTENCE & BROADCAST
+    // ==========================================
+    socket.on('send_feed_post', async (feedData: any) => {
+      console.log(`📰 [Socket.io Feed] New post from ${feedData.speakerId}: "${feedData.title}"`);
+      try {
+        if (isMongoConnected() && feedData.id) {
+          await FamilyFeedModel.findOneAndUpdate(
+            { id: feedData.id },
+            {
+              id: feedData.id,
+              type: feedData.type,
+              title: feedData.title,
+              description: feedData.description,
+              timestamp: feedData.timestamp ? new Date(feedData.timestamp) : new Date(),
+              speakerId: feedData.speakerId,
+              locationName: feedData.locationName || 'En Route',
+              duoId: feedData.duoId || 'ALL',
+              category: feedData.category,
+              statusBadge: feedData.statusBadge,
+              metadata: feedData.metadata
+            },
+            { upsert: true, new: true }
+          );
+        }
+      } catch (err) {
+        console.error('⚠️ [Socket.io Feed] Failed to persist feed post to MongoDB:', err);
+      }
+
+      io.to(FAMILY_ROOM).emit('receive_feed_post', feedData);
+    });
+
+    socket.on('delete_feed_post', async (data: { id: string }) => {
+      console.log(`📰 [Socket.io Feed] Delete feed post ${data.id}`);
+      try {
+        if (isMongoConnected() && data.id) {
+          await FamilyFeedModel.findOneAndDelete({ id: data.id });
+        }
+      } catch (err) {
+        console.error('⚠️ [Socket.io Feed] Failed to delete feed post from MongoDB:', err);
+      }
+
+      io.to(FAMILY_ROOM).emit('feed_post_removed', { id: data.id });
+    });
+
+    // ==========================================
+    // 4. ITINERARY CHECKPOINT LIVE SYNC
+    // ==========================================
+    socket.on('toggle_checkpoint', async (data: { segmentId: string; checkpointId: string }) => {
+      console.log(`🧭 [Socket.io Itinerary] Toggle checkpoint ${data.checkpointId} in segment ${data.segmentId}`);
+      try {
+        if (isMongoConnected()) {
+          const segment = await SegmentModel.findOne({ id: data.segmentId });
+          if (segment) {
+            const cp = segment.checkpoints.find(c => c.id === data.checkpointId);
+            if (cp) {
+              cp.done = !cp.done;
+              cp.completedAt = cp.done ? new Date() : undefined;
+              await segment.save();
+
+              io.to(FAMILY_ROOM).emit('checkpoint_updated', {
+                segmentId: data.segmentId,
+                checkpointId: data.checkpointId,
+                done: cp.done,
+                completedAt: cp.completedAt ? cp.completedAt.toISOString() : undefined,
+                checkpointName: cp.name
+              });
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('⚠️ [Socket.io Itinerary] Failed to update checkpoint in MongoDB:', err);
+      }
+
+      // If mongo failed or not connected, still broadcast state toggle
+      io.to(FAMILY_ROOM).emit('checkpoint_updated', {
+        segmentId: data.segmentId,
+        checkpointId: data.checkpointId
       });
     });
 

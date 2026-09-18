@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client';
 import { UserProfile } from '../../../shared/types/user';
 import { OfflineChatMessageRecord } from '../../../shared/db/dexie';
+import { initSocket, isSocketConnected } from '../../../shared/services/socketClient';
 import {
   getLocalChatMessages,
   saveLocalChatMessage,
@@ -14,7 +15,7 @@ import {
 
 export function useFamilySocket(activeUser: UserProfile) {
   const [messages, setMessages] = useState<OfflineChatMessageRecord[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(isSocketConnected());
   const [typingUser, setTypingUser] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const typingTimeoutRef = useRef<any>(null);
@@ -33,28 +34,16 @@ export function useFamilySocket(activeUser: UserProfile) {
     });
   }, [loadMessages]);
 
-  // Connect socket
+  // Connect socket via global singleton
   useEffect(() => {
-    const serverUrl = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_BACKEND_URL) ||
-      (window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin);
-
-    const socket = io(serverUrl, {
-      auth: {
-        pin: localStorage.getItem('triptrack_family_pin') || '2026'
-      },
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 2000,
-      timeout: 10000
-    });
-
+    const socket = initSocket(activeUser);
     socketRef.current = socket;
+    setIsConnected(socket.connected);
 
-    socket.on('connect', async () => {
-      console.log('🔌 Connected to family live socket');
+    const onConnect = async () => {
+      console.log('🔌 Connected to family live socket (via singleton)');
       setIsConnected(true);
 
-      // Join room
       socket.emit('join_family_room', {
         userId: activeUser.id,
         userName: activeUser.name
@@ -74,14 +63,14 @@ export function useFamilySocket(activeUser: UserProfile) {
         await bulkSyncQueuedMessages();
       }
       loadMessages();
-    });
+    };
 
-    socket.on('disconnect', () => {
+    const onDisconnect = () => {
       console.log('🔌 Disconnected from family live socket');
       setIsConnected(false);
-    });
+    };
 
-    socket.on('receive_chat_message', async (incoming: OfflineChatMessageRecord) => {
+    const onReceiveChatMessage = async (incoming: OfflineChatMessageRecord) => {
       await saveLocalChatMessage(incoming);
       setMessages(prev => {
         if (prev.some(m => m.id === incoming.id)) {
@@ -89,20 +78,20 @@ export function useFamilySocket(activeUser: UserProfile) {
         }
         return [...prev, incoming].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
       });
-    });
+    };
 
-    socket.on('message_ack', async (data: { id: string; status: 'delivered' }) => {
+    const onMessageAck = async (data: { id: string; status: 'delivered' }) => {
       await updateMessageStatus(data.id, data.status);
       setMessages(prev => prev.map(m => m.id === data.id ? { ...m, status: data.status } : m));
-    });
+    };
 
-    socket.on('chat_history_cleared', async () => {
+    const onChatHistoryCleared = async () => {
       console.log('🧹 [Socket] Received chat_history_cleared from server');
       await clearAllChatHistory();
       setMessages([]);
-    });
+    };
 
-    socket.on('member_typing', (data: { userId: string; userName: string; isTyping: boolean }) => {
+    const onMemberTyping = (data: { userId: string; userName: string; isTyping: boolean }) => {
       if (data.userId !== activeUser.id && data.isTyping) {
         setTypingUser(data.userName);
         clearTimeout(typingTimeoutRef.current);
@@ -112,7 +101,18 @@ export function useFamilySocket(activeUser: UserProfile) {
       } else if (!data.isTyping) {
         setTypingUser(null);
       }
-    });
+    };
+
+    if (socket.connected) {
+      onConnect();
+    }
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('receive_chat_message', onReceiveChatMessage);
+    socket.on('message_ack', onMessageAck);
+    socket.on('chat_history_cleared', onChatHistoryCleared);
+    socket.on('member_typing', onMemberTyping);
 
     const handleOnline = async () => {
       console.log('🌐 Network restored: syncing chat with cloud...');
@@ -125,7 +125,13 @@ export function useFamilySocket(activeUser: UserProfile) {
 
     return () => {
       window.removeEventListener('online', handleOnline);
-      socket.disconnect();
+      // Remove specific listeners without killing the application-wide socket!
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('receive_chat_message', onReceiveChatMessage);
+      socket.off('message_ack', onMessageAck);
+      socket.off('chat_history_cleared', onChatHistoryCleared);
+      socket.off('member_typing', onMemberTyping);
     };
   }, [activeUser.id, activeUser.name, loadMessages]);
 
@@ -156,7 +162,7 @@ export function useFamilySocket(activeUser: UserProfile) {
 
   const sendTyping = useCallback((isTyping: boolean) => {
     if (socketRef.current && isConnected) {
-      socketRef.current.emit('typing', {
+      socketRef.current.emit('typing_indicator', {
         userId: activeUser.id,
         userName: activeUser.name,
         isTyping

@@ -32,6 +32,15 @@ export function useItinerary() {
 
   useEffect(() => {
     loadSegments();
+
+    const handleUpdate = () => {
+      loadSegments();
+    };
+
+    window.addEventListener('triptrack_itinerary_update', handleUpdate);
+    return () => {
+      window.removeEventListener('triptrack_itinerary_update', handleUpdate);
+    };
   }, [loadSegments]);
 
   const toggleCheckpoint = async (segmentId: string, checkpointId: string) => {

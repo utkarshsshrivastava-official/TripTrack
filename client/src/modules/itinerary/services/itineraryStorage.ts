@@ -2,6 +2,104 @@ import { localDB, OfflineSegmentRecord } from '../../../shared/db/dexie';
 import { TRIP_SEED_SEGMENTS } from '../../../shared/config/trip.config';
 import { TripSegment, SegmentStatus, LogisticsInfo } from '../../../shared/types';
 import { logItineraryMilestoneToFeed, addFamilyFeedItem } from '../../voice-feed/services/familyFeedStorage';
+import { onFamilyEvent, emitFamilyEvent } from '../../../shared/services/socketClient';
+
+let itinerarySocketListenersInitialized = false;
+
+function setupItinerarySocketListeners() {
+  if (itinerarySocketListenersInitialized || typeof window === 'undefined') return;
+  itinerarySocketListenersInitialized = true;
+
+  // Listen for real-time checkpoint updates from other family members
+  onFamilyEvent('checkpoint_updated', async (data: {
+    segmentId: string;
+    checkpointId: string;
+    done?: boolean;
+    completedAt?: string;
+    checkpointName?: string;
+  }) => {
+    try {
+      if (!data?.segmentId || !data?.checkpointId) return;
+      const record = await localDB.offlineSegments.get(data.segmentId);
+      if (!record) return;
+
+      const segment = record.segmentData;
+      const updatedCheckpoints = segment.checkpoints.map(cp => {
+        if (cp.id !== data.checkpointId) return cp;
+        const newDone = data.done !== undefined ? data.done : !cp.done;
+        return {
+          ...cp,
+          done: newDone,
+          completedAt: newDone ? (data.completedAt || new Date().toISOString()) : undefined
+        };
+      });
+
+      const updatedSegment: TripSegment = {
+        ...segment,
+        checkpoints: updatedCheckpoints
+      };
+
+      await localDB.offlineSegments.put({
+        id: segment.id,
+        segmentData: updatedSegment,
+        modifiedLocallyAt: Date.now()
+      });
+
+      window.dispatchEvent(new CustomEvent('triptrack_itinerary_update', { detail: { segmentId: data.segmentId, checkpointId: data.checkpointId } }));
+    } catch (err) {
+      console.warn('⚠️ [Itinerary Sync] Failed to process live checkpoint update:', err);
+    }
+  });
+
+  // Re-sync with cloud on network reconnection
+  window.addEventListener('triptrack_network_sync', () => {
+    syncItineraryWithCloud().catch(err => console.warn('Background itinerary sync error:', err));
+  });
+}
+
+// Wire socket listeners immediately
+setupItinerarySocketListeners();
+
+/**
+ * Reconcile local segments with MongoDB Atlas cloud segments
+ */
+export async function syncItineraryWithCloud(): Promise<TripSegment[]> {
+  try {
+    const pin = localStorage.getItem('triptrack_family_pin') || '2026';
+    const res = await fetch('/api/segments', {
+      headers: { 'x-family-pin': pin }
+    });
+
+    if (!res.ok) {
+      return await getSegmentsFromDexie();
+    }
+
+    const json = await res.json();
+    if (!json.success || !Array.isArray(json.data) || json.data.length === 0) {
+      return await getSegmentsFromDexie();
+    }
+
+    const cloudSegments: TripSegment[] = json.data;
+
+    // Update Dexie stores with cloud states
+    for (const seg of cloudSegments) {
+      await localDB.offlineSegments.put({
+        id: seg.id,
+        segmentData: seg,
+        modifiedLocallyAt: Date.now()
+      });
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('triptrack_itinerary_update'));
+    }
+
+    return cloudSegments;
+  } catch (err) {
+    console.warn('⚠️ [Itinerary Cloud Sync] Offline or API unreachable, using local Dexie:', err);
+    return await getSegmentsFromDexie();
+  }
+}
 
 /**
  * Initialize Dexie with Seed Segments if empty
@@ -19,6 +117,9 @@ export async function initializeItineraryStorage(): Promise<TripSegment[]> {
       console.log(`🧭 [Dexie Itinerary] Initialized ${records.length} trip segments in offline store.`);
       return TRIP_SEED_SEGMENTS;
     }
+
+    // Initial background sync with cloud
+    syncItineraryWithCloud().catch(() => {});
 
     const savedRecords = await localDB.offlineSegments.toArray();
     return savedRecords.map(r => r.segmentData);
@@ -87,6 +188,10 @@ export async function toggleCheckpointInDexie(
 
   await saveSegmentToDexie(updatedSegment);
 
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('triptrack_itinerary_update', { detail: { segmentId, checkpointId } }));
+  }
+
   // Auto-post milestone event to Family Feed when completed
   if (isNowDone && toggledCheckpoint) {
     try {
@@ -101,6 +206,9 @@ export async function toggleCheckpointInDexie(
       console.warn('Failed to auto-log milestone to Family Feed', feedErr);
     }
   }
+
+  // Live broadcast via Socket.io
+  emitFamilyEvent('toggle_checkpoint', { segmentId, checkpointId });
 
   // Background sync if online
   if (navigator.onLine) {
@@ -133,6 +241,10 @@ export async function updateSegmentStatusInDexie(
   };
 
   await saveSegmentToDexie(updatedSegment);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('triptrack_itinerary_update', { detail: { segmentId, status } }));
+  }
 
   // Auto-log status transition in Family Feed
   try {
@@ -187,6 +299,10 @@ export async function updateLogisticsInDexie(
   };
 
   await saveSegmentToDexie(updatedSegment);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('triptrack_itinerary_update', { detail: { segmentId } }));
+  }
 
   // Auto-log cab booking/logistics update in Family Feed
   try {
