@@ -1,5 +1,11 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import dns from 'dns';
+
+// Force DNS resolution to prefer IPv4 over IPv6 on cloud containers (fixes ENETUNREACH on Render)
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 // Load environment configuration (override stale OS environment variables with local .env)
 dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });

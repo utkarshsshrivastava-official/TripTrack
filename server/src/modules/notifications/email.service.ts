@@ -61,6 +61,7 @@ export interface DailyDigestData {
 
 class EmailService {
   private transporter: any = null;
+  private fallbackTransporter: any = null;
   private isConfigured = false;
 
   constructor() {
@@ -69,17 +70,32 @@ class EmailService {
 
     if (user && pass && user !== 'your-family-email@gmail.com' && pass !== 'your-16-char-app-password') {
       try {
+        // Primary: Port 465 SSL with strict IPv4 (avoids cloud container ENETUNREACH IPv6)
         this.transporter = nodemailer.createTransport({
           host: 'smtp.gmail.com',
           port: 465,
-          secure: true, // Port 465 SSL is reliable on cloud containers
+          secure: true,
           auth: { user, pass },
-          connectionTimeout: 6000,
-          greetingTimeout: 6000,
-          socketTimeout: 7000
-        });
+          family: 4,
+          connectionTimeout: 8000,
+          greetingTimeout: 8000,
+          socketTimeout: 8000
+        } as any);
+
+        // Fallback: Port 587 STARTTLS with strict IPv4
+        this.fallbackTransporter = nodemailer.createTransport({
+          host: 'smtp.gmail.com',
+          port: 587,
+          secure: false,
+          auth: { user, pass },
+          family: 4,
+          connectionTimeout: 8000,
+          greetingTimeout: 8000,
+          socketTimeout: 8000
+        } as any);
+
         this.isConfigured = true;
-        console.log(`📧 [Nodemailer] Configured with Gmail SMTP (Port 465 SSL) for: ${user}`);
+        console.log(`📧 [Nodemailer] Configured with Gmail SMTP (IPv4 forced, Dual Port 465/587) for: ${user}`);
       } catch (err) {
         console.warn('⚠️ [Nodemailer] Initialization failed, will use console simulation:', err);
       }
@@ -123,21 +139,43 @@ class EmailService {
         html: htmlBody
       });
 
-      // Strict 7-second timeout race so cloud servers never hang indefinitely
+      // Strict 8-second timeout race so cloud servers never hang indefinitely
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('SMTP timed out after 7s (outbound port blocked or delayed).')), 7000)
+        setTimeout(() => reject(new Error('Primary SMTP (Port 465) timed out after 8s.')), 8000)
       );
 
       const info: any = await Promise.race([sendPromise, timeoutPromise]);
       console.log(`✅ [Email Service] Dispatched to ${recipients.join(', ')} (Msg ID: ${info.messageId})`);
       return { success: true, messageId: info.messageId };
-    } catch (err: any) {
-      console.error('❌ [Email Service] Dispatch error:', err.message || err);
-      // Fall back to safe console simulation so caller never crashes or hangs
+    } catch (primaryErr: any) {
+      console.warn('⚠️ [Email Service] Primary SMTP (Port 465) delayed/failed, attempting Port 587 fallback:', primaryErr.message);
+
+      if (this.fallbackTransporter) {
+        try {
+          const fallbackPromise = this.fallbackTransporter.sendMail({
+            from: `"TripTrack Pilgrimage 🏔️" <${process.env.SMTP_USER}>`,
+            to: recipients,
+            subject,
+            html: htmlBody
+          });
+
+          const fallbackTimeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Fallback SMTP (Port 587) timed out after 8s.')), 8000)
+          );
+
+          const fallbackInfo: any = await Promise.race([fallbackPromise, fallbackTimeout]);
+          console.log(`✅ [Email Service] Dispatched via Port 587 fallback to ${recipients.join(', ')} (Msg ID: ${fallbackInfo.messageId})`);
+          return { success: true, messageId: fallbackInfo.messageId };
+        } catch (fallbackErr: any) {
+          console.error('❌ [Email Service] Fallback Port 587 also failed:', fallbackErr.message);
+        }
+      }
+
+      // Safe console simulation fallback
       return { 
         success: true, 
         simulated: true, 
-        warning: `Direct SMTP delayed (${err.message || 'timeout'}). Notification logged to cloud console.` 
+        warning: `Direct SMTP delayed (${primaryErr.message || 'timeout'}). Notification logged to cloud console.` 
       };
     }
   }

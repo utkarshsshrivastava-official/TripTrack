@@ -645,6 +645,10 @@
   - [x] Explicitly bound Express HTTP server to `0.0.0.0` host interface so Render's container routing mesh and health-checkers connect reliably over IPv4.
   - [x] Added root and multi-path health check handlers (`/`, `/health`, `/api/health`) placed before rate-limiting middleware, returning instant 200 OK JSON status.
   - [x] Pinned Node engine in `server/package.json` to `"20.x"` LTS to prevent Render from selecting experimental Node 26.9.0.
+- [x] **24.8 Cloud Container SMTP IPv4 Enforcement & Dual-Port Fallback (`email.service.ts`, `index.ts`, `package.json`)**
+  - [x] Configured `family: 4` on Nodemailer transports to prevent `ENETUNREACH (:::0)` caused by cloud container lack of outbound IPv6 routing.
+  - [x] Added `dns.setDefaultResultOrder('ipv4first')` and `--dns-result-order=ipv4first` in server startup to force IPv4 DNS resolution for Google SMTP endpoints.
+  - [x] Implemented dual-port resilience: Port 465 SSL primary with automatic failover to Port 587 STARTTLS before logging console simulation fallback.
 
 ---
 
