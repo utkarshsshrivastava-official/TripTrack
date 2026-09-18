@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, PhoneCall, HeartPulse, ShieldAlert, Mountain, Hospital, Smartphone, Radio } from 'lucide-react';
 import { useTravellers } from '../shared/hooks/useTravellers';
+import { getBackendUrl, getApiHeaders } from '../shared/services/apiConfig';
 
 interface EmergencyModalProps {
   isOpen: boolean;
@@ -49,12 +50,12 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({
         `${e.name} (${e.age}y, ${e.bloodGroup}): ${e.elderCareNotes?.dailyMeds.join(', ')} | Alt: ${e.elderCareNotes?.altitudeAlertThresholdMeters}m`
       ).join(' • ');
 
-      const pin = localStorage.getItem('triptrack_family_pin') || '2026';
-      const res = await fetch('/api/notifications/sos', {
+      const backendUrl = getBackendUrl();
+      const res = await fetch(`${backendUrl}/api/notifications/sos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-family-pin': pin
+          ...getApiHeaders()
         },
         body: JSON.stringify({
           triggeredBy: 'Pilgrim Family Emergency Beacon',

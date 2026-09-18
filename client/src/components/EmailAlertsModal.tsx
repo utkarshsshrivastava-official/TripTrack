@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Sun
 } from 'lucide-react';
+import { getBackendUrl, getApiHeaders } from '../shared/services/apiConfig';
 
 interface EmailAlertsModalProps {
   isOpen: boolean;
@@ -57,20 +58,36 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
     }
   }, [isOpen]);
 
+  const safeFetchJson = async (endpoint: string, options: RequestInit = {}) => {
+    const backendUrl = getBackendUrl();
+    const url = endpoint.startsWith('http') ? endpoint : `${backendUrl}${endpoint}`;
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...getApiHeaders(),
+        ...(options.headers || {})
+      }
+    });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      const text = await res.text();
+      throw new Error(`Server returned non-JSON (${res.status}): ${text.slice(0, 60)}...`);
+    }
+
+    const data = await res.json();
+    return { res, data };
+  };
+
   const fetchStatus = async () => {
     setLoading(true);
     try {
-      const pin = localStorage.getItem('triptrack_family_pin') || '2026';
-      const res = await fetch('/api/notifications/status', {
-        headers: { 'x-family-pin': pin }
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success) {
-          setStatus(json.data);
-        }
+      const { res, data } = await safeFetchJson('/api/notifications/status');
+      if (res.ok && data.success) {
+        setStatus(data.data);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Failed to load notification automation status:', err);
     } finally {
       setLoading(false);
@@ -81,15 +98,10 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
     setIsSendingTest(true);
     setActionMessage(null);
     try {
-      const pin = localStorage.getItem('triptrack_family_pin') || '2026';
-      const res = await fetch('/api/notifications/test-email', {
+      const { res, data } = await safeFetchJson('/api/notifications/test-email', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-family-pin': pin
-        }
+        body: JSON.stringify({})
       });
-      const data = await res.json();
       if (res.ok && data.success) {
         setActionMessage({
           text: data.simulated 
@@ -111,15 +123,9 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
     setIsDispatchingDigest(true);
     setActionMessage(null);
     try {
-      const pin = localStorage.getItem('triptrack_family_pin') || '2026';
-      const res = await fetch('/api/notifications/digest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-family-pin': pin
-        }
+      const { res, data } = await safeFetchJson('/api/notifications/digest', {
+        method: 'POST'
       });
-      const data = await res.json();
       if (res.ok && data.success) {
         setActionMessage({
           text: 'Evening Sandhya Bulletin compiled and dispatched to all family emails!',
@@ -140,16 +146,10 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
     setSimulatingId(targetId);
     setActionMessage(null);
     try {
-      const pin = localStorage.getItem('triptrack_family_pin') || '2026';
-      const res = await fetch('/api/notifications/trigger-simulation', {
+      const { res, data } = await safeFetchJson('/api/notifications/trigger-simulation', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-family-pin': pin
-        },
         body: JSON.stringify({ type, targetId })
       });
-      const data = await res.json();
       if (res.ok && data.success) {
         setActionMessage({
           text: `Trigger executed for ${targetId}! Notification dispatched to family.`,
@@ -184,17 +184,11 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
         }
       }
 
-      const pin = localStorage.getItem('triptrack_family_pin') || '2026';
-      const res = await fetch('/api/notifications/trigger-geofence', {
+      const { res, data } = await safeFetchJson('/api/notifications/trigger-geofence', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-family-pin': pin
-        },
         body: JSON.stringify({ latitude: lat, longitude: lng, passengerId: 'traveller-utkarsh' })
       });
 
-      const data = await res.json();
       if (res.ok && data.success) {
         if (data.detected && data.arrival) {
           setActionMessage({
@@ -219,13 +213,8 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
   const handleScheduleCustom = async (minutes: number = 15) => {
     setActionMessage(null);
     try {
-      const pin = localStorage.getItem('triptrack_family_pin') || '2026';
-      const res = await fetch('/api/notifications/schedule-custom', {
+      const { res, data } = await safeFetchJson('/api/notifications/schedule-custom', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-family-pin': pin
-        },
         body: JSON.stringify({
           minutesFromNow: minutes,
           dayTitle: `Live Test: ${minutes}-Minute Scheduled Briefing`,
@@ -234,7 +223,6 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
         })
       });
 
-      const data = await res.json();
       if (res.ok && data.success) {
         setActionMessage({
           text: `⏱️ Scheduled! ${data.message}. TripTrack background engine will fire the email right on schedule.`,

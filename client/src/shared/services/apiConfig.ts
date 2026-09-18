@@ -29,7 +29,16 @@ export const getApiHeaders = (extra: Record<string, string> = {}): Record<string
 };
 
 export const getBackendUrl = (): string => {
-  return (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_BACKEND_URL) ||
-    (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5000' : (typeof window !== 'undefined' ? window.location.origin : ''));
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_BACKEND_URL) {
+    return (import.meta as any).env.VITE_BACKEND_URL;
+  }
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:5000';
+    }
+    // Production Render cloud backend for live Vercel deployments
+    return 'https://triptrack-api.onrender.com';
+  }
+  return 'https://triptrack-api.onrender.com';
 };
 
