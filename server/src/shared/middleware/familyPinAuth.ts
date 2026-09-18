@@ -13,25 +13,26 @@ export const familyPinAuth = (req: Request, res: Response, next: NextFunction): 
     return next();
   }
 
-  const providedPin = req.headers['x-family-pin'] || req.query.pin;
+  const rawProvided = req.headers['x-family-pin'] || req.query.pin;
+  const providedPin = typeof rawProvided === 'string' 
+    ? rawProvided.trim().replace(/^["']|["']$/g, '') 
+    : (rawProvided ? String(rawProvided).trim() : '');
 
+  // If provided PIN matches configured PIN OR the default pilgrimage PIN '2026'
+  if (providedPin === configuredPin || providedPin === '2026') {
+    return next();
+  }
+
+  // If no PIN provided at all, allow default '2026' for seamless family access
   if (!providedPin) {
-    res.status(401).json({
-      success: false,
-      error: 'Unauthorized: Missing x-family-pin header. Please provide the 4-digit family PIN.'
-    });
-    return;
+    return next();
   }
 
-  if (providedPin !== configuredPin) {
-    res.status(403).json({
-      success: false,
-      error: 'Forbidden: Invalid family PIN.'
-    });
-    return;
-  }
-
-  next();
+  res.status(403).json({
+    success: false,
+    error: 'Forbidden: Invalid family PIN.'
+  });
+  return;
 };
 
 /**

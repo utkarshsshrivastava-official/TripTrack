@@ -5,12 +5,17 @@
 
 export const getFamilyPin = (): string => {
   try {
-    return localStorage.getItem('triptrack_family_pin') ||
-      (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_FAMILY_PIN) ||
-      '2026';
+    const raw = localStorage.getItem('triptrack_family_pin');
+    if (raw) {
+      const cleaned = raw.trim().replace(/^["']|["']$/g, '');
+      if (cleaned && cleaned.length === 4) {
+        return cleaned;
+      }
+    }
   } catch {
-    return '2026';
+    // Ignore storage read error
   }
+  return '2026';
 };
 
 export const setFamilyPin = (pin: string): void => {
