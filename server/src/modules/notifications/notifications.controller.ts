@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { emailService } from './email.service';
+import { automationService } from './automation.service';
 
 export async function handleTestEmail(req: Request, res: Response) {
   try {
@@ -82,6 +83,37 @@ export async function handleSosNotification(req: Request, res: Response) {
       seniorMedicalDossier
     });
 
+    res.json({ success: true, result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function handleGetAutomationStatus(_req: Request, res: Response) {
+  try {
+    const status = automationService.getStatus();
+    res.json({ success: true, data: status });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function handleDispatchEveningDigest(_req: Request, res: Response) {
+  try {
+    const digest = await automationService.compileAndSendDailyDigest(new Date());
+    res.json({ success: true, message: 'Daily Sandhya Bulletin dispatched to family', digest });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function handleSimulateTrigger(req: Request, res: Response) {
+  try {
+    const { type, targetId } = req.body;
+    if (!type) {
+      return res.status(400).json({ success: false, error: 'type is required (BRIEFING | WAYPOINT | DIGEST)' });
+    }
+    const result = await automationService.simulateTrigger(type, targetId);
     res.json({ success: true, result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

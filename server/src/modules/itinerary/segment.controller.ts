@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SegmentModel } from '../../models/segment.model';
 import { isMongoConnected } from '../../shared/lib/mongodb';
 import { getIO, FAMILY_ROOM } from '../chat/socket.service';
+import { automationService } from '../notifications/automation.service';
 
 // In-memory fallback segments storage when MongoDB is not connected
 let memorySegments: any[] = [];
@@ -17,7 +18,6 @@ export async function getSegmentsHandler(_req: Request, res: Response): Promise<
       res.json({ success: true, mode: 'mongodb', data: segments });
       return;
     }
-
     res.json({ success: true, mode: 'memory', data: memorySegments });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -26,7 +26,7 @@ export async function getSegmentsHandler(_req: Request, res: Response): Promise<
 
 export async function toggleCheckpointHandler(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
-  const { checkpointId } = req.body;
+  const checkpointId = req.body.checkpointId || req.params.checkpointId;
 
   try {
     const io = getIO();
@@ -43,6 +43,11 @@ export async function toggleCheckpointHandler(req: Request, res: Response): Prom
         cp.done = !cp.done;
         cp.completedAt = cp.done ? new Date() : undefined;
         await segment.save();
+
+        if (cp.done) {
+          automationService.checkAndTriggerMilestoneCheckpoint(checkpointId, cp.name, id)
+            .catch(err => console.warn('⚠️ [Milestone Automation] Error:', err));
+        }
 
         if (io) {
           io.to(FAMILY_ROOM).emit('checkpoint_updated', {
@@ -65,6 +70,11 @@ export async function toggleCheckpointHandler(req: Request, res: Response): Prom
       if (cp) {
         cp.done = !cp.done;
         cp.completedAt = cp.done ? new Date().toISOString() : undefined;
+
+        if (cp.done) {
+          automationService.checkAndTriggerMilestoneCheckpoint(checkpointId, cp.name, id)
+            .catch(err => console.warn('⚠️ [Milestone Automation] Error:', err));
+        }
 
         if (io) {
           io.to(FAMILY_ROOM).emit('checkpoint_updated', {

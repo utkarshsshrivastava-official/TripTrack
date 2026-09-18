@@ -8,6 +8,7 @@ import http from 'http';
 import { app } from './app';
 import { connectMongoDB } from './shared/lib/mongodb';
 import { initSocketServer } from './modules/chat/socket.service';
+import { automationService } from './modules/notifications/automation.service';
 
 const PORT = process.env.PORT || 5000;
 
@@ -20,6 +21,9 @@ async function bootstrap() {
 
   // Attach Socket.io server
   initSocketServer(httpServer);
+
+  // Start Autonomous Pilgrimage Briefings & Evening Digest Scheduler
+  automationService.startScheduler();
 
   httpServer.listen(PORT, () => {
     console.log(`🚀 [TripTrack Server] Running on http://localhost:${PORT}`);

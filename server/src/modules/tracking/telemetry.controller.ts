@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { LocationPingModel } from '../../models/locationPing.model';
 import { isMongoConnected } from '../../shared/lib/mongodb';
+import { automationService } from '../notifications/automation.service';
 
 // In-memory telemetry fallback store
 let memoryPings: any[] = [];
@@ -29,6 +30,12 @@ export async function pingLocationHandler(req: Request, res: Response): Promise<
       deviceTimestamp: deviceTimestamp ? new Date(deviceTimestamp) : new Date(),
       serverReceivedAt: new Date()
     };
+
+    // Autonomous Geofence Arrival Evaluation
+    if (!isNaN(payload.latitude) && !isNaN(payload.longitude)) {
+      automationService.checkAndTriggerGeofence(payload.latitude, payload.longitude, payload.passengerId)
+        .catch(err => console.warn('⚠️ [Geofence] Evaluation error:', err));
+    }
 
     if (isMongoConnected()) {
       const saved = await LocationPingModel.create(payload);
@@ -66,6 +73,14 @@ export async function bulkPingHandler(req: Request, res: Response): Promise<void
       deviceTimestamp: p.deviceTimestamp ? new Date(p.deviceTimestamp) : new Date(),
       serverReceivedAt: new Date()
     }));
+
+    if (formatted.length > 0) {
+      const latest = formatted[formatted.length - 1];
+      if (!isNaN(latest.latitude) && !isNaN(latest.longitude)) {
+        automationService.checkAndTriggerGeofence(latest.latitude, latest.longitude, latest.passengerId)
+          .catch(err => console.warn('⚠️ [Bulk Geofence] Evaluation error:', err));
+      }
+    }
 
     if (isMongoConnected()) {
       await LocationPingModel.insertMany(formatted);

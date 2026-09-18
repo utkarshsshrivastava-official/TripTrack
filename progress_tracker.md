@@ -36,6 +36,7 @@
 | **Phase 21** | **Universal Live Data Sync: MongoDB Atlas, Socket.io & Dexie** | ✅ **DONE** | 100% | Completed |
 | **Phase 22** | **Cloudinary Media Integration: Receipts, Voice Streaming & Photo Moments** | ✅ **DONE** | 100% | Completed |
 | **Phase 23** | **Splitwise-Grade Multi-Payer & Custom Split Financial Engine in Gullak** | ✅ **DONE** | 100% | Completed |
+| **Phase 24** | **Autonomous Scheduled & Geofenced Email Notification Engine** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -607,6 +608,34 @@
   - [x] Preserved `paymentSplits`, `splitMode`, and `owedSplits` across REST API endpoints (`GET /api/expenses`, `POST /api/expenses`, `POST /api/expenses/sync`).
   - [x] Real-time Socket.io events (`send_expense`, `receive_expense`) broadcast and sync split records instantaneously across devices.
   - [x] Dexie IndexedDB stores split records locally first for complete offline operation in Alaknanda river gorges.
+
+---
+
+### ✅ Phase 24: Autonomous Scheduled & Geofenced Email Notification Engine
+*Status: Completed & Verified on Sep 18, 2026 (100%)*
+
+- [x] **24.1 High-Contrast Email Template Suite (`email.service.ts`)**
+  - [x] Enhanced `notifyEmergencySos()` with 1-tap Google Maps coordinates pin, battery percentage, senior medical dossiers, and national/Uttarakhand helplines.
+  - [x] Implemented `notifyScheduledBriefing()`: rich morning briefing with day title, core objectives, milestone timings, elder dignity pacing, and logistics notes.
+  - [x] Implemented `notifyGeofenceArrival()`: green celebration banner, altitude, source detection type (GPS geofence vs milestone check), and next target segment.
+  - [x] Implemented `notifyDailyEveningDigest()`: "Sandhya Bulletin" summarizing today's milestones, SpO2 & BP status, photos uploaded, and tomorrow's morning schedule.
+  - [x] Updated `getRecipients()`: merges `FAMILY_NOTIFICATION_EMAILS` and `SMTP_USER` deduplicated.
+- [x] **24.2 Autonomous GPS Geofencing Engine (`automation.service.ts`, `telemetry.controller.ts`)**
+  - [x] Configured 8 pilgrimage landmark geofences: NDLS (12km), Haridwar (8km), Rishikesh (6km), Devprayag (4km), Rudraprayag (4km), Joshimath (5km), Badrinath Sanctum (3km), and Mana Village (2.5km).
+  - [x] Implemented mathematical Haversine Distance algorithm: $d = 2R \cdot \arcsin(\dots)$.
+  - [x] Hooked into `pingLocationHandler` and `bulkPingHandler` in `telemetry.controller.ts`: incoming pings automatically trigger arrival notice upon entry.
+  - [x] Idempotency & duplicate protection: `dispatchedTriggers` ensures each waypoint fires at most once.
+- [x] **24.3 Dual-Trigger Himalayan Checkpoint Fallback (`segment.controller.ts`)**
+  - [x] Mountain battery-saver protection: when background GPS is throttled or phone is asleep, marking a milestone in the Itinerary tab automatically triggers the same waypoint arrival email.
+  - [x] Zero-signal queueing: offline checkpoint toggles stored in client Dexie IndexedDB flush and dispatch the arrival email upon cellular reconnection.
+- [x] **24.4 Time-Based Scheduled Briefings & Sandhya Bulletin Scheduler (`automation.service.ts`, `index.ts`)**
+  - [x] Scheduled briefings for Sep 24 (Train 12441 departure), Sep 25 (NDLS arrival & Expressway transfer), Sep 26 (Mountain ascent to Joshimath), Sep 27 (Badrinath Sanctum & Tarpan), Sep 28 (Mana village & descent), and Oct 01 (IndiGo flight connections).
+  - [x] Background 60-second heartbeat in `startScheduler()` initialized on server boot.
+  - [x] Daily 20:00 (8:00 PM) automated Sandhya Bulletin dispatch compiling live DB stats (milestones, expenses, photos).
+- [x] **24.5 Client-Side Dispatchers & Settings UI (`EmergencyModal.tsx`, `EmailAlertsModal.tsx`, `AppSidebar.tsx`)**
+  - [x] Emergency Modal: added prominent `"🚨 Broadcast Emergency GPS SOS Email Now"` button capturing live coordinates, battery level, and elders' medical dossier.
+  - [x] Email Alerts Modal: dedicated modal displaying active recipients, 6 scheduled morning briefings with status pills, 8 GPS geofence waypoints, 1-tap "Send Today's Evening Digest Now", and "Send Test Email to Family".
+  - [x] Sidebar integration: added `"Family Email Alerts"` drawer action with active mail icon and badge.
 
 ---
 

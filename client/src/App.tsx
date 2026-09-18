@@ -22,6 +22,7 @@ import { BrahmaKapalGuideModal } from './modules/sacred/components/BrahmaKapalGu
 import { PackingChecklistModal } from './modules/sacred/components/PackingChecklistModal';
 import { OfflineStotraPlayer } from './modules/sacred/components/OfflineStotraPlayer';
 import { YatraMemorialModal } from './modules/sacred/components/YatraMemorialModal';
+import { EmailAlertsModal } from './components/EmailAlertsModal';
 import { ItineraryPreview } from './modules/itinerary/ItineraryPreview';
 import { VaultPreview } from './modules/vault/VaultPreview';
 import { TrackingPreview } from './modules/tracking/TrackingPreview';
@@ -46,6 +47,7 @@ export const App: React.FC = () => {
   const [isPackingOpen, setIsPackingOpen] = useState<boolean>(false);
   const [isStotraOpen, setIsStotraOpen] = useState<boolean>(false);
   const [isMemorialOpen, setIsMemorialOpen] = useState<boolean>(false);
+  const [isEmailAlertsOpen, setIsEmailAlertsOpen] = useState<boolean>(false);
 
   const { isOnline, queuedCount, isSyncing, triggerSync } = useNetworkStatus();
   const {
@@ -119,6 +121,7 @@ export const App: React.FC = () => {
           onOpenPackingChecklist={() => setIsPackingOpen(true)}
           onOpenSacredChants={() => setIsStotraOpen(true)}
           onOpenMemorial={() => setIsMemorialOpen(true)}
+          onOpenEmailAlerts={() => setIsEmailAlertsOpen(true)}
           isOnline={isOnline}
           queuedCount={queuedCount}
           isSyncing={isSyncing}
@@ -238,6 +241,12 @@ export const App: React.FC = () => {
         <YatraMemorialModal
           isOpen={isMemorialOpen}
           onClose={() => setIsMemorialOpen(false)}
+        />
+
+        {/* Phase 24: Autonomous Scheduled & Geofenced Email Alerts Modal */}
+        <EmailAlertsModal
+          isOpen={isEmailAlertsOpen}
+          onClose={() => setIsEmailAlertsOpen(false)}
         />
       </div>
     </div>

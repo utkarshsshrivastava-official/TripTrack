@@ -20,7 +20,8 @@ import {
   MessageSquareShare,
   Smartphone,
   Download,
-  CheckCircle2
+  CheckCircle2,
+  Mail
 } from 'lucide-react';
 import { usePwaInstall } from '../shared/hooks/usePwaInstall';
 
@@ -37,6 +38,7 @@ interface AppSidebarProps {
   onOpenPackingChecklist: () => void;
   onOpenSacredChants: () => void;
   onOpenMemorial: () => void;
+  onOpenEmailAlerts: () => void;
   isOnline: boolean;
   queuedCount: number;
   isSyncing: boolean;
@@ -57,6 +59,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
   onOpenPackingChecklist,
   onOpenSacredChants,
   onOpenMemorial,
+  onOpenEmailAlerts,
   isOnline,
   queuedCount,
   isSyncing,
@@ -316,6 +319,22 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
                   <div>
                     <span className="text-xs font-bold text-slate-200 block">Yatra Memorial Certificate</span>
                     <span className="text-[10px] text-slate-400">Keepsake & 50/50 split</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-300" />
+              </button>
+
+              <button
+                onClick={() => handleAction(onOpenEmailAlerts)}
+                className="w-full tap-active flex items-center justify-between p-2.5 rounded-xl bg-slate-900/50 hover:bg-slate-800/80 border border-slate-800/60 transition-all text-left group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-950/60 border border-emerald-800/60 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-200 block">Family Email Alerts</span>
+                    <span className="text-[10px] text-slate-400">Briefings, geofencing & digest</span>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-slate-300" />
