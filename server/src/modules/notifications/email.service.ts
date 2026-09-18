@@ -151,8 +151,10 @@ class EmailService {
     htmlBody: string, 
     recipients: string[]
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    const apiKey = process.env.BREVO_API_KEY?.trim();
+    const apiKey = process.env.BREVO_API_KEY?.replace(/['"\r\n\s]/g, '');
     if (!apiKey) return { success: false, error: 'BREVO_API_KEY not configured' };
+
+    console.log(`📡 [Brevo HTTPS API] Attempting dispatch with key: ${apiKey.slice(0, 10)}... (length: ${apiKey.length})`);
 
     const senderEmail = process.env.SMTP_USER?.trim() || 'utkarshsofficial13@gmail.com';
     const senderName = 'TripTrack Pilgrimage 🏔️';
