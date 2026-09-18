@@ -22,9 +22,6 @@ import { isMongoConnected } from './shared/lib/mongodb';
 
 export const app = express();
 
-// Global Rate Limiter to protect free-tier APIs and database
-app.use('/api', rateLimiter);
-
 // Middleware
 app.use(cors({
   origin: '*',
@@ -32,20 +29,24 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'x-family-pin']
 }));
 
-app.use(express.json({ limit: '15mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// Health Check Endpoint (Public)
-app.get('/api/health', (_req, res) => {
-  res.json({
+// Cloud / Container Health Check Endpoints (Zero overhead, before rate limiter)
+app.get(['/', '/health', '/api/health'], (_req: Request, res: Response) => {
+  res.status(200).json({
     status: 'ok',
     app: 'TripTrack API',
     version: '1.0.0',
     target: 'Badrinath Dham Pilgrimage 2026',
     mongoConnected: isMongoConnected(),
+    uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString()
   });
 });
+
+// Global Rate Limiter to protect free-tier APIs and database (after health check)
+app.use('/api', rateLimiter);
+
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // Protected Modular Routes (Mutations require x-family-pin header)
 app.use('/api/seed', familyPinMutationsOnly, seedRoutes);

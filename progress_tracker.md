@@ -641,6 +641,10 @@
   - [x] Verified live geofence detection: triggered real arrival notification email via Gmail SMTP to `utkarshshrivastava.13@gmail.com`.
   - [x] Verified automated 15-minute scheduled briefing countdown and active background server scheduler.
   - [x] Added interactive "Trigger Durg GPS" and "Schedule (+15m)" controls to `EmailAlertsModal.tsx`.
+- [x] **24.7 Render Production Deployment & Cloud Health Check Hardening (`index.ts`, `app.ts`, `package.json`)**
+  - [x] Explicitly bound Express HTTP server to `0.0.0.0` host interface so Render's container routing mesh and health-checkers connect reliably over IPv4.
+  - [x] Added root and multi-path health check handlers (`/`, `/health`, `/api/health`) placed before rate-limiting middleware, returning instant 200 OK JSON status.
+  - [x] Pinned Node engine in `server/package.json` to `"20.x"` LTS to prevent Render from selecting experimental Node 26.9.0.
 
 ---
 

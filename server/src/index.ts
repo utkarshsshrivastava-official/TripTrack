@@ -10,7 +10,8 @@ import { connectMongoDB } from './shared/lib/mongodb';
 import { initSocketServer } from './modules/chat/socket.service';
 import { automationService } from './modules/notifications/automation.service';
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
+const HOST = '0.0.0.0';
 
 async function bootstrap() {
   // Connect to MongoDB Atlas (graceful if not configured)
@@ -25,12 +26,12 @@ async function bootstrap() {
   // Start Autonomous Pilgrimage Briefings & Evening Digest Scheduler
   automationService.startScheduler();
 
-  httpServer.listen(PORT, () => {
-    console.log(`🚀 [TripTrack Server] Running on http://localhost:${PORT}`);
+  httpServer.listen(PORT, HOST, () => {
+    console.log(`🚀 [TripTrack Server] Running on http://${HOST}:${PORT}`);
     console.log(`🏔️ [Mission] Badrinath Dham Pilgrimage 2026 (Sep 24 - Oct 02)`);
-    console.log(`📡 [Health API] http://localhost:${PORT}/api/health`);
-    console.log(`🌱 [Seed API]   http://localhost:${PORT}/api/seed/init`);
-    console.log(`🔌 [Socket.io]  Live In-Family Room Ready on ws://localhost:${PORT}`);
+    console.log(`📡 [Health API] http://${HOST}:${PORT}/api/health`);
+    console.log(`🌱 [Seed API]   http://${HOST}:${PORT}/api/seed/init`);
+    console.log(`🔌 [Socket.io]  Live In-Family Room Ready on ws://${HOST}:${PORT}`);
   });
 }
 
