@@ -157,7 +157,7 @@ class EmailService {
     console.log(`📡 [Brevo HTTPS API] Attempting dispatch with key: ${apiKey.slice(0, 10)}... (length: ${apiKey.length})`);
 
     const senderEmail = process.env.SMTP_USER?.trim() || 'utkarshsofficial13@gmail.com';
-    const senderName = 'TripTrack Pilgrimage 🏔️';
+    const senderName = 'TripTrack by Ut-tech';
 
     try {
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -216,7 +216,7 @@ class EmailService {
     if (this.isConfigured && this.transporter) {
       try {
         const sendPromise = this.transporter.sendMail({
-          from: `"TripTrack Pilgrimage 🏔️" <${process.env.SMTP_USER}>`,
+          from: `"TripTrack by Ut-tech" <${process.env.SMTP_USER}>`,
           to: recipients,
           subject,
           html: htmlBody

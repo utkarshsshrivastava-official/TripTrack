@@ -6,11 +6,11 @@ export async function handleTestEmail(req: Request, res: Response) {
   try {
     const { recipient } = req.body;
     const result = await emailService.sendEmail(
-      '🏔️ [TripTrack] Test Notification Dispatch',
+      '🏔️ [TripTrack by Ut-tech] Test Notification Dispatch',
       `
       <div style="font-family: Arial, sans-serif; background-color: #1c1917; color: #f5f5f4; padding: 20px; border-radius: 12px;">
-        <h2 style="color: #f59e0b;">TripTrack Test Email Notification</h2>
-        <p>This is a test notification confirming that the Google Gmail App Password notification system is functioning properly.</p>
+        <h2 style="color: #f59e0b;">TripTrack by Ut-tech Test Email Notification</h2>
+        <p>This is a test notification confirming that the family notification system is functioning properly.</p>
         <p style="color: #10b981;">✅ Ready for Badrinath Dham Sacred Pilgrimage 2026</p>
       </div>
       `,
