@@ -58,16 +58,22 @@ export async function subscribeUserToWebPush(activeUser: UserProfile): Promise<b
     // 3. Wait for service worker to become active
     const registration = await navigator.serviceWorker.ready;
 
-    // 4. Subscribe with PushManager
+    // 4. Subscribe with PushManager (cleanly refresh token to guarantee valid key binding)
     const applicationServerKey = urlBase64ToUint8Array(keyData.publicKey);
     let subscription = await registration.pushManager.getSubscription();
 
-    if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: applicationServerKey as unknown as BufferSource
-      });
+    if (subscription) {
+      try {
+        await subscription.unsubscribe();
+      } catch (e) {
+        console.warn('Could not unsubscribe stale token:', e);
+      }
     }
+
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: applicationServerKey as unknown as BufferSource
+    });
 
     // 5. Send subscription endpoint & keys to MongoDB Atlas backend
     const subRes = await fetch(`${backendUrl}/api/notifications/push-subscribe`, {

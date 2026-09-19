@@ -23,6 +23,7 @@ import { PackingChecklistModal } from './modules/sacred/components/PackingCheckl
 import { OfflineStotraPlayer } from './modules/sacred/components/OfflineStotraPlayer';
 import { YatraMemorialModal } from './modules/sacred/components/YatraMemorialModal';
 import { EmailAlertsModal } from './components/EmailAlertsModal';
+import { Bell, X } from 'lucide-react';
 import { ChatNotificationToast, ChatToastData } from './components/ChatNotificationToast';
 import { OfflineChatMessageRecord } from './shared/db/dexie';
 import { playChatChime, triggerChatHaptic } from './shared/utils/soundEffects';
@@ -66,11 +67,28 @@ export const App: React.FC = () => {
   // Real-Time Chat & Notification States
   const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
   const [chatToast, setChatToast] = useState<ChatToastData | null>(null);
+  const [showPushBanner, setShowPushBanner] = useState<boolean>(false);
 
   const handleOpenChat = useCallback(() => {
     setIsChatOpen(true);
     setUnreadChatCount(0);
     setChatToast(null);
+
+    // Prompt user to enable background lock screen notifications on chat interaction
+    if (isPushSupported() && getNotificationPermission() === 'default') {
+      subscribeUserToWebPush(activeUser).catch(() => {});
+    }
+  }, [activeUser]);
+
+  // Show gentle one-time opt-in banner if phone hasn't enabled push notifications yet
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isPushSupported() && getNotificationPermission() === 'default') {
+      const dismissed = sessionStorage.getItem('triptrack_push_banner_dismissed');
+      if (!dismissed) {
+        const timer = setTimeout(() => setShowPushBanner(true), 2000);
+        return () => clearTimeout(timer);
+      }
+    }
   }, []);
 
   const handleIncomingChatMessage = useCallback((msg: OfflineChatMessageRecord) => {
@@ -176,6 +194,44 @@ export const App: React.FC = () => {
           onOpenEmergency={() => setIsEmergencyOpen(true)}
           activeUser={activeUser}
         />
+
+        {/* Lock Screen Push Notification Opt-in Prompt Banner */}
+        {showPushBanner && (
+          <div className="mx-3 mt-2 p-3 rounded-2xl bg-gradient-to-r from-emerald-950/95 via-slate-950/95 to-slate-900/95 border border-emerald-500/50 shadow-2xl backdrop-blur-xl flex items-center justify-between gap-2.5 animate-fade-in z-30 relative">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                <Bell className="w-4 h-4 animate-bounce" />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-stone-100 truncate">Enable Lock Screen Alerts</h4>
+                <p className="text-[10px] text-stone-400 truncate">Get alerted even when phone is locked</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <button
+                type="button"
+                onClick={async () => {
+                  await subscribeUserToWebPush(activeUser);
+                  setShowPushBanner(false);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-md shadow-emerald-500/30 active:scale-95 transition-all min-h-touch min-w-touch flex items-center justify-center"
+              >
+                Allow
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPushBanner(false);
+                  sessionStorage.setItem('triptrack_push_banner_dismissed', 'true');
+                }}
+                className="p-1.5 text-stone-400 hover:text-stone-200 min-h-touch min-w-touch flex items-center justify-center"
+                aria-label="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Slide-out Navigation Drawer for Health, Sacred Liturgy & Diagnostics */}
         <AppSidebar

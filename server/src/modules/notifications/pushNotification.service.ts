@@ -123,7 +123,11 @@ export class PushNotificationService {
                 auth: sub.keys.auth
               }
             },
-            payload
+            payload,
+            {
+              TTL: 86400,
+              urgency: 'high'
+            }
           );
         } catch (err: any) {
           // If status is 404 (Not Found) or 410 (Gone), device unsubscribed or token expired
@@ -178,7 +182,11 @@ export class PushNotificationService {
               auth: sub.keys.auth
             }
           },
-          payload
+          payload,
+          {
+            TTL: 86400,
+            urgency: 'high'
+          }
         );
         sent++;
       } catch (err: any) {

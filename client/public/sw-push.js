@@ -21,6 +21,7 @@ self.addEventListener('push', (event) => {
     badge: data.badge || '/favicon.svg',
     tag: data.tag || 'triptrack-chat',
     renotify: true,
+    requireInteraction: true,
     // Elder-friendly high-notice vibration cadence
     vibrate: [200, 100, 200, 100, 200],
     data: data.data || { url: '/?openChat=true' },
