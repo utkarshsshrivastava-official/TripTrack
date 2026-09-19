@@ -190,3 +190,69 @@ export async function handleResetTrigger(req: Request, res: Response) {
   }
 }
 
+// ==========================================
+// WEB PUSH CONTROLLERS (STANDALONE WEBAPK)
+// ==========================================
+
+export async function handleGetVapidPublicKey(_req: Request, res: Response) {
+  try {
+    const { pushNotificationService } = await import('./pushNotification.service');
+    const publicKey = pushNotificationService.getPublicKey();
+    res.json({ success: true, publicKey });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function handlePushSubscribe(req: Request, res: Response) {
+  try {
+    const { userId, userName, subscription } = req.body;
+    if (!userId || !subscription) {
+      return res.status(400).json({ success: false, error: 'userId and subscription are required' });
+    }
+
+    const { pushNotificationService } = await import('./pushNotification.service');
+    const record = await pushNotificationService.saveSubscription({
+      userId,
+      userName: userName || userId,
+      subscription,
+      userAgent: req.headers['user-agent']
+    });
+
+    res.json({ success: true, message: 'Push subscription registered successfully.', record });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function handlePushUnsubscribe(req: Request, res: Response) {
+  try {
+    const { endpoint } = req.body;
+    if (!endpoint) {
+      return res.status(400).json({ success: false, error: 'endpoint is required' });
+    }
+
+    const { pushNotificationService } = await import('./pushNotification.service');
+    await pushNotificationService.removeSubscription(endpoint);
+    res.json({ success: true, message: 'Push subscription removed successfully.' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+export async function handleTestPush(req: Request, res: Response) {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId is required' });
+    }
+
+    const { pushNotificationService } = await import('./pushNotification.service');
+    const result = await pushNotificationService.sendTestPush(userId);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+

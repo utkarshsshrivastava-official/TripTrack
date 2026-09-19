@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { DuoId } from './shared/types';
 import { useNetworkStatus } from './shared/hooks/useNetworkStatus';
 import { useUserProfile } from './shared/hooks/useUserProfile';
@@ -23,6 +23,10 @@ import { PackingChecklistModal } from './modules/sacred/components/PackingCheckl
 import { OfflineStotraPlayer } from './modules/sacred/components/OfflineStotraPlayer';
 import { YatraMemorialModal } from './modules/sacred/components/YatraMemorialModal';
 import { EmailAlertsModal } from './components/EmailAlertsModal';
+import { ChatNotificationToast, ChatToastData } from './components/ChatNotificationToast';
+import { OfflineChatMessageRecord } from './shared/db/dexie';
+import { playChatChime, triggerChatHaptic } from './shared/utils/soundEffects';
+import { isPushSupported, getNotificationPermission, subscribeUserToWebPush } from './shared/services/pushNotificationManager';
 import { ItineraryPreview } from './modules/itinerary/ItineraryPreview';
 import { VaultPreview } from './modules/vault/VaultPreview';
 import { TrackingPreview } from './modules/tracking/TrackingPreview';
@@ -58,6 +62,72 @@ export const App: React.FC = () => {
     isModalOpen: isProfileModalOpen,
     setIsModalOpen: setIsProfileModalOpen
   } = useUserProfile();
+
+  // Real-Time Chat & Notification States
+  const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
+  const [chatToast, setChatToast] = useState<ChatToastData | null>(null);
+
+  const handleOpenChat = useCallback(() => {
+    setIsChatOpen(true);
+    setUnreadChatCount(0);
+    setChatToast(null);
+  }, []);
+
+  const handleIncomingChatMessage = useCallback((msg: OfflineChatMessageRecord) => {
+    // If chat drawer is currently closed, increment counter and trigger alert
+    if (!isChatOpen) {
+      setUnreadChatCount(prev => prev + 1);
+
+      // Only alert if message is from another family member
+      if (msg.senderId !== activeUser.id) {
+        setChatToast({
+          id: msg.id,
+          senderName: msg.senderName,
+          senderAvatarColor: msg.senderAvatarColor,
+          text: msg.text,
+          timestamp: msg.timestamp
+        });
+        playChatChime();
+        triggerChatHaptic();
+      }
+    }
+  }, [isChatOpen, activeUser.id]);
+
+  // Handle Web Push click routing & Service Worker communication
+  useEffect(() => {
+    const handleServiceWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'OPEN_CHAT') {
+        handleOpenChat();
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+    }
+
+    // Direct URL entry from Android system notification drawer: /?openChat=true
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('openChat') === 'true') {
+        handleOpenChat();
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+
+    return () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+      }
+    };
+  }, [handleOpenChat]);
+
+  // Auto-subscribe standalone WebAPK/PWA to background Web Push if supported & permitted
+  useEffect(() => {
+    if (isPushSupported() && getNotificationPermission() === 'granted') {
+      subscribeUserToWebPush(activeUser).catch(() => {});
+    }
+  }, [activeUser]);
+
 
   // Initialize and maintain persistent Socket.io connection with active profile
   useEffect(() => {
@@ -163,8 +233,18 @@ export const App: React.FC = () => {
           )}
         </main>
 
+        {/* Top Floating Live Chat Banner Toast */}
+        <ChatNotificationToast
+          toast={chatToast}
+          onOpenChat={handleOpenChat}
+          onDismiss={() => setChatToast(null)}
+        />
+
         {/* Floating Quick Chat Bubble (Bottom-Left) */}
-        <FloatingChatButton onClick={() => setIsChatOpen(true)} />
+        <FloatingChatButton 
+          onClick={handleOpenChat} 
+          unreadCount={unreadChatCount} 
+        />
 
         {/* Floating Frosted Glass Bottom Dock */}
         <BottomDock activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -192,6 +272,7 @@ export const App: React.FC = () => {
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
           activeUser={activeUser}
+          onIncomingMessage={handleIncomingChatMessage}
         />
 
         {/* Phase 6.1 & 6.2: Pulse Oximeter Modal */}

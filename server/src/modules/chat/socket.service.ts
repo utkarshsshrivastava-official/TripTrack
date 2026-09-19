@@ -6,6 +6,7 @@ import { FamilyFeedModel } from '../../models/familyFeed.model';
 import { SegmentModel } from '../../models/segment.model';
 import { DocumentModel } from '../../models/document.model';
 import { isMongoConnected } from '../../shared/lib/mongodb';
+import { pushNotificationService } from '../notifications/pushNotification.service';
 
 export const FAMILY_ROOM = 'badrinath-family-2026';
 
@@ -85,6 +86,11 @@ export function initSocketServer(httpServer: HttpServer): SocketIOServer {
       socket.to(FAMILY_ROOM).emit('receive_chat_message', {
         ...msg,
         status: 'delivered'
+      });
+
+      // Dispatch Web Push notification to all other family members (for backgrounded WebAPKs)
+      pushNotificationService.sendChatPushToFamily(msg).catch(err => {
+        console.warn('⚠️ [WebPush] Async family push error:', err.message || err);
       });
 
       // Acknowledge back to sender

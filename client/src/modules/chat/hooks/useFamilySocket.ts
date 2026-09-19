@@ -13,12 +13,20 @@ import {
   clearAllChatHistory
 } from '../services/chatStorage';
 
-export function useFamilySocket(activeUser: UserProfile) {
+export function useFamilySocket(
+  activeUser: UserProfile,
+  onIncomingMessage?: (msg: OfflineChatMessageRecord) => void
+) {
   const [messages, setMessages] = useState<OfflineChatMessageRecord[]>([]);
   const [isConnected, setIsConnected] = useState(isSocketConnected());
   const [typingUser, setTypingUser] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const typingTimeoutRef = useRef<any>(null);
+  const onIncomingMessageRef = useRef(onIncomingMessage);
+
+  useEffect(() => {
+    onIncomingMessageRef.current = onIncomingMessage;
+  }, [onIncomingMessage]);
 
   // Load existing Dexie messages
   const loadMessages = useCallback(async () => {
@@ -78,6 +86,10 @@ export function useFamilySocket(activeUser: UserProfile) {
         }
         return [...prev, incoming].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
       });
+
+      if (onIncomingMessageRef.current) {
+        onIncomingMessageRef.current(incoming);
+      }
     };
 
     const onMessageAck = async (data: { id: string; status: 'delivered' }) => {

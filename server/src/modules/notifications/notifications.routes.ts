@@ -9,7 +9,11 @@ import {
   handleSimulateTrigger,
   handleScheduleCustomBriefing,
   handleTriggerGeofenceCheck,
-  handleResetTrigger
+  handleResetTrigger,
+  handleGetVapidPublicKey,
+  handlePushSubscribe,
+  handlePushUnsubscribe,
+  handleTestPush
 } from './notifications.controller';
 
 const router = Router();
@@ -25,4 +29,11 @@ router.post('/schedule-custom', handleScheduleCustomBriefing);
 router.post('/trigger-geofence', handleTriggerGeofenceCheck);
 router.post('/reset-trigger', handleResetTrigger);
 
+// Web Push (Standalone WebAPK / PWA)
+router.get('/vapid-public-key', handleGetVapidPublicKey);
+router.post('/push-subscribe', handlePushSubscribe);
+router.post('/push-unsubscribe', handlePushUnsubscribe);
+router.post('/test-push', handleTestPush);
+
 export { router as notificationsRouter };
+

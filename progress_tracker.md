@@ -39,6 +39,7 @@
 | **Phase 24** | **Autonomous Scheduled & Geofenced Email Notification Engine** | ✅ **DONE** | 100% | Completed |
 | **Phase 25** | **Pre-Departure (Sep 19–23) & During-Trip (Sep 24–Oct 02) Scheduled Briefing System** | ✅ **DONE** | 100% | Completed |
 | **Phase 26** | **Zero-Friction Profile Auto-Binding (Gullak, Feed, Vault, Itinerary & GPS)** | ✅ **DONE** | 100% | Completed |
+| **Phase 27** | **Dual-Tier In-App & Standalone WebAPK Push Notification Engine** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -734,6 +735,23 @@
     - [x] Added WhatsApp-style incoming animated chat bubble with 3-dot bouncy wave animation (`animate-bounce` with staggered delay).
     - [x] Implemented 2000ms debounce timer for keystroke typing emission and instant cleanup on submit, blur, or drawer close.
     - [x] Auto-scrolls conversation stream smoothly to reveal the typing bubble as soon as a family member starts typing.
+
+---
+
+### ✅ Phase 27: Dual-Tier In-App & Standalone WebAPK Push Notification Engine
+*Status: Completed & Verified on Sep 19, 2026*
+
+- [x] **27.1 Tier 1: In-App Real-Time Notification & Unread Counter**
+  - [x] App-level persistent chat socket listener in `App.tsx` (active even when chat drawer is closed).
+  - [x] Dynamic unread badge counter (`1`, `2`, `9+`) on `FloatingChatButton.tsx` with pulsing emerald/amber glow.
+  - [x] Ultra-crisp slide-down `ChatNotificationToast.tsx` with sender badge, preview, and one-tap drawer launcher.
+  - [x] Zero-dependency Web Audio API synthetic bell chime (`playChatChime()`) and tactile vibration (`triggerChatHaptic()`).
+- [x] **27.2 Tier 2: Standalone WebAPK Background Push via VAPID & Service Worker**
+  - [x] Server `web-push` integration with generated VAPID keypair (`VAPID_PUBLIC_KEY` & `VAPID_PRIVATE_KEY`).
+  - [x] MongoDB Atlas `PushSubscriptionModel` for device token persistence.
+  - [x] Endpoints: `GET /api/notifications/vapid-public-key`, `POST /api/notifications/push-subscribe`, `POST /api/notifications/test-push`.
+  - [x] Service worker background push listener (`sw-push.js`) in Workbox with high-priority vibration and click routing (`openChat=true`).
+  - [x] Auto-dispatch background push to all family members when a socket message arrives.
 
 ---
 

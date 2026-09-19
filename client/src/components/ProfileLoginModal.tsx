@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../shared/types/user';
-import { UserCheck, Edit2, Check, ShieldCheck, Heart, Users, X } from 'lucide-react';
+import { UserCheck, Edit2, Check, ShieldCheck, Heart, Users, X, Bell, BellRing, Loader2 } from 'lucide-react';
+import { isPushSupported, getNotificationPermission, subscribeUserToWebPush } from '../shared/services/pushNotificationManager';
+import { getBackendUrl, getApiHeaders } from '../shared/services/apiConfig';
 
 interface ProfileLoginModalProps {
   isOpen: boolean;
@@ -21,6 +23,61 @@ export const ProfileLoginModal: React.FC<ProfileLoginModalProps> = ({
 }) => {
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
   const [guestNameInput, setGuestNameInput] = useState('');
+  const [pushSupported, setPushSupported] = useState(true);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+  const [isEnablingPush, setIsEnablingPush] = useState(false);
+  const [pushFeedback, setPushFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen && typeof window !== 'undefined') {
+      setPushSupported(isPushSupported());
+      setPushPermission(getNotificationPermission());
+    }
+  }, [isOpen]);
+
+  const handleEnablePush = async () => {
+    setIsEnablingPush(true);
+    setPushFeedback(null);
+    try {
+      const ok = await subscribeUserToWebPush(activeUser);
+      setPushPermission(getNotificationPermission());
+      if (ok) {
+        setPushFeedback('✅ Notifications active! You will receive lock screen alerts.');
+      } else {
+        setPushFeedback('⚠️ Permission was not granted or device not supported.');
+      }
+    } catch {
+      setPushFeedback('⚠️ Could not enable notifications.');
+    } finally {
+      setIsEnablingPush(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setIsEnablingPush(true);
+    setPushFeedback(null);
+    try {
+      const backendUrl = getBackendUrl();
+      const res = await fetch(`${backendUrl}/api/notifications/test-push`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getApiHeaders()
+        },
+        body: JSON.stringify({ userId: activeUser.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPushFeedback('📱 Test push dispatched! Check your phone notification tray.');
+      } else {
+        setPushFeedback(data.message || '⚠️ Device not found. Tap "Enable" first.');
+      }
+    } catch {
+      setPushFeedback('⚠️ Failed to dispatch test push.');
+    } finally {
+      setIsEnablingPush(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -223,6 +280,59 @@ export const ProfileLoginModal: React.FC<ProfileLoginModalProps> = ({
               })}
             </div>
           </div>
+
+          {/* Web Push Notification Settings on this Phone */}
+          {pushSupported && (
+            <div className="mt-4 p-3.5 rounded-2xl bg-stone-950/80 border border-stone-800/80 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                    pushPermission === 'granted' 
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  }`}>
+                    {pushPermission === 'granted' ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-stone-200">
+                      {pushPermission === 'granted' ? 'Lock Screen Alerts Active' : 'Lock Screen Chat Alerts'}
+                    </h4>
+                    <p className="text-[10px] text-stone-400">
+                      {pushPermission === 'granted'
+                        ? 'Phone receives notifications even when app is closed'
+                        : 'Get alerted instantly when family messages or checks in'}
+                    </p>
+                  </div>
+                </div>
+
+                {pushPermission === 'granted' ? (
+                  <button
+                    type="button"
+                    onClick={handleSendTestPush}
+                    disabled={isEnablingPush}
+                    className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold border border-stone-700 transition-colors flex items-center gap-1.5 disabled:opacity-50 min-h-touch min-w-touch"
+                  >
+                    {isEnablingPush ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Test Push'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleEnablePush}
+                    disabled={isEnablingPush}
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 text-xs font-bold shadow-md shadow-emerald-500/20 hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50 min-h-touch min-w-touch"
+                  >
+                    {isEnablingPush ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Enable Alerts'}
+                  </button>
+                )}
+              </div>
+
+              {pushFeedback && (
+                <div className="text-[11px] font-medium text-emerald-400 px-1 pt-1 border-t border-stone-800/60 animate-fade-in">
+                  {pushFeedback}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}

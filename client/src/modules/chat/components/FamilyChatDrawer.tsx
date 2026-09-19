@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile } from '../../../shared/types/user';
+import { OfflineChatMessageRecord } from '../../../shared/db/dexie';
 import { useFamilySocket } from '../hooks/useFamilySocket';
 import { Send, Wifi, WifiOff, X, Clock, Check, CheckCheck, MessageSquare, Trash2, AlertTriangle } from 'lucide-react';
 
@@ -7,6 +8,7 @@ interface FamilyChatDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   activeUser: UserProfile;
+  onIncomingMessage?: (msg: OfflineChatMessageRecord) => void;
 }
 
 const QUICK_STATUS_CHIPS = [
@@ -36,9 +38,10 @@ function formatChatDateDivider(dateStr: string): string {
 export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
   isOpen,
   onClose,
-  activeUser
+  activeUser,
+  onIncomingMessage
 }) => {
-  const { messages, isConnected, typingUser, sendMessage, sendTyping, clearChat } = useFamilySocket(activeUser);
+  const { messages, isConnected, typingUser, sendMessage, sendTyping, clearChat } = useFamilySocket(activeUser, onIncomingMessage);
   const [inputText, setInputText] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
