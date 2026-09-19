@@ -28,6 +28,8 @@ export interface SosNotification {
 
 export interface ScheduledBriefing {
   id: string;
+  phase: 'PRE_DEPARTURE' | 'DURING_TRIP';
+  timeSlot: 'MORNING' | 'AFTERNOON' | 'EVENING' | 'NIGHT';
   dayTitle: string;
   scheduledFor: string;
   subject: string;
@@ -35,6 +37,8 @@ export interface ScheduledBriefing {
   transitInfo: string;
   elderCareTip: string;
   logisticsSummary: string;
+  checklistItems?: string[];
+  sightseeingTips?: string[];
 }
 
 export interface WaypointArrival {
@@ -222,9 +226,9 @@ class EmailService {
           html: htmlBody
         });
 
-        // Fast 3.5s timeout probe to avoid hanging when SMTP ports are dropped by cloud host
+        // 6.0s timeout probe to allow TLS handshake on slower connections
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Direct SMTP probe timed out (outbound port blocked).')), 3500)
+          setTimeout(() => reject(new Error('Direct SMTP probe timed out (outbound port blocked).')), 6000)
         );
 
         const info: any = await Promise.race([sendPromise, timeoutPromise]);
@@ -364,27 +368,84 @@ class EmailService {
   }
 
   /**
-   * Template 4: Automated Scheduled Morning Briefing
+   * Template 4: Automated Scheduled Briefing (Pre-Departure & During-Trip)
    */
   async notifyScheduledBriefing(data: ScheduledBriefing) {
-    const subject = `🌅 [Yatra Morning Briefing] ${data.dayTitle} — ${data.subject}`;
+    const isPreDeparture = data.phase === 'PRE_DEPARTURE';
+    
+    // Determine icon & label based on time slot
+    let slotIcon = '🌅';
+    let slotName = 'Morning';
+    let slotColor = '#f59e0b'; // amber
+    if (data.timeSlot === 'AFTERNOON') {
+      slotIcon = '☀️';
+      slotName = 'Afternoon';
+      slotColor = '#f97316'; // orange
+    } else if (data.timeSlot === 'EVENING') {
+      slotIcon = '🌇';
+      slotName = 'Evening';
+      slotColor = '#ec4899'; // pink
+    } else if (data.timeSlot === 'NIGHT') {
+      slotIcon = '🌙';
+      slotName = 'Night';
+      slotColor = '#8b5cf6'; // violet
+    }
+
+    const phaseTitle = isPreDeparture 
+      ? '🎒 Pre-Departure Briefing' 
+      : '🏔️ Pilgrimage Morning Briefing';
+
+    const subject = `${slotIcon} [${isPreDeparture ? 'TripTrack Prep' : 'Yatra Briefing'}] ${data.dayTitle} — ${data.subject}`;
     const highlightsHtml = data.highlights.map(h => `<li style="margin-bottom: 6px; color: #e7e5e4;">${h}</li>`).join('');
 
+    const checklistHtml = (data.checklistItems && data.checklistItems.length > 0)
+      ? `
+        <div style="background-color: #0f172a; border: 1px solid #0284c7; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+          <h3 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 15px; display: flex; align-items: center;">
+            <span style="margin-right: 6px;">📋</span> Essential Checklist & Must-Haves:
+          </h3>
+          <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6; color: #bae6fd;">
+            ${data.checklistItems.map(item => `<li style="margin-bottom: 4px;"><strong>✓</strong> ${item}</li>`).join('')}
+          </ul>
+        </div>
+      `
+      : '';
+
+    const sightseeingHtml = (data.sightseeingTips && data.sightseeingTips.length > 0)
+      ? `
+        <div style="background-color: #2e1065; border: 1px solid #7c3aed; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+          <h3 style="color: #c084fc; margin: 0 0 10px 0; font-size: 15px; display: flex; align-items: center;">
+            <span style="margin-right: 6px;">🕉️</span> Sightseeing, Temple & Scenic Guide:
+          </h3>
+          <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6; color: #e9d5ff;">
+            ${data.sightseeingTips.map(tip => `<li style="margin-bottom: 4px;">• ${tip}</li>`).join('')}
+          </ul>
+        </div>
+      `
+      : '';
+
     const html = `
-      <div style="font-family: Arial, sans-serif; background-color: #1c1917; color: #f5f5f4; padding: 24px; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid #f59e0b;">
+      <div style="font-family: Arial, sans-serif; background-color: #1c1917; color: #f5f5f4; padding: 24px; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid ${slotColor};">
         <div style="text-align: center; border-bottom: 1px solid #44403c; padding-bottom: 16px;">
-          <h1 style="color: #f59e0b; margin: 0; font-size: 24px;">🏔️ TripTrack Morning Yatra Briefing</h1>
-          <p style="color: #fbbf24; font-size: 14px; margin: 4px 0 0 0; font-weight: bold;">${data.dayTitle}</p>
+          <div style="display: inline-block; background-color: #292524; border: 1px solid #57534e; border-radius: 20px; padding: 4px 12px; font-size: 12px; color: ${slotColor}; font-weight: bold; margin-bottom: 8px;">
+            ${phaseTitle} • ${slotIcon} ${slotName} Slot
+          </div>
+          <h1 style="color: #f5f5f4; margin: 0; font-size: 22px;">TripTrack Pilgrimage Guide</h1>
+          <p style="color: #fbbf24; font-size: 14px; margin: 6px 0 0 0; font-weight: bold;">${data.dayTitle}</p>
         </div>
         
         <div style="padding: 20px 0;">
-          <div style="background-color: #292524; border-left: 4px solid #f59e0b; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-            <h2 style="color: #fef08a; margin: 0; font-size: 17px;">📌 Today's Core Objective: ${data.subject}</h2>
-            <p style="color: #d6d3d1; margin: 6px 0 0 0; font-size: 13px;">${data.transitInfo}</p>
+          <div style="background-color: #292524; border-left: 4px solid ${slotColor}; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+            <h2 style="color: #fef08a; margin: 0; font-size: 17px;">📌 Core Focus: ${data.subject}</h2>
+            <p style="color: #d6d3d1; margin: 6px 0 0 0; font-size: 13px; line-height: 1.5;">${data.transitInfo}</p>
           </div>
 
+          ${checklistHtml}
+
+          ${sightseeingHtml}
+
           <div style="background-color: #1c1917; border: 1px solid #44403c; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-            <h3 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 15px;">⭐ Key Milestones & Timing:</h3>
+            <h3 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 15px;">⭐ Key Milestones & Recommendations:</h3>
             <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6;">
               ${highlightsHtml}
             </ul>
@@ -401,7 +462,7 @@ class EmailService {
         </div>
 
         <div style="border-top: 1px solid #44403c; padding-top: 14px; text-align: center; color: #78716c; font-size: 11px;">
-          Automated Pilgrimage Morning Dispatch • TripTrack by Ut-tech • Badrinath Dham 2026
+          Automated Pilgrimage Dispatch • TripTrack by Ut-tech • Badrinath Dham 2026
         </div>
       </div>
     `;

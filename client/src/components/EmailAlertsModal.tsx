@@ -24,14 +24,24 @@ interface GeofenceItem {
   name: string;
   radiusKm: number;
   altitudeMeters: number;
+  description?: string;
+  nextStop?: string;
   isDispatched: boolean;
 }
 
 interface BriefingItem {
   id: string;
+  phase: 'PRE_DEPARTURE' | 'DURING_TRIP';
+  timeSlot: 'MORNING' | 'AFTERNOON' | 'EVENING' | 'NIGHT';
   dayTitle: string;
   scheduledFor: string;
   subject: string;
+  transitInfo?: string;
+  highlights?: string[];
+  elderCareTip?: string;
+  logisticsSummary?: string;
+  checklistItems?: string[];
+  sightseeingTips?: string[];
   isDispatched: boolean;
 }
 
@@ -43,6 +53,12 @@ interface AutomationStatus {
     status: string;
   };
   recipients: string[];
+  counts?: {
+    totalBriefings: number;
+    preDeparture: number;
+    duringTrip: number;
+    geofences: number;
+  };
   activeGeofences: GeofenceItem[];
   scheduledBriefings: BriefingItem[];
   totalDispatchedCount: number;
@@ -51,7 +67,7 @@ interface AutomationStatus {
 export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onClose }) => {
   const [status, setStatus] = useState<AutomationStatus | null>(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'briefings' | 'geofences'>('briefings');
+  const [activeTab, setActiveTab] = useState<'pre_departure' | 'during_trip' | 'geofences'>('pre_departure');
   const [actionMessage, setActionMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [isDispatchingDigest, setIsDispatchingDigest] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
@@ -431,106 +447,219 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
         </div>
 
         {/* Segmented Tab Selector */}
-        <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800">
+        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-950 border border-slate-800">
           <button
             type="button"
-            onClick={() => setActiveTab('briefings')}
-            className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all tap-active ${
-              activeTab === 'briefings'
+            onClick={() => setActiveTab('pre_departure')}
+            className={`py-2 px-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all tap-active ${
+              activeTab === 'pre_departure'
                 ? 'bg-amber-500 text-slate-950 shadow-md font-black'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Calendar className="w-3.5 h-3.5" />
-            <span>Scheduled Briefings ({status?.scheduledBriefings.length || 6})</span>
+            <Calendar className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Pre-Trip ({status?.counts?.preDeparture ?? status?.scheduledBriefings.filter(b => b.phase === 'PRE_DEPARTURE').length ?? 15})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('during_trip')}
+            className={`py-2 px-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all tap-active ${
+              activeTab === 'during_trip'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Send className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">During Trip ({status?.counts?.duringTrip ?? status?.scheduledBriefings.filter(b => b.phase === 'DURING_TRIP').length ?? 9})</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('geofences')}
-            className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all tap-active ${
+            className={`py-2 px-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1 transition-all tap-active ${
               activeTab === 'geofences'
                 ? 'bg-amber-500 text-slate-950 shadow-md font-black'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Compass className="w-3.5 h-3.5" />
-            <span>GPS Geofences ({status?.activeGeofences.length || 8})</span>
+            <Compass className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">GPS ({status?.activeGeofences.length || 9})</span>
           </button>
         </div>
 
-        {/* Tab 1: Scheduled Briefings List */}
-        {activeTab === 'briefings' && (
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-            {/* Quick 15-min test scheduler */}
-            <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/40 flex items-center justify-between gap-2">
+        {/* Tab 1: Pre-Departure Briefings (15 Briefings: Sep 19 - Sep 23) */}
+        {activeTab === 'pre_departure' && (
+          <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+            {/* Today Sep 19 Alert Banner */}
+            <div className="p-2.5 rounded-xl bg-orange-950/40 border border-orange-500/50 flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Schedule Test Briefing (+15 Mins)</span>
+                <span className="text-[11px] font-bold text-orange-300 flex items-center gap-1">
+                  <span>⚡ Today (Sep 19) Schedule:</span>
+                  <span className="text-white font-mono text-[10px] bg-orange-500/30 px-1.5 py-0.5 rounded">Tightened Timings</span>
                 </span>
-                <p className="text-[10px] text-slate-400 leading-tight">
-                  Dispatches an automated email 15 minutes from now.
+                <p className="text-[10px] text-slate-300 mt-0.5 leading-tight">
+                  Past 11 AM: 12:30 PM (Afternoon Vault), 05:00 PM (Evening Health), 08:30 PM (Night Orientation).
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => handleScheduleCustom(15)}
-                className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[10px] shrink-0 tap-active shadow"
+                className="px-2 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-400 text-slate-950 font-black text-[10px] shrink-0 tap-active shadow"
+                title="Schedule custom test 15 minutes from now"
               >
-                Schedule (+15m)
+                +15m Test
               </button>
             </div>
 
-            {status?.scheduledBriefings.map((briefing) => (
-              <div 
-                key={briefing.id}
-                className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-white truncate">
-                      {briefing.dayTitle}
+            {status?.scheduledBriefings
+              .filter(b => b.phase === 'PRE_DEPARTURE')
+              .map((briefing) => {
+                const isToday = briefing.scheduledFor.startsWith('2026-09-19');
+                const slotBadge = {
+                  MORNING: { label: '🌅 Morning', cls: 'bg-amber-500/20 text-amber-300 border-amber-500/40' },
+                  AFTERNOON: { label: '☀️ Afternoon', cls: 'bg-orange-500/20 text-orange-300 border-orange-500/40' },
+                  EVENING: { label: '🌇 Evening', cls: 'bg-pink-500/20 text-pink-300 border-pink-500/40' },
+                  NIGHT: { label: '🌙 Night', cls: 'bg-purple-500/20 text-purple-300 border-purple-500/40' }
+                }[briefing.timeSlot || 'MORNING'];
+
+                return (
+                  <div 
+                    key={briefing.id}
+                    className={`p-3 rounded-2xl bg-slate-950/70 border ${
+                      isToday ? 'border-orange-500/50 shadow-md shadow-orange-950/20' : 'border-slate-800'
+                    } space-y-2`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center flex-wrap gap-1.5">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${slotBadge.cls}`}>
+                            {slotBadge.label}
+                          </span>
+                          {isToday && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-600 text-white uppercase tracking-wider">
+                              Today
+                            </span>
+                          )}
+                          <span className="text-xs font-bold text-white">
+                            {briefing.dayTitle}
+                          </span>
+                        </div>
+                        <div className="text-xs font-semibold text-amber-200/95 leading-snug">
+                          {briefing.subject}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSimulate('BRIEFING', briefing.id)}
+                        disabled={simulatingId === briefing.id}
+                        className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-white text-[10px] font-extrabold shrink-0 border border-slate-700 tap-active shadow flex items-center gap-1"
+                        title="Dispatch preview to family inboxes"
+                      >
+                        <Send className="w-3 h-3" />
+                        <span>{simulatingId === briefing.id ? 'Sending...' : 'Test Send'}</span>
+                      </button>
+                    </div>
+
+                    {/* Metadata & Checklist/Sightseeing Pills */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px]">
+                      <span className="text-slate-400 font-mono flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-amber-400" />
+                        <span>{new Date(briefing.scheduledFor).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      </span>
+
+                      {briefing.checklistItems && briefing.checklistItems.length > 0 && (
+                        <span className="px-2 py-0.5 rounded-md bg-sky-950/80 border border-sky-600/60 text-sky-200 font-medium">
+                          📋 {briefing.checklistItems.length} Checklist Items
+                        </span>
+                      )}
+
+                      {briefing.sightseeingTips && briefing.sightseeingTips.length > 0 && (
+                        <span className="px-2 py-0.5 rounded-md bg-purple-950/80 border border-purple-600/60 text-purple-200 font-medium">
+                          🕉️ {briefing.sightseeingTips.length} Sights / Guides
+                        </span>
+                      )}
+
+                      {briefing.isDispatched ? (
+                        <span className="text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30 ml-auto">
+                          Dispatched
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-mono font-bold bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700 ml-auto">
+                          Scheduled
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+
+        {/* Tab 2: During-Trip Briefings (9 Daily Briefings: Sep 24 - Oct 02) */}
+        {activeTab === 'during_trip' && (
+          <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+            {status?.scheduledBriefings
+              .filter(b => b.phase === 'DURING_TRIP')
+              .map((briefing) => (
+                <div 
+                  key={briefing.id}
+                  className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center flex-wrap gap-1.5">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-500/20 text-amber-300 border-amber-500/40">
+                          🌅 07:00 AM Morning Briefing
+                        </span>
+                        <span className="text-xs font-bold text-white">
+                          {briefing.dayTitle}
+                        </span>
+                      </div>
+                      <div className="text-xs font-semibold text-temple-gold leading-snug">
+                        {briefing.subject}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSimulate('BRIEFING', briefing.id)}
+                      disabled={simulatingId === briefing.id}
+                      className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-white text-[10px] font-extrabold shrink-0 border border-slate-700 tap-active shadow flex items-center gap-1"
+                      title="Dispatch preview to family inboxes"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>{simulatingId === briefing.id ? 'Sending...' : 'Test Send'}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 text-[10px] text-slate-400">
+                    <span className="font-mono flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-amber-400" />
+                      <span>{new Date(briefing.scheduledFor).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                     </span>
+
                     {briefing.isDispatched ? (
-                      <span className="text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-500/30 shrink-0">
+                      <span className="text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30">
                         Dispatched
                       </span>
                     ) : (
-                      <span className="text-[9px] font-mono font-bold bg-sky-500/20 text-sky-400 px-1.5 py-0.2 rounded border border-sky-500/30 shrink-0">
+                      <span className="text-[9px] font-mono font-bold bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">
                         Scheduled
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                    {briefing.subject}
-                  </p>
-                  <p className="text-[10px] text-amber-300/80 font-mono mt-0.5 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-amber-400" />
-                    <span>{new Date(briefing.scheduledFor).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                  </p>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleSimulate('BRIEFING', briefing.id)}
-                  disabled={simulatingId === briefing.id}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold shrink-0 border border-slate-700 tap-active"
-                  title="Simulate Dispatch"
-                >
-                  {simulatingId === briefing.id ? 'Sending...' : 'Test Send'}
-                </button>
-              </div>
-            ))}
+              ))}
           </div>
         )}
 
-        {/* Tab 2: GPS Geofences List */}
+        {/* Tab 3: GPS Geofences List */}
         {activeTab === 'geofences' && (
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
             {status?.activeGeofences.map((wp) => (
               <div 
                 key={wp.id}
-                className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between gap-3"
+                className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -538,16 +667,16 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
                       {wp.name}
                     </span>
                     {wp.isDispatched ? (
-                      <span className="text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-500/30 shrink-0">
+                      <span className="text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/30 shrink-0">
                         Touched
                       </span>
                     ) : (
-                      <span className="text-[9px] font-mono font-bold bg-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded border border-amber-500/30 shrink-0">
+                      <span className="text-[9px] font-mono font-bold bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0">
                         Pending
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono mt-0.5">
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono mt-1">
                     <span>Radius: {wp.radiusKm}km</span>
                     <span>•</span>
                     <span>Alt: {wp.altitudeMeters}m</span>
@@ -558,7 +687,7 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
                   type="button"
                   onClick={() => handleSimulate('WAYPOINT', wp.id)}
                   disabled={simulatingId === wp.id}
-                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold shrink-0 border border-slate-700 tap-active"
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 hover:text-white text-[10px] font-extrabold shrink-0 border border-slate-700 tap-active"
                   title="Simulate Waypoint Touch"
                 >
                   {simulatingId === wp.id ? 'Sending...' : 'Simulate Touch'}

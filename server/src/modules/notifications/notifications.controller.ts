@@ -128,6 +128,8 @@ export async function handleScheduleCustomBriefing(req: Request, res: Response) 
 
     const briefing = automationService.scheduleCustomBriefing({
       id: `briefing-custom-${Date.now()}`,
+      phase: req.body.phase || 'PRE_DEPARTURE',
+      timeSlot: req.body.timeSlot || 'AFTERNOON',
       dayTitle: dayTitle || `Test Briefing: ${mins} Mins Trigger`,
       scheduledFor: scheduledTime.toISOString(),
       subject: subject || `⏰ [TripTrack Test] Scheduled Briefing (${mins} Mins)`,

@@ -37,6 +37,7 @@
 | **Phase 22** | **Cloudinary Media Integration: Receipts, Voice Streaming & Photo Moments** | ✅ **DONE** | 100% | Completed |
 | **Phase 23** | **Splitwise-Grade Multi-Payer & Custom Split Financial Engine in Gullak** | ✅ **DONE** | 100% | Completed |
 | **Phase 24** | **Autonomous Scheduled & Geofenced Email Notification Engine** | ✅ **DONE** | 100% | Completed |
+| **Phase 25** | **Pre-Departure (Sep 19–23) & During-Trip (Sep 24–Oct 02) Scheduled Briefing System** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -654,6 +655,43 @@
   - [x] Added dynamic engine provider reporting (`status.provider.name`) in API and client UI modal badges.
   - [x] Reduced direct SMTP probe timeout to 3.5s and increased client abort timeout to 15s with graceful error banners, eliminating `signal is aborted without reason` hangs.
   - [x] Added `BREVO_API_KEY` to `render.yaml`, `server/.env`, and `server/.env.example`.
+
+---
+
+### ✅ Phase 25: Pre-Departure & During-Trip Structured Briefing System
+*Status: Completed & Verified on Sep 19, 2026 (100%)*
+
+- [x] **25.1 15-Briefing Pre-Departure Suite (Sep 19 – Sep 23, 2026)**
+  - [x] Tightened Sep 19 Schedule (adapted for start past 11:00 AM):
+    - [x] 12:30 PM (Afternoon): Kickoff & Digital Document Vault Checklist (original Aadhaar cards, 2x printout sets, offline TripTrack Vault check, emergency cash ₹15,000).
+    - [x] 05:00 PM (Evening): Himalayan Altitude Acclimatization & Elder Pacing (pulse oximeter, digital BP monitor, 2x thermos flasks, electrolyte oral hydration, SpO2 benchmarks).
+    - [x] 08:30 PM (Night): Haridwar & Rishikesh Sacred Orientation & Temple Guide (Har Ki Pauri Ganga Aarti seated view, Mansa/Chandi Devi ropeway cable car, Triveni sunset aarti).
+  - [x] Sep 20: 3 briefings (08:00 AM Winter Wardrobe 3-layer system, 02:00 PM Badrinath Sanctum & Brahma Kapal Pinda Daan Gotra list, 08:30 PM Panch Prayag Sacred Confluences).
+  - [x] Sep 21: 3 briefings (08:00 AM Mountain Dead-Zone & 20,000mAh Power Banks, 02:00 PM Mountain Road Motion Sickness & Captain Seat Pacing, 08:30 PM Mana First Village & Saraswati River).
+  - [x] Sep 22: 3 briefings (08:00 AM Comprehensive 15-day Medical Kit & BP supply, 02:00 PM Badrinath Temple Etiquette & Tapt Kund Hot Spring bath, 08:30 PM Train 12441 Rajdhani Boarding Timetable).
+  - [x] Sep 23: 3 briefings (08:00 AM Luggage Hand-Carry Separation, 02:00 PM Mountain Cash & Gullak 50/50 Shared Pool, 08:30 PM Shubh Yatra Blessing & Early Rest).
+- [x] **25.2 9-Briefing During-Trip Suite (Sep 24 – Oct 02, 2026)**
+  - [x] Day 1 (Sep 24): Departure Day — Train 12441 Rajdhani Express Boarding Briefing.
+  - [x] Day 2 (Sep 25): NDLS Arrival & Delhi-Meerut Expressway to Haridwar.
+  - [x] Day 3 (Sep 26): Early 06:00 AM Departure — Haridwar to Joshimath (NH-7).
+  - [x] Day 4 (Sep 27): Jai Badri Vishal! Temple Darshan & Brahma Kapal Tarpan.
+  - [x] Day 5 (Sep 28): Mana First Village of India & Return Highway Descent.
+  - [x] Day 6 (Sep 29): Rishikesh Foothills & Triveni Ghat Evening Rest.
+  - [x] Day 7 (Sep 30): Haridwar Sacred Ghats & Ayurvedic Rest Day.
+  - [x] Day 8 (Oct 01): Homeward Flight Connections — Dehradun to Delhi to Raipur.
+  - [x] Day 9 (Oct 02): Pilgrimage Completion, Sacred Gangajal & Kuldevta Prasad.
+- [x] **25.3 Rich Visual Email Template Expansion (`email.service.ts`)**
+  - [x] Added `checklistItems` section: high-contrast navy badge cards with checkmark badges (`style="background-color: #0f172a; border: 1px solid #0284c7"`).
+  - [x] Added `sightseeingTips` section: royal purple container with lotus icons for temple and scenic highlights (`style="background-color: #2e1065; border: 1px solid #7c3aed"`).
+  - [x] Dynamic time-slot branding: 🌅 Morning (Amber), ☀️ Afternoon (Orange), 🌇 Evening (Pink), 🌙 Night (Purple).
+  - [x] Branded sender `"TripTrack by Ut-tech" <utkarshsofficial13@gmail.com>`.
+- [x] **25.4 3-Tab Mobile Modal Interface (`EmailAlertsModal.tsx`)**
+  - [x] 3-way tab selector: `🎒 Pre-Trip (15)`, `🏔️ During Trip (9)`, `📍 GPS (9)`.
+  - [x] Prominent "Today (Sep 19) Schedule: Tightened Timings" highlight card with +15m test trigger.
+  - [x] Detailed card metadata: Time slot badge, Day title, Subject, Checklist item count pill, Sightseeing tip count pill, and 1-tap "Test Send" simulator button.
+- [x] **25.5 Field Verification & Live Dispatch Testing**
+  - [x] Verified `GET /api/notifications/status` returning exact counts (`totalBriefings: 24`, `preDeparture: 15`, `duringTrip: 9`, `geofences: 9`).
+  - [x] Live simulated all 3 Sep 19 briefings (Afternoon 12:30, Evening 17:00, Night 20:30) with 200 OK delivery directly to Gmail inboxes.
 
 ---
 

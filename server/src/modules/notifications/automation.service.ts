@@ -100,22 +100,370 @@ export const PILGRIMAGE_GEOFENCES: GeofenceWaypoint[] = [
 ];
 
 export const SCHEDULED_BRIEFINGS: ScheduledBriefing[] = [
+  // ============================================================================
+  // PRE-DEPARTURE PHASE (Sep 19 – Sep 23, 2026: 15 Curated Briefings)
+  // ============================================================================
+
+  // --- Sep 19, 2026 (Day -5: Kickoff & Health Foundation — Tightened Schedule) ---
   {
-    id: 'briefing-test-15min',
-    dayTitle: 'Live Verification: 15-Minute Scheduled Briefing',
-    scheduledFor: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-    subject: '⏰ [TripTrack Live Test] 15-Minute Scheduled Briefing Trigger',
-    transitInfo: 'Live automated schedule verification in Durg, Chhattisgarh. Background timer executed right on schedule!',
-    highlights: [
-      'Autonomous background heartbeat executed at exact target timestamp',
-      'Gmail SMTP transporter connected and delivered payload to family inboxes',
-      'Countdown verified: 15-minute scheduled trigger is fully operational'
+    id: 'briefing-sep19-afternoon',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'AFTERNOON',
+    dayTitle: 'Day -5: Kickoff & Documents — Sep 19, 2026',
+    scheduledFor: '2026-09-19T12:30:00+05:30',
+    subject: 'Pilgrimage Kickoff & Digital Document Vault Checklist',
+    transitInfo: 'Initial 5-day countdown begun in Durg, CG. Preparing mobile vaults, physical IDs, and offline verification.',
+    checklistItems: [
+      'Original Aadhar Cards for all 4 travellers (Utkarsh, Rajnish Ji, Shreyas, Sanjay Ji)',
+      'Physical printouts (2 sets) of Train 12441 Rajdhani tickets (PNR: 6709136735)',
+      'TripTrack PWA installed on all phones with offline Vault synced',
+      'Emergency cash reserve ₹15,000 kept safely for transit & doli/kandi'
     ],
-    elderCareTip: 'Test briefing confirmed. Real briefings trigger at 6:00 AM / 7:00 AM on pilgrimage days.',
-    logisticsSummary: 'TripTrack Autonomous Notification Engine active and verified.'
+    highlights: [
+      '12:30 — Check digital document storage and biometric Yatra QR passes',
+      'Verify TripTrack is added to mobile home screen (Works 100% offline in dead zones)',
+      'Laminate senior medical emergency cards and store in pocket wallets'
+    ],
+    elderCareTip: 'Keep original IDs and vital medicines in a dedicated handheld shoulder bag. Never place daily pills in large check-in suitcases.',
+    logisticsSummary: 'TripTrack Vault sync status: verified. IRCTC PNR 6709136735 loaded.'
   },
   {
+    id: 'briefing-sep19-evening',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'EVENING',
+    dayTitle: 'Day -5: Acclimatization & Health — Sep 19, 2026',
+    scheduledFor: '2026-09-19T17:00:00+05:30',
+    subject: 'Himalayan Altitude Acclimatization & Elder Pacing',
+    transitInfo: 'Ascent profile: Durg (290m) ➔ Delhi (216m) ➔ Haridwar (314m) ➔ Joshimath (1,890m) ➔ Badrinath (3,133m).',
+    checklistItems: [
+      'Fingertip Pulse Oximeter with fresh AAA batteries tested',
+      'Digital Blood Pressure monitor tested and packed',
+      '2x Stainless steel vacuum thermos flasks (1 Litre each for hot water)',
+      '10x Electral / Enerzal oral rehydration electrolyte sachets'
+    ],
+    highlights: [
+      '17:00 — Elder health and altitude tolerance briefing with fathers',
+      'Diamond rule: Take steps at half normal pace above 2,500m elevation',
+      'Hydration target: Sip warm water every 90 minutes to combat dry mountain air',
+      'SpO2 benchmark: >90% normal; alert threshold <82% for supplemental oxygen'
+    ],
+    elderCareTip: 'Rajnish Ji & Sanjay Ji should avoid brisk walking or lifting heavy baggage. Sons handle all luggage loading.',
+    logisticsSummary: 'Joshimath base camp (1,890m) provides critical 14-hour acclimatization window before entering 3,133m Badrinath zone.'
+  },
+  {
+    id: 'briefing-sep19-night',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'NIGHT',
+    dayTitle: 'Day -5: Sacred Orientation — Sep 19, 2026',
+    scheduledFor: '2026-09-19T20:30:00+05:30',
+    subject: 'Haridwar & Rishikesh Sacred Orientation & Temple Guide',
+    transitInfo: 'First spiritual stops after Delhi: Sacred Ganges plains before the Garhwal mountain highway ascent.',
+    sightseeingTips: [
+      'Har Ki Pauri Ganga Aarti: Arrive by 17:30 to secure clean seated view on Malviya Dweep for senior comfort',
+      'Mansa Devi & Chandi Devi: Use the Udankhatola ropeway (cable car) to avoid climbing steep stairs',
+      'Rishikesh Parmarth Niketan & Triveni Ghat: Peaceful evening musical aarti with majestic Himalayan backdrop'
+    ],
+    highlights: [
+      '20:30 — Evening family discussion on Haridwar & Rishikesh flow',
+      'Confirm private AC highway cab pickup at NDLS Ajmeri Gate exit',
+      'Locate clean highway rest stops: Namaste Midway & Cheetal Grand along Delhi-Haridwar expressway'
+    ],
+    elderCareTip: 'Ensure fathers sleep by 22:00 tonight. Restful sleep is fundamental to building immune stamina for the Himalayas.',
+    logisticsSummary: 'Haridwar hotel check-in voucher saved offline. Cab driver contact logged in Itinerary tab.'
+  },
+
+  // --- Sep 20, 2026 (Day -4: Clothing & Sacred Ritual Items) ---
+  {
+    id: 'briefing-sep20-morning',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'MORNING',
+    dayTitle: 'Day -4: Mountain Wardrobe — Sep 20, 2026',
+    scheduledFor: '2026-09-20T08:00:00+05:30',
+    subject: 'Winter & Mountain Wardrobe Essentials (3-Layer System)',
+    transitInfo: 'Badrinath nighttime temperature drops to 2°C – 6°C in late September. Windchill can feel sub-zero near Alaknanda.',
+    checklistItems: [
+      '2x High-grade thermal inner sets (top & bottom) per pilgrim',
+      '1x Heavy windproof fleece jacket with hood per traveller',
+      '3x Pairs thick woolen socks + 1 pair light cotton socks for transit',
+      'Woolen monkey cap covering ears and throat + muffler',
+      'Comfortable walking shoes with deep rubber lug traction (non-slip)'
+    ],
+    highlights: [
+      '08:00 — Clothing inspection: Ensure fathers have loose-fitting warm layers',
+      'Layer 1: Thermal inners (moisture wicking)',
+      'Layer 2: Warm sweater/fleece (insulation)',
+      'Layer 3: Windcheater / down jacket (wind & rain protection)'
+    ],
+    elderCareTip: 'Cold mountain wind hitting senior ears triggers sudden BP spikes. Keep monkey caps or mufflers in hand luggage.',
+    logisticsSummary: 'Pack clothes in soft duffel or medium trolley bags for easier cab boot stacking.'
+  },
+  {
+    id: 'briefing-sep20-afternoon',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'AFTERNOON',
+    dayTitle: 'Day -4: Sacred Rituals — Sep 20, 2026',
+    scheduledFor: '2026-09-20T14:00:00+05:30',
+    subject: 'Badrinath Sanctum & Brahma Kapal Pinda Daan Checklist',
+    transitInfo: 'Brahma Kapal Ghat on the Alaknanda bank is the world’s most sacred site for final Pitru Tarpan and liberation.',
+    checklistItems: [
+      'White unstitched cotton dhoti & angavastram for Pitru Tarpan',
+      'Written ancestral Gotra, Pravara, and 3-generation family tree list',
+      'Small container of pure cow ghee (250g) and black sesame seeds (til)',
+      'Copper or brass small puja vessel (Panchapatra)',
+      'Clean copper brass bottle for carrying holy Badrinath Gangajal home'
+    ],
+    sightseeingTips: [
+      'Brahma Kapal Ghat: Ritual takes approx 45–60 mins; panda assistance arranged',
+      'Tapt Kund: Holy hot sulphur bath before entering temple sanctum',
+      'Badrinath Sanctum Darshan: Gold canopy, Shaligram murti of Lord Vishnu in Padmasana posture'
+    ],
+    highlights: [
+      '14:00 — Finalize handwritten Gotra and ancestral name register',
+      'Coordinate with family elders regarding names to be included in sacred tarpan',
+      'Understand Brahma Kapal tradition: once performed here, no further Shradh is required'
+    ],
+    elderCareTip: 'Brahma Kapal stone steps can be chilly; fathers will wear warm socks and shawl during the rituals until sankalp.',
+    logisticsSummary: 'Ancestral Gotra list digitized and saved in TripTrack Liturgy tab.'
+  },
+  {
+    id: 'briefing-sep20-night',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'NIGHT',
+    dayTitle: 'Day -4: Panch Prayag — Sep 20, 2026',
+    scheduledFor: '2026-09-20T20:30:00+05:30',
+    subject: 'The Divine Panch Prayag Sacred Confluences on NH-7',
+    transitInfo: 'NH-7 highway follows the Alaknanda river, witnessing the five sacred confluences that form Mother Ganga.',
+    sightseeingTips: [
+      '1. Devprayag: Confluence of turquoise Alaknanda and emerald Bhagirathi — birth of Ganga',
+      '2. Rudraprayag: Confluence of Alaknanda and Mandakini (flowing from Kedarnath)',
+      '3. Karnaprayag: Confluence of Alaknanda and Pindar river (flowing from Pindari glacier)',
+      '4. Nandaprayag: Confluence of Alaknanda and Mandakini/Nandakini river',
+      '5. Vishnuprayag: Confluence of Alaknanda and Dhauliganga near Joshimath'
+    ],
+    highlights: [
+      '20:30 — Sacred geography study: Spotting each Sangam during the car drive',
+      'Devprayag photo stop: 10-minute halt at view deck for family blessing',
+      'Rudraprayag tea halt: Beautiful view of ancient temple perched on river cliff'
+    ],
+    elderCareTip: 'View confluences from highway viewpoints; do not encourage elders to descend 200 steep wet river steps at every sangam.',
+    logisticsSummary: 'All 5 Prayag coordinates programmed into TripTrack GPS Geofencing Engine.'
+  },
+
+  // --- Sep 21, 2026 (Day -3: Dead-Zone Prep & Mountain Road Comfort) ---
+  {
+    id: 'briefing-sep21-morning',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'MORNING',
+    dayTitle: 'Day -3: Tech & Battery — Sep 21, 2026',
+    scheduledFor: '2026-09-21T08:00:00+05:30',
+    subject: 'Mountain Dead-Zone & Battery Survival Protocol',
+    transitInfo: 'NH-7 deep gorges between Kaudiyala and Devprayag, and past Pipalkoti have zero cellular connectivity.',
+    checklistItems: [
+      '2x High-capacity 20,000mAh fast-charge power banks (100% charged)',
+      '12V fast car cigarette-lighter charger with dual USB-C cables for cab',
+      'All 4 phones loaded with TripTrack PWA offline cache verified',
+      'BSNL or Jio secondary SIM cards checked (best mountain coverage)'
+    ],
+    highlights: [
+      '08:00 — Power bank and cable check: each duo carries 1 power bank',
+      'Pre-alert extended family that 3–5 hour cellular radio silence is normal on mountain roads',
+      'TripTrack offline mode tested: verify tickets open with Airplane mode ON'
+    ],
+    elderCareTip: 'Ensure fathers’ phones have screen brightness turned up and large text enabled for easy daylight outdoor reading.',
+    logisticsSummary: 'Cellular dead zone boundaries mapped in TripTrack Shadow Guard engine.'
+  },
+  {
+    id: 'briefing-sep21-afternoon',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'AFTERNOON',
+    dayTitle: 'Day -3: Mountain Pacing — Sep 21, 2026',
+    scheduledFor: '2026-09-21T14:00:00+05:30',
+    subject: 'Curvy Mountain Highway Comfort & Motion Sickness Pacing',
+    transitInfo: '275 km drive from Haridwar to Joshimath includes over 3,000 hairpin mountain bends along the Alaknanda canyon.',
+    checklistItems: [
+      'Avomine (Promethazine) / Ondansetron motion sickness tablets',
+      'Digestive Hing peda, ginger candies & Ayurvedic lemon lozenges',
+      '10x Biodegradable travel sickness disposal bags in car seat pockets',
+      'Pure peppermint / eucalyptus essential oil for refreshing car cabin'
+    ],
+    highlights: [
+      '14:00 — Vehicle seating arrangement: Rajnish Ji and Sanjay Ji seated in middle captain row',
+      'Driver briefing: Gentle, smooth acceleration and braking on curves, no jerky overtaking',
+      'Scheduled breaks: 15-minute halt every 2.5 hours for fresh air and elder leg stretching'
+    ],
+    elderCareTip: 'Take motion sickness pill 45 minutes BEFORE embarking on mountain roads, not after nausea begins.',
+    logisticsSummary: 'Highway cab driver instructed on elder comfort speed limit (max 35-40 km/h on hills).'
+  },
+  {
+    id: 'briefing-sep21-night',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'NIGHT',
+    dayTitle: 'Day -3: Mana Village — Sep 21, 2026',
+    scheduledFor: '2026-09-21T20:30:00+05:30',
+    subject: 'Mana Village (First Village of India) & Saraswati Exploration',
+    transitInfo: 'Located just 3 km beyond Badrinath at 3,200m altitude, bordering the Tibetan plateau.',
+    sightseeingTips: [
+      'Bhim Pul: Colossal stone boulder bridge placed by Bhima over the roaring Saraswati river',
+      'Vyas Gufa: 5,000-year-old rock cavern where Maharishi Ved Vyas composed the 18 Puranas and Mahabharata',
+      'Ganesh Gufa: Where Lord Ganesha transcribed the epic Mahabharata dictated by Vyasa',
+      'Saraswati River Origin: The only place where the mythical subterranean river emerges violently into daylight',
+      'India’s First Tea Shop: Enjoy hot ginger tea with local organic buckwheat snacks'
+    ],
+    highlights: [
+      '20:30 — Overview of Mana walking trail: Gentle 1.5 km stone path',
+      'Pony / pithu assistance available for fathers if walking is strenuous',
+      'Handmade sheep wool shawls and Himalayan herbs available from local Bhotia artisans'
+    ],
+    elderCareTip: 'Altitude is 3,200m. Keep heavy windcheater on; wind through the Mana pass can be sudden and sharp.',
+    logisticsSummary: 'Mana coordinates cached in TripTrack GPS engine. Estimated visit duration: 2 hours.'
+  },
+
+  // --- Sep 22, 2026 (Day -2: Medical Dossier & Temple Etiquette) ---
+  {
+    id: 'briefing-sep22-morning',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'MORNING',
+    dayTitle: 'Day -2: Medical Dossier — Sep 22, 2026',
+    scheduledFor: '2026-09-22T08:00:00+05:30',
+    subject: 'Comprehensive Pilgrimage Medical Kit & Health Plan',
+    transitInfo: 'Remote mountain pharmacy stocks can be limited. Full 15-day supply of all maintenance meds is mandatory.',
+    checklistItems: [
+      '15-day daily BP tablets for Rajnish Ji (Amlodipine / Telmisartan in labeled container)',
+      'Sanjay Ji’s daily health supplements and digestive prescription',
+      'Pain relief spray (Volini / Moov) + 2x elastic crepe knee bandages',
+      'Paracetamol (650mg), Cetirizine (anti-allergy), and Pantoprazole (antacid)',
+      'Povidone-iodine ointment, band-aids, and sterile gauze pads'
+    ],
+    highlights: [
+      '08:00 — Cross-check pill count: double-check daily pill dosage for the entire 9-day trip',
+      'Place 1 strip of each critical medicine in son’s daypack as an emergency backup',
+      'Emergency SOS contact list saved on speed dial: 108 Ambulance, 1364 Yatra Line'
+    ],
+    elderCareTip: 'Never alter or skip morning BP medication due to early travel departures. Always take with light breakfast or biscuit.',
+    logisticsSummary: 'Elders’ blood groups and medical dossier pre-loaded in TripTrack Emergency Modal.'
+  },
+  {
+    id: 'briefing-sep22-afternoon',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'AFTERNOON',
+    dayTitle: 'Day -2: Temple Etiquette — Sep 22, 2026',
+    scheduledFor: '2026-09-22T14:00:00+05:30',
+    subject: 'Badrinath Temple Sanctum Etiquette & Sacred Bath Protocol',
+    transitInfo: 'Badrinath temple sits on the right bank of Alaknanda between the Nar and Narayana mountain ranges.',
+    sightseeingTips: [
+      'Tapt Kund Thermal Spring: Sacred bath before darshan; water contains natural therapeutic minerals (~55°C)',
+      'Surya Kund: Hot spring reservoir right beside Tapt Kund',
+      'Garuda Mandap & Sabha Mandap: Observe ancient stone carvings before inner sanctum',
+      'Maha Abhishek: Early morning sacred ceremony where deity is anointed with sandalwood, saffron and camphor'
+    ],
+    highlights: [
+      '14:00 — Senior darshan convenience: Senior citizens queue available near the Simha Dwar entrance',
+      'Footwear management: Drop shoes at clean counter; carry thick dry wool socks to walk on cold temple stone',
+      'Offerings: Pure tulsi mala, dry chana dal prasad, and marigold flowers available at temple stalls'
+    ],
+    elderCareTip: 'Temple flagstones are cold marble. Slip on clean dry woolen socks immediately after taking the sacred water touch.',
+    logisticsSummary: 'Temple open timings: 04:30 AM to 01:00 PM, and 04:00 PM to 09:00 PM.'
+  },
+  {
+    id: 'briefing-sep22-night',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'NIGHT',
+    dayTitle: 'Day -2: Train Boarding Plan — Sep 22, 2026',
+    scheduledFor: '2026-09-22T20:30:00+05:30',
+    subject: 'Train 12441 Bilaspur Rajdhani Express Boarding Timetable',
+    transitInfo: 'Departing Durg Jn (DURG) Platform 1 at 16:30 on Sep 24. PNR: 6709136735. Coach A2, Berths 19, 20, 21, 22.',
+    checklistItems: [
+      'Train 12441 e-ticket PDF saved on phone + physical printout in shoulder bag',
+      'Station Coolie pre-contacted / identified at Durg Jn Main Gate 1',
+      'Light indoor footwear / slippers for comfortable walking in AC coach',
+      'Hand sanitizer and moist wet wipes for train cabin hygiene'
+    ],
+    highlights: [
+      '20:30 — Detailed review of Day 1 departure timeline:',
+      '14:30 — Home farewell & departure towards Durg Jn',
+      '15:45 — Station arrival & smooth baggage handling by porter',
+      '16:30 — Departure: Train 12441 rolls out on time',
+      '19:40 — Nagpur Junction halt: Hot pantry dinner served'
+    ],
+    elderCareTip: 'Coach A2 berths 19 & 21 are Lower Berths reserved for Rajnish Ji and Sanjay Ji for easy bathroom access without ladder climbing.',
+    logisticsSummary: 'Train 12441 transit tracker active in TripTrack Transit engine.'
+  },
+
+  // --- Sep 23, 2026 (Day -1: Final 24h Countdown & Luggage Packing) ---
+  {
+    id: 'briefing-sep23-morning',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'MORNING',
+    dayTitle: 'Day -1: Final Packing — Sep 23, 2026',
+    scheduledFor: '2026-09-23T08:00:00+05:30',
+    subject: 'Final Luggage Segregation & The Golden Hand-Carry Rule',
+    transitInfo: 'T-minus 24 hours to departure! Today is dedicated to locking suitcases and zeroing in on cabin hand luggage.',
+    checklistItems: [
+      'Shoulder Daypack: Passes, IDs, daily meds, reading glasses, power bank, shawl',
+      'Check-in Trolleys: 1 bag per family, weighing under 15kg for easy boot loading',
+      'Luggage identification tags with Utkarsh & Shreyas mobile numbers attached',
+      'TSA/Number locks set on all main zipper compartments'
+    ],
+    highlights: [
+      '08:00 — Final packing audit: Separate hand luggage from check-in bags',
+      'Verify nothing needed during the 18-hour train journey is locked in the big suitcases',
+      'Charge all 4 smartphones and both 20,000mAh power banks to 100%'
+    ],
+    elderCareTip: 'Keep fathers’ reading glasses, hearing aids, and dental care in the shoulder bag so they are always at hand.',
+    logisticsSummary: 'Weight distribution checked: ensures comfortable handling for drivers and porters.'
+  },
+  {
+    id: 'briefing-sep23-afternoon',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'AFTERNOON',
+    dayTitle: 'Day -1: Financial Pool — Sep 23, 2026',
+    scheduledFor: '2026-09-23T14:00:00+05:30',
+    subject: 'Cash Reserves in Mountains & Gullak 50/50 Shared Pool Setup',
+    transitInfo: 'Mountain ATMs from Rishikesh upwards often face network outages or cash depletion during peak Yatra.',
+    checklistItems: [
+      '₹20,000 Total cash pool divided across Utkarsh (₹10,000) and Shreyas (₹10,000)',
+      'Currency split: Clean ₹100, ₹200, and ₹500 notes for easy roadside payments',
+      'TripTrack Gullak tab verified: test ₹10 entry logged and split balance confirmed',
+      'UPI apps (GPay / PhonePe / Paytm) active and linked to bank with offline PIN ready'
+    ],
+    highlights: [
+      '14:00 — Gullak shared finance orientation between Utkarsh and Shreyas',
+      '50/50 Bilateral Rule: All common expenses (fuel, tolls, meals, prasad, tips) logged in Gullak',
+      'Instant settlement gauge: Shows net balance between Family A and Family B in real time'
+    ],
+    elderCareTip: 'Fathers never need to reach into their pockets for small cash or negotiate with vendors. Sons manage all transactions seamlessly.',
+    logisticsSummary: 'Gullak offline Dexie storage ready: allows expense entry even with zero cellular signal.'
+  },
+  {
+    id: 'briefing-sep23-night',
+    phase: 'PRE_DEPARTURE',
+    timeSlot: 'NIGHT',
+    dayTitle: 'Day -1: Shubh Yatra Blessing — Sep 23, 2026',
+    scheduledFor: '2026-09-23T20:30:00+05:30',
+    subject: 'Shubh Yatra Blessing, Family Peace of Mind & Early Sleep',
+    transitInfo: 'All preparations complete! Tomorrow at 14:30 we begin the sacred journey to Lord Badri Vishal.',
+    checklistItems: [
+      'Alarms set for 06:30 AM tomorrow morning for unhurried morning routine',
+      'All luggage zipped, tagged, and placed near front door',
+      'Train tickets, hotel vouchers, and Aadhaar cards re-checked in shoulder bag',
+      'Kuldevta and home temple prasad and blessings sought'
+    ],
+    highlights: [
+      '20:30 — Final family evening gathering: Peaceful hearts, joyful anticipation',
+      'Briefing recap: Journey timetable, train coach A2, seamless cab transfer in Delhi',
+      'Turn lights out by 22:00 for deep, restorative sleep before departure day'
+    ],
+    elderCareTip: 'Give Rajnish Ji and Sanjay Ji a glass of warm turmeric milk before bed to promote peaceful sleep.',
+    logisticsSummary: 'TripTrack Automated Pilgrimage Scheduler engaged and standing by for Day 1 morning trigger!'
+  },
+
+  // ============================================================================
+  // DURING-TRIP PHASE (Sep 24 – Oct 02, 2026: 9 Daily Morning Briefings)
+  // ============================================================================
+  {
     id: 'briefing-sep24-morning',
+    phase: 'DURING_TRIP',
+    timeSlot: 'MORNING',
     dayTitle: 'Day 1: Departure Day — Sep 24, 2026',
     scheduledFor: '2026-09-24T08:00:00+05:30',
     subject: 'Train 12441 Rajdhani Express Boarding Briefing',
@@ -131,6 +479,8 @@ export const SCHEDULED_BRIEFINGS: ScheduledBriefing[] = [
   },
   {
     id: 'briefing-sep25-morning',
+    phase: 'DURING_TRIP',
+    timeSlot: 'MORNING',
     dayTitle: 'Day 2: Delhi Arrival & Highway Transfer — Sep 25, 2026',
     scheduledFor: '2026-09-25T08:30:00+05:30',
     subject: 'NDLS Arrival & Delhi-Meerut Expressway to Haridwar',
@@ -146,6 +496,8 @@ export const SCHEDULED_BRIEFINGS: ScheduledBriefing[] = [
   },
   {
     id: 'briefing-sep26-morning',
+    phase: 'DURING_TRIP',
+    timeSlot: 'MORNING',
     dayTitle: 'Day 3: The Mountain Ascent — Sep 26, 2026',
     scheduledFor: '2026-09-26T05:30:00+05:30',
     subject: 'Early 06:00 AM Departure: Haridwar ➔ Joshimath (NH-7)',
@@ -161,6 +513,8 @@ export const SCHEDULED_BRIEFINGS: ScheduledBriefing[] = [
   },
   {
     id: 'briefing-sep27-morning',
+    phase: 'DURING_TRIP',
+    timeSlot: 'MORNING',
     dayTitle: 'Day 4: Holy Badrinath Sanctum & Tarpan Day — Sep 27, 2026',
     scheduledFor: '2026-09-27T06:00:00+05:30',
     subject: 'Jai Badri Vishal! Temple Darshan & Brahma Kapal Tarpan',
@@ -176,6 +530,8 @@ export const SCHEDULED_BRIEFINGS: ScheduledBriefing[] = [
   },
   {
     id: 'briefing-sep28-morning',
+    phase: 'DURING_TRIP',
+    timeSlot: 'MORNING',
     dayTitle: 'Day 5: Mana Village & Garhwal Descent — Sep 28, 2026',
     scheduledFor: '2026-09-28T06:00:00+05:30',
     subject: 'Mana First Village of India & Return Highway Descent',
@@ -189,9 +545,43 @@ export const SCHEDULED_BRIEFINGS: ScheduledBriefing[] = [
     logisticsSummary: 'All return hotel passes confirmed. Gullak shared pool tracking active.'
   },
   {
+    id: 'briefing-sep29-morning',
+    phase: 'DURING_TRIP',
+    timeSlot: 'MORNING',
+    dayTitle: 'Day 6: Rishikesh Foothills & Triveni Ghat — Sep 29, 2026',
+    scheduledFor: '2026-09-29T07:30:00+05:30',
+    subject: 'Rishikesh Serenity, Ram Jhula & Triveni Maha Aarti',
+    transitInfo: 'Relaxed morning in Rishikesh valley foothills (372m). Soothing river views and holy dip.',
+    highlights: [
+      '08:30 — Leisurely breakfast with views of the Himalayan Shivalik foothills',
+      '11:00 — Gentle walk across Ram Jhula suspension bridge and Gita Bhawan',
+      '17:30 — Triveni Ghat holy Maha Aarti at sunset with floating diyas'
+    ],
+    elderCareTip: 'Keep fathers away from slippery ghat algae. Use brass handrails along Triveni Ghat bathing bays.',
+    logisticsSummary: 'Rishikesh hotel verified. Local e-rickshaws pre-identified for senior mobility.'
+  },
+  {
+    id: 'briefing-sep30-morning',
+    phase: 'DURING_TRIP',
+    timeSlot: 'MORNING',
+    dayTitle: 'Day 7: Haridwar Sacred Ghats & Ayurvedic Rest — Sep 30, 2026',
+    scheduledFor: '2026-09-30T08:00:00+05:30',
+    subject: 'Haridwar Local Bazaars, Ayurvedic Herbs & Rest Day',
+    transitInfo: 'Gentle rest and rejuvenation day in holy Haridwar (314m).',
+    highlights: [
+      '09:00 — Sacred morning Ganga Snan at Haridwar Ghats',
+      '11:30 — Visit to authentic Ayurvedic pharmacies for herbal oils and churna',
+      '16:00 — Packing holy Gangajal copper vessels for home relatives'
+    ],
+    elderCareTip: 'Complete day of rest for senior leg muscles. Avoid long shopping walks in crowded lanes.',
+    logisticsSummary: 'IndiGo flight web check-in opens today. Boarding passes generating in Vault.'
+  },
+  {
     id: 'briefing-oct01-morning',
+    phase: 'DURING_TRIP',
+    timeSlot: 'MORNING',
     dayTitle: 'Day 8: Homeward Flight Connections — Oct 01, 2026',
-    scheduledFor: '2026-09-30T07:00:00+05:30',
+    scheduledFor: '2026-10-01T07:00:00+05:30',
     subject: 'IndiGo Flight Transit: Dehradun ➔ Delhi ➔ Raipur',
     transitInfo: 'IndiGo flight connections. PNRs active in Vault. Terminal check-in with wheelchair assistance pre-confirmed for elders.',
     highlights: [
@@ -201,6 +591,22 @@ export const SCHEDULED_BRIEFINGS: ScheduledBriefing[] = [
     ],
     elderCareTip: 'Wheelchair assistance requested on IndiGo boarding passes to avoid airport terminal fatigue.',
     logisticsSummary: 'All boarding passes cached in Vault with instant offline barcode display.'
+  },
+  {
+    id: 'briefing-oct02-morning',
+    phase: 'DURING_TRIP',
+    timeSlot: 'MORNING',
+    dayTitle: 'Day 9: Pilgrimage Completion — Oct 02, 2026',
+    scheduledFor: '2026-10-02T08:00:00+05:30',
+    subject: 'Pilgrimage Completion, Sacred Gangajal & Kuldevta Prasad',
+    transitInfo: 'All 4 pilgrims safely home in Durg, Chhattisgarh. Yatra successfully completed with divine blessings!',
+    highlights: [
+      '09:00 — Home temple Puja: Offering holy Badrinath Tulsi and Gangajal to Kuldevta',
+      '11:00 — Distribution of sacred Badrinath prasad to extended family and neighbours',
+      '16:00 — Final Gullak settlement between Utkarsh and Shreyas (Net Bilateral Balance settled)'
+    ],
+    elderCareTip: 'Encourage complete rest today. Check post-trip BP and congratulate both fathers on an extraordinary spiritual feat!',
+    logisticsSummary: 'TripTrack trip archive saved. Sacred journey memories locked in photo vault.'
   }
 ];
 
@@ -455,18 +861,34 @@ class AutomationService {
       schedulerActive: this.isRunning,
       provider: emailService.getProviderInfo(),
       recipients: emailService.getRecipients(),
+      counts: {
+        totalBriefings: SCHEDULED_BRIEFINGS.length,
+        preDeparture: SCHEDULED_BRIEFINGS.filter(b => b.phase === 'PRE_DEPARTURE').length,
+        duringTrip: SCHEDULED_BRIEFINGS.filter(b => b.phase === 'DURING_TRIP').length,
+        geofences: PILGRIMAGE_GEOFENCES.length
+      },
       activeGeofences: PILGRIMAGE_GEOFENCES.map(g => ({
         id: g.id,
         name: g.name,
         radiusKm: g.radiusKm,
         altitudeMeters: g.altitudeMeters,
+        description: g.description,
+        nextStop: g.nextStop,
         isDispatched: this.dispatchedTriggers.has(`geofence-${g.id}`)
       })),
       scheduledBriefings: SCHEDULED_BRIEFINGS.map(b => ({
         id: b.id,
+        phase: b.phase,
+        timeSlot: b.timeSlot,
         dayTitle: b.dayTitle,
         scheduledFor: b.scheduledFor,
         subject: b.subject,
+        transitInfo: b.transitInfo,
+        highlights: b.highlights,
+        elderCareTip: b.elderCareTip,
+        logisticsSummary: b.logisticsSummary,
+        checklistItems: b.checklistItems,
+        sightseeingTips: b.sightseeingTips,
         isDispatched: this.dispatchedTriggers.has(`briefing-${b.id}`)
       })),
       totalDispatchedCount: this.dispatchedTriggers.size
