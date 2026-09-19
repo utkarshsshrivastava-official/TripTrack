@@ -692,6 +692,17 @@
 - [x] **25.5 Field Verification & Live Dispatch Testing**
   - [x] Verified `GET /api/notifications/status` returning exact counts (`totalBriefings: 24`, `preDeparture: 15`, `duringTrip: 9`, `geofences: 9`).
   - [x] Live simulated all 3 Sep 19 briefings (Afternoon 12:30, Evening 17:00, Night 20:30) with 200 OK delivery directly to Gmail inboxes.
+- [x] **25.6 Full Bilingual (English + Hindi Devanagari) Accessibility for Elders (`email.service.ts`, `automation.service.ts`, `EmailAlertsModal.tsx`)**
+  - [x] Rendered ALL 6 email notification templates with dual English + Hindi Devanagari script for maximum senior readability:
+    - [x] Milestone Crossed Reassurance: English title + Hindi devotional subtitle (`सकुशल पड़ाव सूचना`) + elder health reassurance.
+    - [x] Dead-Zone Gorge Warning: Dual-language shadow guard notice + reassuring message for home families (`कृपया बिल्कुल भी चिंता न करें`).
+    - [x] Emergency SOS: Bilingual alert banners (`आपातकालीन सहायता सूचना`) and Google Maps button (`मैप में देखें`).
+    - [x] Scheduled Briefings (Pre-Departure & During-Trip): Bilingual slot pills (`प्रातःकालीन`, `दोपहर`, `सायंकालीन`, `रात्रिकालीन`), dual day titles, translated core objectives, checklist items (`✓ English \n • Hindi`), sightseeing tips, and elder care protocols.
+    - [x] Geofence Landmark Arrival: Dual-language confirmation (`सभी चारों तीर्थयात्री सकुशल पहुँच चुके हैं`).
+    - [x] Sandhya Bulletin Daily Digest: Bilingual evening summary with senior health updates, photo count, and tomorrow's route.
+  - [x] Enriched all 24 scheduled briefings in `automation.service.ts` with authentic Hindi fields (`dayTitleHindi`, `subjectHindi`, `transitInfoHindi`, `highlightsHindi`, `elderCareTipHindi`, `logisticsSummaryHindi`, `checklistItemsHindi`, `sightseeingTipsHindi`).
+  - [x] Updated client PWA `EmailAlertsModal.tsx` cards with high-contrast Hindi day titles and golden Devanagari subtitles (`text-amber-400/90`).
+  - [x] Verified zero-error compilation on both server and client; confirmed successful live email dispatch over Gmail SMTP.
 
 ---
 

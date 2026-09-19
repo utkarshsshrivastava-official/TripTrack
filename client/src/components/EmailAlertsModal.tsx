@@ -34,14 +34,22 @@ interface BriefingItem {
   phase: 'PRE_DEPARTURE' | 'DURING_TRIP';
   timeSlot: 'MORNING' | 'AFTERNOON' | 'EVENING' | 'NIGHT';
   dayTitle: string;
+  dayTitleHindi?: string;
   scheduledFor: string;
   subject: string;
+  subjectHindi?: string;
   transitInfo?: string;
+  transitInfoHindi?: string;
   highlights?: string[];
+  highlightsHindi?: string[];
   elderCareTip?: string;
+  elderCareTipHindi?: string;
   logisticsSummary?: string;
+  logisticsSummaryHindi?: string;
   checklistItems?: string[];
+  checklistItemsHindi?: string[];
   sightseeingTips?: string[];
+  sightseeingTipsHindi?: string[];
   isDispatched: boolean;
 }
 
@@ -546,6 +554,11 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
                         <div className="text-xs font-semibold text-amber-200/95 leading-snug">
                           {briefing.subject}
                         </div>
+                        {briefing.subjectHindi && (
+                          <div className="text-[11px] font-medium text-amber-400/90 leading-snug">
+                            {briefing.subjectHindi}
+                          </div>
+                        )}
                       </div>
 
                       <button
@@ -618,6 +631,11 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
                       <div className="text-xs font-semibold text-temple-gold leading-snug">
                         {briefing.subject}
                       </div>
+                      {briefing.subjectHindi && (
+                        <div className="text-[11px] font-medium text-amber-400/90 leading-snug">
+                          {briefing.subjectHindi}
+                        </div>
+                      )}
                     </div>
 
                     <button

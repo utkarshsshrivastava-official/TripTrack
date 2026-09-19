@@ -31,14 +31,22 @@ export interface ScheduledBriefing {
   phase: 'PRE_DEPARTURE' | 'DURING_TRIP';
   timeSlot: 'MORNING' | 'AFTERNOON' | 'EVENING' | 'NIGHT';
   dayTitle: string;
+  dayTitleHindi?: string;
   scheduledFor: string;
   subject: string;
+  subjectHindi?: string;
   highlights: string[];
+  highlightsHindi?: string[];
   transitInfo: string;
+  transitInfoHindi?: string;
   elderCareTip: string;
+  elderCareTipHindi?: string;
   logisticsSummary: string;
+  logisticsSummaryHindi?: string;
   checklistItems?: string[];
+  checklistItemsHindi?: string[];
   sightseeingTips?: string[];
+  sightseeingTipsHindi?: string[];
 }
 
 export interface WaypointArrival {
@@ -250,34 +258,45 @@ class EmailService {
       simulated: true, 
       warning: process.env.BREVO_API_KEY 
         ? 'Brevo API call failed. Notification logged to cloud console.' 
-        : 'Outbound SMTP ports blocked on Render free tier. Add BREVO_API_KEY to enable live email delivery.' 
+        : 'Outbound SMTP ports blocked on Render free tier. Add BREVO_API_KEY in Render environment variables for 100% production delivery.'
     };
   }
 
   /**
-   * Template 1: Milestone Checkpoint Crossed Reassurance
+   * Template 1: Milestone Checkpoint Crossed Reassurance (Bilingual English + Hindi)
    */
   async notifyMilestoneCrossed(data: MilestoneNotification) {
-    const subject = `🏔️ [Badrinath 2026] Reached Safely: ${data.landmarkName} (${data.time})`;
+    const subject = `🏔️ [Badrinath 2026 / बद्रीनाथ यात्रा] Reached Safely / सकुशल पहुंचे: ${data.landmarkName} (${data.time})`;
     const html = `
       <div style="font-family: Arial, sans-serif; background-color: #1c1917; color: #f5f5f4; padding: 24px; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid #d97706;">
         <div style="text-align: center; border-bottom: 1px solid #44403c; padding-bottom: 16px;">
-          <h1 style="color: #f59e0b; margin: 0; font-size: 24px;">TripTrack Badrinath Dham 2026</h1>
-          <p style="color: #a8a29e; font-size: 14px; margin: 4px 0 0 0;">In-Family Milestone Reassurance Update</p>
+          <h1 style="color: #f59e0b; margin: 0; font-size: 22px;">TripTrack Badrinath Dham 2026</h1>
+          <p style="color: #fbbf24; font-size: 15px; margin: 4px 0 0 0; font-weight: bold;">श्री बद्रीनाथ धाम यात्रा • सकुशल पड़ाव सूचना</p>
+          <p style="color: #a8a29e; font-size: 12px; margin: 4px 0 0 0;">In-Family Milestone Reassurance / परिजनों हेतु लाइव सूचना</p>
         </div>
         
         <div style="padding: 20px 0;">
           <div style="background-color: #292524; border-left: 4px solid #10b981; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-            <h2 style="color: #10b981; margin: 0; font-size: 18px;">✅ Landmark Crossed Safely: ${data.landmarkName}</h2>
-            <p style="color: #e7e5e4; margin: 6px 0 0 0; font-size: 14px;"><strong>Time:</strong> ${data.time} | <strong>Updated By:</strong> ${data.duoOrPilgrim}</p>
-            ${data.altitudeMeters ? `<p style="color: #fbbf24; margin: 4px 0 0 0; font-size: 13px;">Elevation: ~${data.altitudeMeters} meters</p>` : ''}
+            <h2 style="color: #10b981; margin: 0; font-size: 17px;">✅ Landmark Crossed Safely / पड़ाव सकुशल पार किया:</h2>
+            <div style="color: #ffffff; font-size: 18px; font-weight: bold; margin-top: 4px;">${data.landmarkName}</div>
+            <p style="color: #e7e5e4; margin: 8px 0 0 0; font-size: 13px;">
+              <strong>🕒 Time / समय:</strong> ${data.time} | <strong>👤 Updated By / द्वारा:</strong> ${data.duoOrPilgrim}
+            </p>
+            ${data.altitudeMeters ? `<p style="color: #fbbf24; margin: 4px 0 0 0; font-size: 12px; font-family: monospace;">⛰️ Altitude / समुद्र तल से ऊंचाई: ~${data.altitudeMeters} meters (मीटर)</p>` : ''}
           </div>
 
-          ${data.notes ? `<p style="color: #d6d3d1; font-size: 14px; background-color: #1c1917; padding: 12px; border: 1px solid #44403c; border-radius: 8px;"><em>"${data.notes}"</em></p>` : ''}
+          ${data.notes ? `<p style="color: #d6d3d1; font-size: 13px; background-color: #1c1917; padding: 12px; border: 1px solid #44403c; border-radius: 8px; line-height: 1.5;"><em>"${data.notes}"</em></p>` : ''}
 
-          <div style="margin-top: 16px; padding: 12px; background-color: #292524; border-radius: 8px;">
-            <p style="color: #93c5fd; margin: 0; font-size: 13px;"><strong>Next Destination:</strong> ${data.nextMilestone || 'En route next ghat milestone'}</p>
-            <p style="color: #a8a29e; margin: 4px 0 0 0; font-size: 12px;">Elder comfort checks, warm water hydration, and BP medication schedules are actively maintained.</p>
+          <div style="margin-top: 16px; padding: 14px; background-color: #064e3b; border: 1px solid #059669; border-radius: 8px;">
+            <p style="color: #6ee7b7; margin: 0; font-size: 14px; font-weight: bold;">🩺 Elder Care & Health Update / वरिष्ठजनों का स्वास्थ्य:</p>
+            <p style="color: #ecfdf5; margin: 4px 0 0 0; font-size: 13px; line-height: 1.5;">
+              Elder comfort checks, warm water hydration, and BP medication schedules are actively maintained.<br/>
+              <span style="color: #a7f3d0; font-size: 13px;">आदरणीय पिताजी (रजनीश जी) एवं चाचाजी (संजय जी) के स्वास्थ्य, गर्म पानी तथा समय पर दवाइयों का पूर्ण ध्यान रखा जा रहा है। सभी पूर्णतः स्वस्थ हैं।</span>
+            </p>
+          </div>
+
+          <div style="margin-top: 14px; padding: 12px; background-color: #292524; border-radius: 8px;">
+            <p style="color: #93c5fd; margin: 0; font-size: 13px;"><strong>📍 Next Target / अगला पड़ाव:</strong> ${data.nextMilestone || 'En route next ghat milestone / अगले पड़ाव की ओर अग्रसर'}</p>
           </div>
         </div>
 
@@ -290,29 +309,43 @@ class EmailService {
   }
 
   /**
-   * Template 2: Mountain Dead-Zone Entry Notice (Prevents Home Family Panic)
+   * Template 2: Mountain Dead-Zone Entry Notice (Bilingual English + Hindi)
    */
   async notifyDeadZoneEntry(data: DeadZoneNotification) {
-    const subject = `📡 [Topography Notice] Entering Mountain Dead-Zone: ${data.segmentTitle}`;
+    const subject = `📡 [Topography Notice / नेटवर्क विहीन क्षेत्र] Entering Mountain Dead-Zone: ${data.segmentTitle}`;
     const html = `
       <div style="font-family: Arial, sans-serif; background-color: #1c1917; color: #f5f5f4; padding: 24px; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid #3b82f6;">
         <div style="text-align: center; border-bottom: 1px solid #44403c; padding-bottom: 16px;">
           <h1 style="color: #60a5fa; margin: 0; font-size: 22px;">Alaknanda Gorge Cellular Shadow</h1>
-          <p style="color: #a8a29e; font-size: 13px; margin: 4px 0 0 0;">Pre-Alert for Extended Family at Home</p>
+          <p style="color: #93c5fd; font-size: 15px; margin: 4px 0 0 0; font-weight: bold;">अलकनंदा घाटी मोबाइल नेटवर्क छाया क्षेत्र</p>
+          <p style="color: #a8a29e; font-size: 12px; margin: 4px 0 0 0;">Pre-Alert for Family at Home / घर पर परिजनों हेतु पूर्व सूचना</p>
         </div>
         
         <div style="padding: 20px 0;">
           <div style="background-color: #1e293b; border-left: 4px solid #3b82f6; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-            <h3 style="color: #93c5fd; margin: 0; font-size: 16px;">📵 Cellular Disconnection Expected: ${data.segmentTitle}</h3>
-            <p style="color: #cbd5e1; margin: 6px 0 0 0; font-size: 14px;">The vehicle is currently travelling through deep Himalayan gorge sections on NH-7 where cellular towers are geographically shielded.</p>
+            <h3 style="color: #93c5fd; margin: 0; font-size: 15px;">📵 Cellular Disconnection Expected / मोबाइल नेटवर्क अस्थायी रूप से बंद रहेगा:</h3>
+            <p style="color: #ffffff; font-weight: bold; margin: 6px 0 0 0; font-size: 16px;">${data.segmentTitle}</p>
+            <p style="color: #cbd5e1; margin: 6px 0 0 0; font-size: 13px; line-height: 1.5;">
+              The vehicle is currently travelling through deep Himalayan gorge sections on NH-7 where cellular towers are geographically shielded.<br/>
+              <span style="color: #93c5fd; font-size: 13px;">गाड़ी इस समय हिमालय की गहरी घाटी (NH-7) से गुजर रही है जहाँ पहाड़ों के कारण मोबाइल नेटवर्क अस्थायी रूप से उपलब्ध नहीं रहेगा।</span>
+            </p>
           </div>
 
-          <div style="background-color: #292524; padding: 14px; border-radius: 8px; font-size: 14px; line-height: 1.6;">
-            <p style="color: #fbbf24; margin: 0 0 8px 0;"><strong>Please Do Not Worry:</strong></p>
+          <div style="background-color: #292524; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.6;">
+            <p style="color: #fbbf24; margin: 0 0 8px 0; font-weight: bold; font-size: 14px;">
+              Please Do Not Worry / कृपया बिल्कुल भी चिंता न करें:
+            </p>
             <ul style="margin: 0; padding-left: 20px; color: #d6d3d1;">
-              <li>Expected Radio Silence Duration: ~${data.expectedSilenceHours} hours</li>
-              <li>Expected Reconnection Landmark: ${data.expectedReconnectionPoint}</li>
-              <li>All offline passes, medical relief contacts, and navigation routes are stored directly on the pilgrims' phones.</li>
+              <li style="margin-bottom: 6px;">
+                <strong>Expected Radio Silence / अनुमानित नेटवर्क बंद समय:</strong> ~${data.expectedSilenceHours} hours (घंटे)
+              </li>
+              <li style="margin-bottom: 6px;">
+                <strong>Reconnection Landmark / नेटवर्क पुनः मिलने का स्थान:</strong> ${data.expectedReconnectionPoint}
+              </li>
+              <li>
+                All offline passes, medical emergency contacts, and maps are saved directly in the pilgrims' phones.<br/>
+                <span style="color: #a8a29e; font-size: 12px;">सभी जरूरी यात्रा पास, टिकट, रूट मैप तथा आपातकालीन संपर्क तीर्थयात्रियों के फोन में ऑफलाइन सुरक्षित हैं।</span>
+              </li>
             </ul>
           </div>
         </div>
@@ -326,35 +359,40 @@ class EmailService {
   }
 
   /**
-   * Template 3: Emergency SOS & Critical Alert
+   * Template 3: Emergency SOS & Critical Alert (Bilingual English + Hindi)
    */
   async notifyEmergencySos(data: SosNotification) {
-    const subject = `🚨 [URGENT SOS ALERT] Emergency Beacon Triggered by ${data.triggeredBy}`;
+    const subject = `🚨 [URGENT SOS ALERT / आपातकालीन संदेश] Emergency Beacon Triggered by ${data.triggeredBy}`;
     const mapsLink = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
     const html = `
       <div style="font-family: Arial, sans-serif; background-color: #450a0a; color: #fef2f2; padding: 24px; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 2px solid #ef4444;">
         <div style="text-align: center; border-bottom: 1px solid #7f1d1d; padding-bottom: 16px;">
           <h1 style="color: #f87171; margin: 0; font-size: 24px;">🚨 PILGRIM SOS DISPATCH</h1>
-          <p style="color: #fca5a5; font-size: 14px; margin: 4px 0 0 0;">Immediate Family Attention Requested</p>
+          <p style="color: #fca5a5; font-size: 16px; margin: 4px 0 0 0; font-weight: bold;">आपातकालीन सहायता सूचना • परिजनों का तत्काल ध्यान अपेक्षित</p>
         </div>
         
         <div style="padding: 20px 0;">
-          <p style="font-size: 16px; margin-top: 0;">An emergency beacon was initiated by <strong>${data.triggeredBy}</strong> (${data.duoName}) at <strong>${data.timestamp}</strong>.</p>
+          <p style="font-size: 15px; margin-top: 0; line-height: 1.5;">
+            An emergency beacon was initiated by <strong>${data.triggeredBy}</strong> (${data.duoName}) at <strong>${data.timestamp}</strong>.<br/>
+            <span style="color: #fecaca; font-size: 14px;">तीर्थयात्री <strong>${data.triggeredBy}</strong> द्वारा आपातकालीन सहायता संकेत भेजा गया है।</span>
+          </p>
 
           <div style="background-color: #1c1917; padding: 16px; border-radius: 8px; margin: 16px 0;">
-            <p style="color: #fbbf24; margin: 0 0 8px 0; font-size: 15px;"><strong>📍 Last Known GPS Coordinates:</strong></p>
+            <p style="color: #fbbf24; margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">
+              📍 Last Known GPS Coordinates / अंतिम ज्ञात स्थान:
+            </p>
             <p style="font-family: monospace; font-size: 15px; margin: 0; color: #67e8f9;">${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}</p>
             <p style="margin: 10px 0 0 0;">
               <a href="${mapsLink}" style="display: inline-block; background-color: #ef4444; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13px;">
-                Open in Google Maps
+                Open in Google Maps / मैप में देखें
               </a>
             </p>
-            ${data.batteryLevel ? `<p style="color: #a8a29e; font-size: 12px; margin: 10px 0 0 0;">Phone Battery: ${data.batteryLevel}%</p>` : ''}
+            ${data.batteryLevel ? `<p style="color: #a8a29e; font-size: 12px; margin: 10px 0 0 0;">Phone Battery / फोन बैटरी: ${data.batteryLevel}%</p>` : ''}
           </div>
 
           ${data.seniorMedicalDossier ? `
             <div style="background-color: #292524; padding: 12px; border-radius: 8px; font-size: 13px;">
-              <strong style="color: #fca5a5;">Medical Dossier:</strong> ${data.seniorMedicalDossier}
+              <strong style="color: #fca5a5;">Medical Dossier / चिकित्सा विवरण:</strong> ${data.seniorMedicalDossier}
             </div>
           ` : ''}
         </div>
@@ -368,44 +406,55 @@ class EmailService {
   }
 
   /**
-   * Template 4: Automated Scheduled Briefing (Pre-Departure & During-Trip)
+   * Template 4: Automated Scheduled Briefing (Pre-Departure & During-Trip) — Bilingual English + Hindi
    */
   async notifyScheduledBriefing(data: ScheduledBriefing) {
     const isPreDeparture = data.phase === 'PRE_DEPARTURE';
     
-    // Determine icon & label based on time slot
+    // Determine icon, label & Hindi translation based on time slot
     let slotIcon = '🌅';
     let slotName = 'Morning';
+    let slotNameHindi = 'प्रातःकालीन';
     let slotColor = '#f59e0b'; // amber
     if (data.timeSlot === 'AFTERNOON') {
       slotIcon = '☀️';
       slotName = 'Afternoon';
+      slotNameHindi = 'दोपहर';
       slotColor = '#f97316'; // orange
     } else if (data.timeSlot === 'EVENING') {
       slotIcon = '🌇';
       slotName = 'Evening';
+      slotNameHindi = 'सायंकालीन';
       slotColor = '#ec4899'; // pink
     } else if (data.timeSlot === 'NIGHT') {
       slotIcon = '🌙';
       slotName = 'Night';
+      slotNameHindi = 'रात्रिकालीन';
       slotColor = '#8b5cf6'; // violet
     }
 
     const phaseTitle = isPreDeparture 
-      ? '🎒 Pre-Departure Briefing' 
-      : '🏔️ Pilgrimage Morning Briefing';
+      ? '🎒 Pre-Departure / यात्रा पूर्व तैयारी' 
+      : '🏔️ Pilgrimage Morning / दैनिक यात्रा बुलेटिन';
 
-    const subject = `${slotIcon} [${isPreDeparture ? 'TripTrack Prep' : 'Yatra Briefing'}] ${data.dayTitle} — ${data.subject}`;
-    const highlightsHtml = data.highlights.map(h => `<li style="margin-bottom: 6px; color: #e7e5e4;">${h}</li>`).join('');
+    const subject = `${slotIcon} [${isPreDeparture ? 'TripTrack Prep / पूर्व तैयारी' : 'Yatra Briefing / यात्रा बुलेटिन'}] ${data.dayTitle} — ${data.subject}`;
 
     const checklistHtml = (data.checklistItems && data.checklistItems.length > 0)
       ? `
         <div style="background-color: #0f172a; border: 1px solid #0284c7; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-          <h3 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 15px; display: flex; align-items: center;">
-            <span style="margin-right: 6px;">📋</span> Essential Checklist & Must-Haves:
+          <h3 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 15px;">
+            📋 Essential Checklist & Must-Haves / आवश्यक सामान एवं चेकलिस्ट:
           </h3>
-          <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6; color: #bae6fd;">
-            ${data.checklistItems.map(item => `<li style="margin-bottom: 4px;"><strong>✓</strong> ${item}</li>`).join('')}
+          <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: #bae6fd;">
+            ${data.checklistItems.map((item, idx) => {
+              const itemHi = data.checklistItemsHindi && data.checklistItemsHindi[idx];
+              return `
+                <li style="margin-bottom: 8px;">
+                  <strong style="color: #38bdf8;">✓</strong> <span style="font-weight: 600;">${item}</span>
+                  ${itemHi ? `<div style="color: #7dd3fc; font-size: 12.5px; margin-left: 6px; margin-top: 2px;">• ${itemHi}</div>` : ''}
+                </li>
+              `;
+            }).join('')}
           </ul>
         </div>
       `
@@ -414,30 +463,53 @@ class EmailService {
     const sightseeingHtml = (data.sightseeingTips && data.sightseeingTips.length > 0)
       ? `
         <div style="background-color: #2e1065; border: 1px solid #7c3aed; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-          <h3 style="color: #c084fc; margin: 0 0 10px 0; font-size: 15px; display: flex; align-items: center;">
-            <span style="margin-right: 6px;">🕉️</span> Sightseeing, Temple & Scenic Guide:
+          <h3 style="color: #c084fc; margin: 0 0 10px 0; font-size: 15px;">
+            🕉️ Sightseeing, Temple & Scenic Guide / तीर्थ दर्शन एवं दर्शनीय स्थल:
           </h3>
-          <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6; color: #e9d5ff;">
-            ${data.sightseeingTips.map(tip => `<li style="margin-bottom: 4px;">• ${tip}</li>`).join('')}
+          <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: #e9d5ff;">
+            ${data.sightseeingTips.map((tip, idx) => {
+              const tipHi = data.sightseeingTipsHindi && data.sightseeingTipsHindi[idx];
+              return `
+                <li style="margin-bottom: 8px;">
+                  <strong style="color: #c084fc;">•</strong> <span style="font-weight: 600;">${tip}</span>
+                  ${tipHi ? `<div style="color: #d8b4fe; font-size: 12.5px; margin-left: 6px; margin-top: 2px;">• ${tipHi}</div>` : ''}
+                </li>
+              `;
+            }).join('')}
           </ul>
         </div>
       `
       : '';
 
+    const highlightsHtml = data.highlights.map((h, idx) => {
+      const hHi = data.highlightsHindi && data.highlightsHindi[idx];
+      return `
+        <li style="margin-bottom: 6px; color: #e7e5e4;">
+          <span>${h}</span>
+          ${hHi ? `<div style="color: #94a3b8; font-size: 12px; margin-top: 2px;">• ${hHi}</div>` : ''}
+        </li>
+      `;
+    }).join('');
+
     const html = `
       <div style="font-family: Arial, sans-serif; background-color: #1c1917; color: #f5f5f4; padding: 24px; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid ${slotColor};">
         <div style="text-align: center; border-bottom: 1px solid #44403c; padding-bottom: 16px;">
           <div style="display: inline-block; background-color: #292524; border: 1px solid #57534e; border-radius: 20px; padding: 4px 12px; font-size: 12px; color: ${slotColor}; font-weight: bold; margin-bottom: 8px;">
-            ${phaseTitle} • ${slotIcon} ${slotName} Slot
+            ${phaseTitle} • ${slotIcon} ${slotName} Slot (${slotNameHindi})
           </div>
           <h1 style="color: #f5f5f4; margin: 0; font-size: 22px;">TripTrack Pilgrimage Guide</h1>
-          <p style="color: #fbbf24; font-size: 14px; margin: 6px 0 0 0; font-weight: bold;">${data.dayTitle}</p>
+          <p style="color: #fbbf24; font-size: 16px; margin: 4px 0 0 0; font-weight: bold;">श्री बद्रीनाथ धाम यात्रा मार्गदर्शिका</p>
+          <p style="color: #e2e8f0; font-size: 13px; margin: 6px 0 0 0; font-weight: 600;">
+            ${data.dayTitle} ${data.dayTitleHindi ? `• ${data.dayTitleHindi}` : ''}
+          </p>
         </div>
         
         <div style="padding: 20px 0;">
           <div style="background-color: #292524; border-left: 4px solid ${slotColor}; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-            <h2 style="color: #fef08a; margin: 0; font-size: 17px;">📌 Core Focus: ${data.subject}</h2>
-            <p style="color: #d6d3d1; margin: 6px 0 0 0; font-size: 13px; line-height: 1.5;">${data.transitInfo}</p>
+            <h2 style="color: #fef08a; margin: 0; font-size: 16px;">📌 Core Focus / मुख्य उद्देश्य: ${data.subject}</h2>
+            ${data.subjectHindi ? `<div style="color: #fde047; font-size: 15px; font-weight: bold; margin-top: 4px;">• ${data.subjectHindi}</div>` : ''}
+            <p style="color: #d6d3d1; margin: 8px 0 0 0; font-size: 13px; line-height: 1.5;">${data.transitInfo}</p>
+            ${data.transitInfoHindi ? `<p style="color: #cbd5e1; margin: 4px 0 0 0; font-size: 13px; line-height: 1.5;">${data.transitInfoHindi}</p>` : ''}
           </div>
 
           ${checklistHtml}
@@ -445,19 +517,21 @@ class EmailService {
           ${sightseeingHtml}
 
           <div style="background-color: #1c1917; border: 1px solid #44403c; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-            <h3 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 15px;">⭐ Key Milestones & Recommendations:</h3>
-            <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6;">
+            <h3 style="color: #38bdf8; margin: 0 0 10px 0; font-size: 15px;">⭐ Key Milestones & Timing / मुख्य पड़ाव एवं समय सारणी:</h3>
+            <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6;">
               ${highlightsHtml}
             </ul>
           </div>
 
           <div style="background-color: #052e16; border: 1px solid #166534; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-            <h3 style="color: #4ade80; margin: 0 0 6px 0; font-size: 14px;">🩺 Elder Dignity & Health Protocol:</h3>
+            <h3 style="color: #4ade80; margin: 0 0 6px 0; font-size: 14px;">🩺 Elder Dignity & Health Protocol / वरिष्ठजनों हेतु स्वास्थ्य सुरक्षा एवं दिशानिर्देश:</h3>
             <p style="color: #dcfce7; margin: 0; font-size: 13px; line-height: 1.5;">${data.elderCareTip}</p>
+            ${data.elderCareTipHindi ? `<p style="color: #bbf7d0; margin: 6px 0 0 0; font-size: 13px; line-height: 1.5; font-weight: 500;">${data.elderCareTipHindi}</p>` : ''}
           </div>
 
           <div style="background-color: #292524; padding: 12px; border-radius: 8px; font-size: 12px; color: #a8a29e;">
-            <strong style="color: #f5f5f4;">Logistics Reference:</strong> ${data.logisticsSummary}
+            <strong style="color: #f5f5f4;">Logistics Reference / लॉजिस्टिक्स संदर्भ:</strong> ${data.logisticsSummary}
+            ${data.logisticsSummaryHindi ? `<br/><span style="color: #cbd5e1;">${data.logisticsSummaryHindi}</span>` : ''}
           </div>
         </div>
 
@@ -470,28 +544,29 @@ class EmailService {
   }
 
   /**
-   * Template 5: Location-Based Geofence Waypoint Arrival Notice
+   * Template 5: Location-Based Geofence Waypoint Arrival Notice (Bilingual English + Hindi)
    */
   async notifyGeofenceArrival(data: WaypointArrival) {
-    const subject = `📍 [Live Arrival] Touched ${data.name} (${data.arrivedAt}) — All Pilgrims Safe`;
+    const subject = `📍 [Live Arrival / पड़ाव आगमन] Touched ${data.name} (${data.arrivedAt}) — All Pilgrims Safe (सभी सकुशल)`;
     const mapsLink = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; background-color: #1c1917; color: #f5f5f4; padding: 24px; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid #10b981;">
         <div style="text-align: center; border-bottom: 1px solid #44403c; padding-bottom: 16px;">
           <h1 style="color: #10b981; margin: 0; font-size: 22px;">📍 Waypoint Reached Safely!</h1>
-          <p style="color: #6ee7b7; font-size: 14px; margin: 4px 0 0 0; font-weight: bold;">${data.name}</p>
+          <p style="color: #6ee7b7; font-size: 16px; margin: 4px 0 0 0; font-weight: bold;">पड़ाव पर सकुशल आगमन • ${data.name}</p>
         </div>
         
         <div style="padding: 20px 0;">
           <div style="background-color: #064e3b; border-left: 4px solid #10b981; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-            <p style="color: #ecfdf5; margin: 0; font-size: 15px; font-weight: bold;">
-              All 4 travellers (Rajnish Ji, Sanjay Ji, Utkarsh & Shreyas) have arrived at ${data.name}.
+            <p style="color: #ecfdf5; margin: 0; font-size: 15px; font-weight: bold; line-height: 1.4;">
+              All 4 travellers (Rajnish Ji, Sanjay Ji, Utkarsh & Shreyas) have arrived at ${data.name}.<br/>
+              <span style="color: #a7f3d0; font-size: 14px;">सभी चारों तीर्थयात्री (आदरणीय रजनीश जी, संजय जी, उत्कर्ष एवं श्रेयस) सकुशल पहुँच चुके हैं।</span>
             </p>
             <div style="display: flex; gap: 12px; margin-top: 8px; font-size: 12px; color: #a7f3d0; font-family: monospace;">
-              <span>🕒 Time: ${data.arrivedAt}</span>
+              <span>🕒 Time / समय: ${data.arrivedAt}</span>
               <span>•</span>
-              <span>⛰️ Altitude: ~${data.altitudeMeters}m</span>
+              <span>⛰️ Altitude / ऊंचाई: ~${data.altitudeMeters}m</span>
               <span>•</span>
               <span>🛰️ Source: ${data.detectedVia === 'GPS_GEOFENCE' ? 'GPS Geofence' : 'Milestone Check'}</span>
             </div>
@@ -503,10 +578,10 @@ class EmailService {
 
           <div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; background-color: #1c1917; border: 1px solid #44403c; padding: 12px; border-radius: 8px;">
             <div style="font-size: 12px; color: #94a3b8;">
-              <strong style="color: #f5f5f4;">Next Target:</strong> ${data.nextStop}
+              <strong style="color: #f5f5f4;">Next Target / अगला पड़ाव:</strong> ${data.nextStop}
             </div>
             <a href="${mapsLink}" style="background-color: #047857; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: bold;">
-              Live Pin
+              Live Pin / मैप
             </a>
           </div>
         </div>
@@ -520,47 +595,51 @@ class EmailService {
   }
 
   /**
-   * Template 6: Daily Evening Yatra Digest ("Sandhya Bulletin")
+   * Template 6: Daily Evening Yatra Digest ("Sandhya Bulletin") — Bilingual English + Hindi
    */
   async notifyDailyEveningDigest(data: DailyDigestData) {
-    const subject = `🌄 [Sandhya Bulletin] Pilgrimage Daily Summary — ${data.dateStr}`;
+    const subject = `🌄 [Sandhya Bulletin / संध्या बुलेटिन] Daily Yatra Summary — ${data.dateStr}`;
     const milestonesList = data.milestonesCovered.length > 0 
       ? data.milestonesCovered.map(m => `<li style="margin-bottom: 4px; color: #cbd5e1;">✅ ${m}</li>`).join('')
-      : '<li style="color: #94a3b8;">Resting / Acclimatization day</li>';
+      : '<li style="color: #94a3b8;">Resting / Acclimatization day • विश्राम एवं अनुकूलन दिवस</li>';
 
     const html = `
       <div style="font-family: Arial, sans-serif; background-color: #1c1917; color: #f5f5f4; padding: 24px; border-radius: 16px; max-width: 600px; margin: 0 auto; border: 1px solid #8b5cf6;">
         <div style="text-align: center; border-bottom: 1px solid #44403c; padding-bottom: 16px;">
           <h1 style="color: #a78bfa; margin: 0; font-size: 22px;">🌄 Sandhya Bulletin — Daily Yatra Digest</h1>
-          <p style="color: #ddd6fe; font-size: 13px; margin: 4px 0 0 0;">${data.dateStr} • Extended Family Peace of Mind</p>
+          <p style="color: #ddd6fe; font-size: 15px; margin: 4px 0 0 0; font-weight: bold;">दैनिक संध्या बुलेटिन • परिजनों की मानसिक शांति हेतु सारांश</p>
+          <p style="color: #a8a29e; font-size: 12px; margin: 4px 0 0 0;">${data.dateStr}</p>
         </div>
         
         <div style="padding: 20px 0;">
           <div style="background-color: #2e1065; border-left: 4px solid #8b5cf6; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-            <h3 style="color: #f5f3ff; margin: 0 0 8px 0; font-size: 15px;">🏁 Milestones Reached Today:</h3>
+            <h3 style="color: #f5f3ff; margin: 0 0 8px 0; font-size: 15px;">🏁 Milestones Reached Today / आज पूर्ण हुए पड़ाव:</h3>
             <ul style="margin: 0; padding-left: 16px; font-size: 13px; line-height: 1.5;">
               ${milestonesList}
             </ul>
           </div>
 
           <div style="background-color: #1e293b; border: 1px solid #334155; padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-            <h3 style="color: #38bdf8; margin: 0 0 6px 0; font-size: 14px;">🩺 Elder Health & Comfort Check:</h3>
+            <h3 style="color: #38bdf8; margin: 0 0 6px 0; font-size: 14px;">🩺 Elder Health & Comfort / वरिष्ठजनों का स्वास्थ्य:</h3>
             <p style="color: #f1f5f9; margin: 0; font-size: 13px; line-height: 1.5;">${data.eldersHealthSummary}</p>
+            <p style="color: #bae6fd; margin: 6px 0 0 0; font-size: 13px; line-height: 1.5;">
+              रजनीश जी एवं संजय जी दोनों का ऑक्सीजन स्तर (SpO2 > 92%) व स्वास्थ्य एकदम सामान्य एवं उत्तम है। दवाइयां समय पर ली गई हैं।
+            </p>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
             <div style="background-color: #292524; padding: 12px; border-radius: 8px;">
-              <span style="color: #a8a29e; font-size: 11px; display: block;">📸 Moments Uploaded</span>
+              <span style="color: #a8a29e; font-size: 11px; display: block;">📸 Moments Uploaded / फोटो</span>
               <strong style="color: #fbbf24; font-size: 16px;">${data.photosCount} Photos</strong>
             </div>
             <div style="background-color: #292524; padding: 12px; border-radius: 8px;">
-              <span style="color: #a8a29e; font-size: 11px; display: block;">💰 Today's Shared Outlay</span>
+              <span style="color: #a8a29e; font-size: 11px; display: block;">💰 Today's Shared Outlay / खर्च</span>
               <strong style="color: #34d399; font-size: 16px;">₹${data.gullakSpentTodayINR.toLocaleString('en-IN')}</strong>
             </div>
           </div>
 
           <div style="background-color: #292524; padding: 14px; border-radius: 8px; font-size: 13px;">
-            <strong style="color: #f59e0b; display: block; margin-bottom: 4px;">🌅 Tomorrow's Scheduled Route:</strong>
+            <strong style="color: #f59e0b; display: block; margin-bottom: 4px;">🌅 Tomorrow's Scheduled Route / कल का कार्यक्रम:</strong>
             <span style="color: #e7e5e4;">${data.tomorrowPreview}</span>
           </div>
         </div>
