@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, X, Check, Loader2, Sparkles } from 'lucide-react';
 import { DocumentCategory, TravelDocument } from '../../../shared/types';
 import { TRAVELLERS_CONFIG } from '../../../shared/config/travellers.config';
+import { useUserProfile } from '../../../shared/hooks/useUserProfile';
 import { compressImageFile } from '../services/imageCompression';
 import { saveDocumentToDexie } from '../services/vaultStorage';
 import { emitFamilyEvent } from '../../../shared/services/socketClient';
@@ -9,7 +10,7 @@ import { emitFamilyEvent } from '../../../shared/services/socketClient';
 interface UploadDocDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onUploadSuccess: () => void;
+  onUploadSuccess: (newDoc?: TravelDocument) => void;
 }
 
 export const UploadDocDialog: React.FC<UploadDocDialogProps> = ({
@@ -17,8 +18,20 @@ export const UploadDocDialog: React.FC<UploadDocDialogProps> = ({
   onClose,
   onUploadSuccess
 }) => {
+  const { activeUser } = useUserProfile();
+  const defaultPassengerId = TRAVELLERS_CONFIG.some(t => t.id === activeUser.id)
+    ? activeUser.id
+    : (activeUser.duoId === 'DUO_B' ? 'traveller-shreyas' : 'traveller-utkarsh');
+
   const [title, setTitle] = useState('');
-  const [passengerId, setPassengerId] = useState(TRAVELLERS_CONFIG[0].id);
+  const [passengerId, setPassengerId] = useState(defaultPassengerId);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPassengerId(defaultPassengerId);
+    }
+  }, [isOpen, defaultPassengerId]);
+
   const [category, setCategory] = useState<DocumentCategory>('YATRA_PASS');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -240,7 +253,7 @@ export const UploadDocDialog: React.FC<UploadDocDialogProps> = ({
               >
                 {TRAVELLERS_CONFIG.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'})
+                    {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'}){t.id === defaultPassengerId ? ' — You' : ''}
                   </option>
                 ))}
               </select>

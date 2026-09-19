@@ -3,6 +3,7 @@ import { TRIP_SEED_SEGMENTS } from '../../../shared/config/trip.config';
 import { TripSegment, SegmentStatus, LogisticsInfo } from '../../../shared/types';
 import { logItineraryMilestoneToFeed, addFamilyFeedItem } from '../../voice-feed/services/familyFeedStorage';
 import { onFamilyEvent, emitFamilyEvent } from '../../../shared/services/socketClient';
+import { getActiveUserId } from '../../../shared/hooks/useUserProfile';
 
 let itinerarySocketListenersInitialized = false;
 
@@ -199,7 +200,7 @@ export async function toggleCheckpointInDexie(
         toggledCheckpoint.name,
         segment.title,
         segment.destination || segment.origin,
-        'traveller-utkarsh',
+        getActiveUserId(),
         toggledCheckpoint.elderComfortNote
       );
     } catch (feedErr) {
@@ -256,7 +257,7 @@ export async function updateSegmentStatusInDexie(
       description: status === 'COMPLETED'
         ? `Successfully arrived at ${record.segmentData.destination}. Elders resting comfortably.`
         : `En route from ${record.segmentData.origin} towards ${record.segmentData.destination}.`,
-      speakerId: 'traveller-utkarsh',
+      speakerId: getActiveUserId(),
       locationName: record.segmentData.origin,
       duoId: 'ALL',
       category: record.segmentData.mode === 'TRAIN' ? 'TRAIN' : 'CAB',

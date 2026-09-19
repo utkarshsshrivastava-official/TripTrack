@@ -206,3 +206,26 @@ export function getAllUserProfiles(
   }));
   return [...pilgrims, ...guests];
 }
+
+/**
+ * Returns current active traveller ID stored in localStorage or default Utkarsh
+ */
+export function getActiveUserId(): string {
+  if (typeof window !== 'undefined') {
+    try {
+      return localStorage.getItem('triptrack_active_user_id') || 'traveller-utkarsh';
+    } catch {
+      return 'traveller-utkarsh';
+    }
+  }
+  return 'traveller-utkarsh';
+}
+
+/**
+ * Synchronous resolver for active traveller object
+ */
+export function getActiveTraveller(): Traveller {
+  const activeId = getActiveUserId();
+  const found = TRAVELLERS_CONFIG.find(t => t.id === activeId);
+  return found || TRAVELLERS_CONFIG[0];
+}

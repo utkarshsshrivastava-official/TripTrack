@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { TRAVELLERS_CONFIG, getTravellerById } from '../../../shared/config/travellers.config';
+import { useUserProfile } from '../../../shared/hooks/useUserProfile';
 import { DuoId } from '../../../shared/types';
 import { WebAudioRecorder } from '../services/audioRecorder';
 import { saveVoiceLogToDexie, deleteVoiceLogFromDexie } from '../services/voiceLogStorage';
@@ -34,15 +35,26 @@ interface FamilyFeedTabProps {
 }
 
 export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initialActiveDuo }) => {
+  const { activeUser } = useUserProfile();
+  const defaultSpeakerId = TRAVELLERS_CONFIG.some(t => t.id === activeUser.id)
+    ? activeUser.id
+    : (activeUser.duoId === 'DUO_B' ? 'traveller-shreyas' : 'traveller-utkarsh');
+
   const [feedItems, setFeedItems] = useState<FamilyFeedItem[]>([]);
   const [selectedDuoFilter, setSelectedDuoFilter] = useState<DuoId | 'ALL'>(initialActiveDuo);
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'MILESTONE' | 'VOICE_NOTE' | 'TRANSIT_UPDATE'>('ALL');
 
-  // Quick Post State
+  // Quick Post State — Auto-bound to logged-in user profile
   const [quickPostText, setQuickPostText] = useState('');
-  const [selectedSpeakerId, setSelectedSpeakerId] = useState(TRAVELLERS_CONFIG[0].id);
+  const [selectedSpeakerId, setSelectedSpeakerId] = useState(defaultSpeakerId);
   const [currentLocation, setCurrentLocation] = useState('Devprayag / NH-7');
   const [toastNote, setToastNote] = useState<string | null>(null);
+
+  // Sync speaker selection if user profile changes
+  useEffect(() => {
+    setSelectedSpeakerId(defaultSpeakerId);
+  }, [defaultSpeakerId]);
+
   const [postPhotoFile, setPostPhotoFile] = useState<File | null>(null);
   const [postPhotoPreviewUrl, setPostPhotoPreviewUrl] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
@@ -390,7 +402,7 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
               >
                 {TRAVELLERS_CONFIG.map(t => (
                   <option key={t.id} value={t.id}>
-                    {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'})
+                    {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'}){t.id === defaultSpeakerId ? ' — You' : ''}
                   </option>
                 ))}
               </select>
@@ -558,7 +570,9 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
                 className="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-white/10 text-[11px] text-slate-300 font-medium focus:outline-none"
               >
                 {TRAVELLERS_CONFIG.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                  <option key={t.id} value={t.id}>
+                    {t.name}{t.id === defaultSpeakerId ? ' (You)' : ''}
+                  </option>
                 ))}
               </select>
 

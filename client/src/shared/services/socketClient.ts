@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { UserProfile } from '../types/user';
+import { TRAVELLERS_CONFIG } from '../config/travellers.config';
 
 let globalSocket: Socket | null = null;
 let currentActiveUser: UserProfile | null = null;
@@ -99,16 +100,30 @@ export function emitFamilyEvent(event: string, payload: any): void {
  */
 export function onFamilyEvent(event: string, callback: (...args: any[]) => void): void {
   if (!globalSocket) {
-    // If not yet initialized, lazily init with default guest user
-    initSocket({
-      id: 'traveller-utkarsh',
-      name: 'Utkarsh',
-      type: 'PILGRIM',
-      roleLabel: 'Coordinator & Son',
-      relation: 'Son & Tech Lead',
-      duoId: 'DUO_A',
-      avatarColor: '#2563eb'
-    });
+    // If not yet initialized, lazily init with active user from storage or default
+    const savedId = typeof window !== 'undefined' ? localStorage.getItem('triptrack_active_user_id') : null;
+    const pilgrim = TRAVELLERS_CONFIG.find(t => t.id === savedId);
+    if (pilgrim) {
+      initSocket({
+        id: pilgrim.id,
+        name: pilgrim.name,
+        type: 'PILGRIM',
+        roleLabel: pilgrim.role === 'COORDINATOR' ? `${pilgrim.duoId === 'DUO_A' ? 'Family A' : 'Family B'} Coordinator` : 'Senior Elder',
+        relation: pilgrim.relation,
+        duoId: pilgrim.duoId,
+        avatarColor: pilgrim.avatarColor
+      });
+    } else {
+      initSocket({
+        id: 'traveller-utkarsh',
+        name: 'Utkarsh',
+        type: 'PILGRIM',
+        roleLabel: 'Coordinator & Son',
+        relation: 'Son & Tech Lead',
+        duoId: 'DUO_A',
+        avatarColor: '#2563eb'
+      });
+    }
   }
   globalSocket?.on(event, callback);
 }

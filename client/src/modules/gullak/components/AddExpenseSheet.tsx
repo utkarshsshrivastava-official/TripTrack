@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ExpenseCategory, ExpenseSplitMode } from '../../../shared/types';
 import { DUO_A_SON, DUO_B_SON } from '../../../shared/config/travellers.config';
+import { useUserProfile } from '../../../shared/hooks/useUserProfile';
 import { uploadMedia } from '../../../shared/services/mediaService';
 import { 
   X, 
@@ -67,19 +68,31 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   onClose,
   onAddExpense
 }) => {
+  const { activeUser } = useUserProfile();
+  const isDuoB = activeUser.id === 'traveller-shreyas' || activeUser.id === 'traveller-sanjay' || activeUser.duoId === 'DUO_B';
+  const defaultPayer = isDuoB ? 'SHREYAS' : 'UTKARSH';
+
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('FOOD');
 
-  // Splitwise-Grade Multi-Payer State
-  const [payerMode, setPayerMode] = useState<'UTKARSH' | 'SHREYAS' | 'BOTH'>('UTKARSH');
+  // Splitwise-Grade Multi-Payer State — Auto-default to logged in coordinator
+  const [payerMode, setPayerMode] = useState<'UTKARSH' | 'SHREYAS' | 'BOTH'>(defaultPayer);
   const [utkarshPaid, setUtkarshPaid] = useState('');
   const [shreyasPaid, setShreyasPaid] = useState('');
+
+  // Auto-sync payer when user profile changes or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setPayerMode(isDuoB ? 'SHREYAS' : 'UTKARSH');
+    }
+  }, [isOpen, isDuoB]);
 
   // Splitwise-Grade Split Mode State
   const [splitMode, setSplitMode] = useState<ExpenseSplitMode>('EQUAL_50_50');
   const [utkarshOwes, setUtkarshOwes] = useState('');
   const [shreyasOwes, setShreyasOwes] = useState('');
+
 
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
@@ -359,7 +372,12 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <span className="text-xs font-bold leading-tight truncate w-full">{DUO_A_SON.name}</span>
+                <span className="text-xs font-bold leading-tight truncate w-full flex items-center justify-center gap-1">
+                  <span>{DUO_A_SON.name}</span>
+                  {!isDuoB && (
+                    <span className="text-[9px] px-1 rounded bg-amber-500/30 text-amber-300 font-extrabold">You</span>
+                  )}
+                </span>
                 <span className="text-[9px] font-mono text-slate-400">Paid 100%</span>
               </button>
 
@@ -372,7 +390,12 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <span className="text-xs font-bold leading-tight truncate w-full">{DUO_B_SON.name}</span>
+                <span className="text-xs font-bold leading-tight truncate w-full flex items-center justify-center gap-1">
+                  <span>{DUO_B_SON.name}</span>
+                  {isDuoB && (
+                    <span className="text-[9px] px-1 rounded bg-amber-500/30 text-amber-300 font-extrabold">You</span>
+                  )}
+                </span>
                 <span className="text-[9px] font-mono text-slate-400">Paid 100%</span>
               </button>
 

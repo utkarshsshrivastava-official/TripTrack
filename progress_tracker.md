@@ -38,6 +38,7 @@
 | **Phase 23** | **Splitwise-Grade Multi-Payer & Custom Split Financial Engine in Gullak** | ✅ **DONE** | 100% | Completed |
 | **Phase 24** | **Autonomous Scheduled & Geofenced Email Notification Engine** | ✅ **DONE** | 100% | Completed |
 | **Phase 25** | **Pre-Departure (Sep 19–23) & During-Trip (Sep 24–Oct 02) Scheduled Briefing System** | ✅ **DONE** | 100% | Completed |
+| **Phase 26** | **Zero-Friction Profile Auto-Binding (Gullak, Feed, Vault, Itinerary & GPS)** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -704,7 +705,30 @@
     - [x] Sandhya Bulletin Daily Digest: Bilingual evening summary with senior health updates, photo count, and tomorrow's route.
   - [x] Enriched all 24 scheduled briefings in `automation.service.ts` with authentic Hindi fields (`dayTitleHindi`, `subjectHindi`, `transitInfoHindi`, `highlightsHindi`, `elderCareTipHindi`, `logisticsSummaryHindi`, `checklistItemsHindi`, `sightseeingTipsHindi`).
   - [x] Updated client PWA `EmailAlertsModal.tsx` cards with high-contrast Hindi day titles and golden Devanagari subtitles (`text-amber-400/90`).
-  - [x] Verified zero-error compilation on both server and client; confirmed successful live email dispatch over Gmail SMTP.
+- [x] **Phase 26: Zero-Friction Profile Auto-Binding Across App Features**
+  - [x] **26.1 Architectural Audit & Gap Discovery**
+    - [x] Identified 8 modules with redundant traveller selection dropdowns / legacy hardcoded `traveller-utkarsh` initializers:
+      - `AddExpenseSheet.tsx` (Gullak): `payerMode` hardcoded to `'UTKARSH'`.
+      - `FamilyFeedTab.tsx` (Feed Quick Post & Voice Studio): `selectedSpeakerId` hardcoded to `TRAVELLERS_CONFIG[0].id`.
+      - `ReportObstructionModal.tsx` (Route Guard): `reportingTravellerId` hardcoded to `TRAVELLERS_CONFIG[0].id`.
+      - `UploadDocDialog.tsx` (Vault): `passengerId` hardcoded to `TRAVELLERS_CONFIG[0].id`.
+      - `TrackingPreview.tsx` (GPS Broadcaster): `selectedTravellerId` hardcoded to `TRAVELLERS_CONFIG[0].id`.
+      - `itineraryStorage.ts` (Milestone Feed): Milestone attribution hardcoded to `'traveller-utkarsh'`.
+      - `OximeterLoggerModal.tsx` (Elder Health): Pre-selection defaulted to `seniorPilgrims[0]` (Rajnish Ji) instead of Duo-aware father.
+      - `EmailAlertsModal.tsx` (Geofence): Test trigger passengerId hardcoded to `'traveller-utkarsh'`.
+  - [x] **26.2 Reactive Shared Profile Hooks & Non-React Resolvers**
+    - [x] Added `triptrack_user_profile_change` and `storage` event dispatchers to `useUserProfile.ts` for instant cross-component re-rendering without page refreshes.
+    - [x] Exported synchronous non-React helpers `getActiveUserId()` and `getActiveTraveller()`.
+  - [x] **26.3 Automated Module Binding & "(You)" Visual Indicators**
+    - [x] Bound `AddExpenseSheet.tsx` payer to logged-in user (`SHREYAS` for Shreyas/Duo B; `UTKARSH` for Utkarsh/Duo A) with `(You)` badge.
+    - [x] Bound `FamilyFeedTab.tsx` speaker selector in Quick Post and Voice Studio to active profile with `(You)` label.
+    - [x] Bound `ReportObstructionModal.tsx` reporter chips to active coordinator with `(You)` badge.
+    - [x] Bound `UploadDocDialog.tsx` assigned pilgrim to active user with `(You)` option text.
+    - [x] Bound `TrackingPreview.tsx` broadcasting pilgrim to active user with `(You)` option text.
+    - [x] Updated `itineraryStorage.ts` to log milestone check-ins under `getActiveUserId()`.
+    - [x] Updated `OximeterLoggerModal.tsx` to pre-select elder matching the active user's family duo (Sanjay Ji for Duo B; Rajnish Ji for Duo A) with `Your Elder` pill.
+  - [x] **26.4 Multi-Profile Switching & Zero-Click Verification**
+    - [x] Verified zero-error compilation across both client (`vite build`) and server (`tsc`); confirmed instant profile auto-binding.
 
 ---
 

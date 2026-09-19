@@ -13,6 +13,7 @@ import {
   Sun
 } from 'lucide-react';
 import { getBackendUrl, getApiHeaders } from '../shared/services/apiConfig';
+import { useUserProfile } from '../shared/hooks/useUserProfile';
 
 interface EmailAlertsModalProps {
   isOpen: boolean;
@@ -73,6 +74,7 @@ interface AutomationStatus {
 }
 
 export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onClose }) => {
+  const { activeUser } = useUserProfile();
   const [status, setStatus] = useState<AutomationStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'pre_departure' | 'during_trip' | 'geofences'>('pre_departure');
@@ -256,7 +258,7 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
 
       const { res, data } = await safeFetchJson('/api/notifications/trigger-geofence', {
         method: 'POST',
-        body: JSON.stringify({ latitude: lat, longitude: lng, passengerId: 'traveller-utkarsh' })
+        body: JSON.stringify({ latitude: lat, longitude: lng, passengerId: activeUser.id || 'traveller-utkarsh' })
       });
 
       if (res.ok && data.success) {

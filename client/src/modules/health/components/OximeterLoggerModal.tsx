@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, HeartPulse, Activity, AlertTriangle, CheckCircle2, History, Plus } from 'lucide-react';
 import { TRAVELLERS_CONFIG, getTravellerById } from '../../../shared/config/travellers.config';
+import { useUserProfile } from '../../../shared/hooks/useUserProfile';
 import { OximeterReading } from '../types/health.types';
-import { saveOximeterReading, getOximeterReadings } from '../services/oximeterStorage';
+import { 
+  getOximeterReadings, 
+  saveOximeterReading 
+} from '../services/oximeterStorage';
 
 interface OximeterLoggerModalProps {
   isOpen: boolean;
@@ -19,10 +23,19 @@ export const OximeterLoggerModal: React.FC<OximeterLoggerModalProps> = ({
   currentAltitude = 1890,
   currentLocationName = 'Joshimath (Acclimatization Hub)'
 }) => {
-  const seniorPilgrims = TRAVELLERS_CONFIG.filter(t => t.isSeniorCitizen);
-  const initialTraveller = defaultTravellerId || seniorPilgrims[0]?.id || TRAVELLERS_CONFIG[0].id;
+  const { activeUser } = useUserProfile();
+  const isDuoB = activeUser.id === 'traveller-shreyas' || activeUser.id === 'traveller-sanjay' || activeUser.duoId === 'DUO_B';
+  const preferredElder = isDuoB ? 'traveller-sanjay' : 'traveller-rajnish';
+  const initialTraveller = defaultTravellerId || (activeUser.isElder ? activeUser.id : preferredElder);
 
   const [selectedTravellerId, setSelectedTravellerId] = useState<string>(initialTraveller);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedTravellerId(defaultTravellerId || (activeUser.isElder ? activeUser.id : preferredElder));
+    }
+  }, [isOpen, defaultTravellerId, activeUser.id, preferredElder, activeUser.isElder]);
+
   const [spo2, setSpo2] = useState<number>(95);
   const [pulseBpm, setPulseBpm] = useState<number>(76);
   const [notes, setNotes] = useState<string>('');
@@ -166,7 +179,15 @@ export const OximeterLoggerModal: React.FC<OximeterLoggerModalProps> = ({
                         {t.name.charAt(0)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs truncate font-semibold">{t.name}</div>
+                        <div className="text-xs truncate font-semibold flex items-center gap-1">
+                          <span>{t.name}</span>
+                          {t.id === activeUser.id && (
+                            <span className="text-[9px] px-1 rounded bg-amber-500/30 text-amber-300 font-extrabold">You</span>
+                          )}
+                          {t.id === preferredElder && t.id !== activeUser.id && (
+                            <span className="text-[9px] px-1 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300 font-bold">Your Elder</span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-stone-400">
                           {t.isSeniorCitizen ? 'Senior Elder' : 'Coordinator'}
                         </div>

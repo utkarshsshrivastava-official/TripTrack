@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   AlertTriangle, 
@@ -17,6 +17,7 @@ import {
   submitFamilySpotterReport 
 } from '../services/routeAlertStorage';
 import { TRAVELLERS_CONFIG } from '../../../shared/config/travellers.config';
+import { useUserProfile } from '../../../shared/hooks/useUserProfile';
 
 interface ReportObstructionModalProps {
   isOpen: boolean;
@@ -29,14 +30,25 @@ export const ReportObstructionModal: React.FC<ReportObstructionModalProps> = ({
   onClose,
   onReportSubmitted
 }) => {
+  const { activeUser } = useUserProfile();
+  const defaultReporterId = (activeUser.id === 'traveller-shreyas' || activeUser.id === 'traveller-sanjay' || activeUser.duoId === 'DUO_B')
+    ? 'traveller-shreyas'
+    : 'traveller-utkarsh';
+
   const [selectedStretch, setSelectedStretch] = useState<string>(CORRIDOR_STRETCHES[2]); // Devprayag - Rudraprayag
   const [locationName, setLocationName] = useState<string>('Near Sirobagarh (NH-7 Km 92)');
   const [eventType, setEventType] = useState<RouteAlert['eventType']>('LANDSLIDE');
   const [severity, setSeverity] = useState<RouteAlert['severity']>('MODERATE');
   const [delayEstimate, setDelayEstimate] = useState<string>('+30 min');
   const [note, setNote] = useState<string>('');
-  const [reportingTravellerId, setReportingTravellerId] = useState<string>(TRAVELLERS_CONFIG[0].id); // Utkarsh
+  const [reportingTravellerId, setReportingTravellerId] = useState<string>(defaultReporterId);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setReportingTravellerId(defaultReporterId);
+    }
+  }, [isOpen, defaultReporterId]);
 
   if (!isOpen) return null;
 
@@ -161,6 +173,11 @@ export const ReportObstructionModal: React.FC<ReportObstructionModalProps> = ({
                 >
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.avatarColor }} />
                   <span className="truncate">{t.name}</span>
+                  {t.id === defaultReporterId && (
+                    <span className="text-[9px] px-1 rounded bg-purple-500/30 text-purple-200 font-extrabold ml-auto">
+                      You
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

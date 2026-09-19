@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DuoId } from '../../shared/types';
 import { FamilyMap } from './components/FamilyMap';
 import { broadcastPilgrimBeacon } from './services/telemetry';
 import { TRAVELLERS_CONFIG } from '../../shared/config/travellers.config';
+import { useUserProfile } from '../../shared/hooks/useUserProfile';
 import { 
   Send, 
   Mountain, 
@@ -38,9 +39,19 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
   onOpenOximeter,
   onDuoChange
 }) => {
+  const { activeUser } = useUserProfile();
+  const defaultTravellerId = TRAVELLERS_CONFIG.some(t => t.id === activeUser.id)
+    ? activeUser.id
+    : (activeUser.duoId === 'DUO_B' ? 'traveller-shreyas' : 'traveller-utkarsh');
+
   const [isPinging, setIsPinging] = useState<boolean>(false);
   const [lastPingTime, setLastPingTime] = useState<string>('Just now');
-  const [selectedTravellerId, setSelectedTravellerId] = useState<string>(TRAVELLERS_CONFIG[0].id);
+  const [selectedTravellerId, setSelectedTravellerId] = useState<string>(defaultTravellerId);
+
+  useEffect(() => {
+    setSelectedTravellerId(defaultTravellerId);
+  }, [defaultTravellerId]);
+
   const [checkpointName, setCheckpointName] = useState<string>('Badrinath Temple Valley');
   const [vitalNote, setVitalNote] = useState<string>('Both fathers comfortable; sipping warm water; normal BP');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -342,7 +353,7 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
                 >
                   {availableTravellers.map(t => (
                     <option key={t.id} value={t.id}>
-                      {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} — {t.relation})
+                      {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} — {t.relation}){t.id === defaultTravellerId ? ' — You' : ''}
                     </option>
                   ))}
                 </select>
