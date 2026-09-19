@@ -181,6 +181,19 @@ export function initSocketServer(httpServer: HttpServer): SocketIOServer {
       io.to(FAMILY_ROOM).emit('feed_post_removed', { id: data.id });
     });
 
+    socket.on('clear_feed', async () => {
+      console.log('📰 [Socket.io Feed] Clear all family feed requested');
+      try {
+        if (isMongoConnected()) {
+          await FamilyFeedModel.deleteMany({});
+        }
+      } catch (err) {
+        console.error('⚠️ [Socket.io Feed] Failed to clear feed posts from MongoDB:', err);
+      }
+
+      io.to(FAMILY_ROOM).emit('feed_cleared', { timestamp: new Date().toISOString() });
+    });
+
     // ==========================================
     // 4. ITINERARY CHECKPOINT LIVE SYNC
     // ==========================================

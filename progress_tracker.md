@@ -528,9 +528,11 @@
   - [x] Real-time UI updates: `GullakPreview.tsx` listens to `triptrack_expense_update`, recalculating 50/50 balance and ledger instantaneously.
 - [x] **21.3 Full-Stack Family Feed Journey Timeline Synchronization (`familyFeed.model.ts`, `feed.controller.ts`, `familyFeedStorage.ts`)**
   - [x] Implemented Mongoose model `FamilyFeedModel` storing title, description, timestamp, speakerId, duoId, and transit metadata.
-  - [x] Created `GET /api/feed`, `POST /api/feed`, and `DELETE /api/feed/:id`.
-  - [x] Connected real-time Socket.io events: `send_feed_post` -> persists to Atlas -> broadcasts `receive_feed_post`; `delete_feed_post` -> removes from Atlas -> broadcasts `feed_post_removed`.
-  - [x] Automated sync: `FamilyFeedTab.tsx` reflects posts from all family devices instantaneously.
+  - [x] Created `GET /api/feed`, `POST /api/feed`, `DELETE /api/feed/:id`, and `DELETE /api/feed/clear-all`.
+  - [x] Connected real-time Socket.io events: `send_feed_post` -> persists to Atlas -> broadcasts `receive_feed_post`; `delete_feed_post` -> removes from Atlas -> broadcasts `feed_post_removed`; `clear_feed` -> purges Atlas -> broadcasts `feed_cleared`.
+  - [x] Fixed cloud endpoint resolution: updated `familyFeedStorage.ts` to use `getBackendUrl()` and `getApiHeaders()`, ensuring feed operations seamlessly reach Render MongoDB backend from Vercel deployments.
+  - [x] Removed UI deletion restriction on milestone cards (`!isMilestone`), allowing users to delete any feed item directly with the trash button.
+  - [x] Added "Clear All" stream button in `FamilyFeedTab.tsx` with confirmation dialog to purge feed locally and in MongoDB Atlas.
 - [x] **21.4 Real-time Itinerary Milestone Checkpoint Synchronization (`segment.controller.ts`, `itineraryStorage.ts`)**
   - [x] Added `checkpoint_updated` socket broadcast in `socket.service.ts` and HTTP `toggleCheckpointHandler`.
   - [x] Connected `itineraryStorage.ts` to broadcast checkpoint toggles and auto-reconcile with `/api/segments`.

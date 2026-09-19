@@ -24,7 +24,8 @@ import {
   FamilyFeedItem,
   getUnifiedFamilyFeed,
   addFamilyFeedItem,
-  deleteFamilyFeedItem
+  deleteFamilyFeedItem,
+  clearAllFamilyFeedItems
 } from '../services/familyFeedStorage';
 import { uploadMedia } from '../../../shared/services/mediaService';
 
@@ -74,6 +75,22 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
     setToastNote('🗑️ Voice note removed');
     setTimeout(() => setToastNote(null), 3000);
     await loadFeed();
+  };
+
+  const handleDeleteFeedItem = (id: string) => {
+    deleteFamilyFeedItem(id);
+    setToastNote('🗑️ Post removed from feed');
+    setTimeout(() => setToastNote(null), 3000);
+    loadFeed();
+  };
+
+  const handleClearAllFeed = async () => {
+    if (window.confirm('Clear all feed updates from the timeline and MongoDB cloud? This will remove all milestone and traveler posts.')) {
+      await clearAllFamilyFeedItems();
+      setToastNote('🧹 Family feed stream cleared!');
+      setTimeout(() => setToastNote(null), 3000);
+      await loadFeed();
+    }
   };
 
   useEffect(() => {
@@ -608,39 +625,53 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
         </div>
 
         {/* Type Filter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[10px]">
-          <button
-            type="button"
-            onClick={() => setTypeFilter('ALL')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'ALL' ? 'bg-white text-slate-950' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
-              }`}
-          >
-            All Stream
-          </button>
-          <button
-            type="button"
-            onClick={() => setTypeFilter('MILESTONE')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'MILESTONE' ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
-              }`}
-          >
-            🏁 Milestones
-          </button>
-          <button
-            type="button"
-            onClick={() => setTypeFilter('VOICE_NOTE')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'VOICE_NOTE' ? 'bg-purple-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
-              }`}
-          >
-            🎙️ Voice Notes
-          </button>
-          <button
-            type="button"
-            onClick={() => setTypeFilter('TRANSIT_UPDATE')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'TRANSIT_UPDATE' ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
-              }`}
-          >
-            🚗 Cab & Transit
-          </button>
+        <div className="flex items-center justify-between gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[10px]">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setTypeFilter('ALL')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'ALL' ? 'bg-white text-slate-950' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
+                }`}
+            >
+              All Stream
+            </button>
+            <button
+              type="button"
+              onClick={() => setTypeFilter('MILESTONE')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'MILESTONE' ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
+                }`}
+            >
+              🏁 Milestones
+            </button>
+            <button
+              type="button"
+              onClick={() => setTypeFilter('VOICE_NOTE')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'VOICE_NOTE' ? 'bg-purple-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
+                }`}
+            >
+              🎙️ Voice Notes
+            </button>
+            <button
+              type="button"
+              onClick={() => setTypeFilter('TRANSIT_UPDATE')}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all tap-active ${typeFilter === 'TRANSIT_UPDATE' ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white border border-white/5'
+                }`}
+            >
+              🚗 Cab & Transit
+            </button>
+          </div>
+
+          {feedItems.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearAllFeed}
+              className="px-2.5 py-1 rounded-lg font-bold bg-rose-950/50 hover:bg-rose-900/70 text-rose-300 hover:text-white border border-rose-800/60 transition-all tap-active shrink-0 flex items-center gap-1 ml-auto"
+              title="Clear all updates from feed and cloud"
+            >
+              <Trash2 className="w-3 h-3 text-rose-400" />
+              <span>Clear All</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -778,17 +809,15 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
                       </span>
                     )}
 
-                    {/* Delete action for custom traveler posts */}
-                    {!isMilestone && (
-                      <button
-                        type="button"
-                        onClick={() => deleteFamilyFeedItem(item.id)}
-                        className="text-slate-500 hover:text-rose-400 transition-colors p-1 tap-active ml-auto"
-                        title="Dismiss update"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    )}
+                    {/* Delete action for any feed post */}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteFeedItem(item.id)}
+                      className="text-slate-500 hover:text-rose-400 transition-colors p-1 tap-active ml-auto"
+                      title="Delete this update"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               )}

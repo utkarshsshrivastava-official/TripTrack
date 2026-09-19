@@ -1,5 +1,6 @@
 import { getVoiceLogsFromDexie } from './voiceLogStorage';
 import { onFamilyEvent, emitFamilyEvent } from '../../../shared/services/socketClient';
+import { getBackendUrl, getApiHeaders } from '../../../shared/services/apiConfig';
 
 export type FamilyFeedItemType = 
   | 'MILESTONE'
@@ -101,9 +102,9 @@ setupFeedSocketListeners();
  */
 export async function syncFamilyFeedWithCloud(): Promise<FamilyFeedItem[]> {
   try {
-    const pin = localStorage.getItem('triptrack_family_pin') || '2026';
-    const res = await fetch('/api/feed', {
-      headers: { 'x-family-pin': pin }
+    const backendUrl = getBackendUrl();
+    const res = await fetch(`${backendUrl}/api/feed`, {
+      headers: getApiHeaders()
     });
 
     if (!res.ok) {
@@ -121,11 +122,19 @@ export async function syncFamilyFeedWithCloud(): Promise<FamilyFeedItem[]> {
     // Map by ID and merge (cloud takes precedence for shared items)
     const map = new Map<string, FamilyFeedItem>();
     cloudFeed.forEach(item => map.set(item.id, item));
-    localItems.forEach(item => {
-      if (!map.has(item.id)) {
-        map.set(item.id, item);
-      }
-    });
+
+    // Also push any local items created while offline up to MongoDB Atlas
+    const unsyncedItems = localItems.filter(item => !map.has(item.id));
+    if (unsyncedItems.length > 0 && navigator.onLine) {
+      unsyncedItems.forEach(unsynced => {
+        fetch(`${backendUrl}/api/feed`, {
+          method: 'POST',
+          headers: getApiHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(unsynced)
+        }).catch(e => console.warn('Delayed feed push to cloud failed:', e));
+        map.set(unsynced.id, unsynced);
+      });
+    }
 
     const merged = Array.from(map.values()).sort(
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -203,12 +212,9 @@ export function addFamilyFeedItem(item: Omit<FamilyFeedItem, 'id' | 'timestamp'>
   if (navigator.onLine) {
     emitFamilyEvent('send_feed_post', fullItem);
 
-    fetch('/api/feed', {
+    fetch(`${getBackendUrl()}/api/feed`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
-      },
+      headers: getApiHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(fullItem)
     }).catch(err => console.warn('⚠️ [Family Feed] Cloud save deferred:', err));
   }
@@ -255,12 +261,32 @@ export function deleteFamilyFeedItem(id: string): void {
   if (navigator.onLine) {
     emitFamilyEvent('delete_feed_post', { id });
 
-    fetch(`/api/feed/${id}`, {
+    fetch(`${getBackendUrl()}/api/feed/${id}`, {
       method: 'DELETE',
-      headers: {
-        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
-      }
+      headers: getApiHeaders()
     }).catch(err => console.warn('⚠️ [Family Feed] Cloud delete deferred:', err));
+  }
+}
+
+// Clear all items from timeline, MongoDB Atlas and broadcast live
+export async function clearAllFamilyFeedItems(): Promise<void> {
+  saveTimelineItems([]);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('triptrack_feed_update', { detail: { cleared: true } }));
+  }
+
+  if (navigator.onLine) {
+    emitFamilyEvent('clear_feed', {});
+
+    try {
+      await fetch(`${getBackendUrl()}/api/feed/clear-all`, {
+        method: 'DELETE',
+        headers: getApiHeaders()
+      });
+    } catch (err) {
+      console.warn('⚠️ [Family Feed] Cloud clear deferred:', err);
+    }
   }
 }
 
