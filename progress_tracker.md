@@ -729,6 +729,11 @@
     - [x] Updated `OximeterLoggerModal.tsx` to pre-select elder matching the active user's family duo (Sanjay Ji for Duo B; Rajnish Ji for Duo A) with `Your Elder` pill.
   - [x] **26.4 Multi-Profile Switching & Zero-Click Verification**
     - [x] Verified zero-error compilation across both client (`vite build`) and server (`tsc`); confirmed instant profile auto-binding.
+  - [x] **26.5 WhatsApp-Grade Live Typing Indicators in Family Chat (`FamilyChatDrawer.tsx`, `useFamilySocket.ts`)**
+    - [x] Added dynamic header subtitle typing state: pulsing green ping dot with `[UserName] is typing...`.
+    - [x] Added WhatsApp-style incoming animated chat bubble with 3-dot bouncy wave animation (`animate-bounce` with staggered delay).
+    - [x] Implemented 2000ms debounce timer for keystroke typing emission and instant cleanup on submit, blur, or drawer close.
+    - [x] Auto-scrolls conversation stream smoothly to reveal the typing bubble as soon as a family member starts typing.
 
 ---
 

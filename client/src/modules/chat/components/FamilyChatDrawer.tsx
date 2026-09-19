@@ -43,6 +43,7 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<any>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -52,16 +53,39 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
     if (isOpen) {
       scrollToBottom();
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, typingUser]);
 
   if (!isOpen) return null;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputText(val);
+
+    if (val.trim().length > 0) {
+      sendTyping(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        sendTyping(false);
+      }, 2000);
+    } else {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      sendTyping(false);
+    }
+  };
 
   const handleSend = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputText.trim()) return;
     sendMessage(inputText.trim());
     setInputText('');
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     sendTyping(false);
+  };
+
+  const handleDrawerClose = () => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    sendTyping(false);
+    onClose();
   };
 
   const handleQuickChip = (chip: string) => {
@@ -100,7 +124,12 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
                 </span>
               </h2>
               <div className="flex items-center gap-1.5 text-[11px] truncate">
-                {isConnected ? (
+                {typingUser ? (
+                  <span className="text-emerald-400 font-semibold flex items-center gap-1.5 animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="truncate">{typingUser} is typing...</span>
+                  </span>
+                ) : isConnected ? (
                   <span className="text-emerald-400 flex items-center gap-1">
                     <Wifi className="w-3 h-3" /> Live Synced (Atlas)
                   </span>
@@ -127,7 +156,7 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
             )}
 
             <button
-              onClick={onClose}
+              onClick={handleDrawerClose}
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-stone-800 hover:bg-stone-700 flex items-center justify-center text-stone-300 transition-colors"
               aria-label="Close"
             >
@@ -256,10 +285,22 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
               );
             }))}
 
+          {/* WhatsApp-Grade Animated Typing Bubble */}
           {typingUser && (
-            <div className="text-xs text-stone-400 italic flex items-center gap-1.5 px-2 py-1">
-              <span className="animate-pulse text-amber-400">●</span>
-              <span>{typingUser} is typing...</span>
+            <div className="flex items-end gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200 my-1.5">
+              <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-extrabold text-xs flex items-center justify-center shrink-0 shadow-sm">
+                {typingUser.charAt(0)}
+              </div>
+              <div className="bg-stone-800/95 border border-stone-700/80 rounded-2xl rounded-bl-xs px-3.5 py-2 shadow-lg flex items-center gap-2">
+                <span className="text-xs font-semibold text-emerald-400">{typingUser}</span>
+                <span className="text-xs text-stone-300 italic">is typing</span>
+                {/* WhatsApp authentic 3-dot bouncy wave animation */}
+                <div className="flex items-center gap-1 pl-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce [animation-delay:-0.32s]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce [animation-delay:-0.16s]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce" />
+                </div>
+              </div>
             </div>
           )}
 
@@ -284,10 +325,7 @@ export const FamilyChatDrawer: React.FC<FamilyChatDrawerProps> = ({
           <input
             type="text"
             value={inputText}
-            onChange={e => {
-              setInputText(e.target.value);
-              sendTyping(e.target.value.length > 0);
-            }}
+            onChange={handleInputChange}
             placeholder="Type message to family..."
             className="flex-1 min-h-[48px] px-4 py-2 bg-stone-900 border border-stone-700 rounded-xl text-stone-100 placeholder-stone-500 text-sm focus:outline-none focus:border-amber-400 transition-colors"
           />
