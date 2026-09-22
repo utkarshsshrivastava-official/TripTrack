@@ -1,8 +1,10 @@
 /**
  * Real-time Device Location & Reverse-Geocoding Service
- * Detects real hardware GPS coordinates and resolves human-readable locality.
+ * Detects real hardware GPS coordinates, continuous highway telemetry, and resolves human-readable locality.
  * Works offline with zero-signal proximity algorithms across Himalayan waypoints.
  */
+
+import { PILGRIMAGE_WAYPOINTS, PilgrimageWaypoint } from '../config/pilgrimageRoute.config';
 
 export interface DetectedLocation {
   name: string;
@@ -11,40 +13,24 @@ export interface DetectedLocation {
   accuracyMeters?: number;
   isLiveGps: boolean;
   timestamp: string;
+  speedKmH?: number | null;
+  headingDegrees?: number | null;
+  altitudeMeters?: number | null;
+}
+
+export interface WaypointProximityResult {
+  waypoint: PilgrimageWaypoint | null;
+  distanceKm: number;
+  isInsideThreshold: boolean;
+  thresholdKm: number;
 }
 
 const STORAGE_KEY = 'triptrack_last_detected_location';
 
-// Known Waypoints on Pilgrimage Corridor (Chhattisgarh to Uttarakhand)
-const CORRIDOR_WAYPOINTS = [
-  { name: 'Durg, Chhattisgarh', lat: 21.1904, lng: 81.2849, radiusKm: 35 },
-  { name: 'Bhilai, Chhattisgarh', lat: 21.2144, lng: 81.3807, radiusKm: 25 },
-  { name: 'Raipur, Chhattisgarh', lat: 21.2514, lng: 81.6296, radiusKm: 35 },
-  { name: 'New Delhi / NDLS', lat: 28.6139, lng: 77.2090, radiusKm: 40 },
-  { name: 'Meerut Expressway', lat: 28.9845, lng: 77.7064, radiusKm: 25 },
-  { name: 'Muzaffarnagar', lat: 29.4727, lng: 77.7085, radiusKm: 25 },
-  { name: 'Roorkee, Uttarakhand', lat: 29.8543, lng: 77.8880, radiusKm: 20 },
-  { name: 'Haridwar / Har Ki Pauri', lat: 29.9457, lng: 78.1642, radiusKm: 20 },
-  { name: 'Rishikesh / Tapovan', lat: 30.0869, lng: 78.2676, radiusKm: 20 },
-  { name: 'Devprayag Sangam', lat: 30.1459, lng: 78.5989, radiusKm: 15 },
-  { name: 'Srinagar Garhwal', lat: 30.2224, lng: 78.7844, radiusKm: 15 },
-  { name: 'Rudraprayag Sangam', lat: 30.2844, lng: 78.9811, radiusKm: 15 },
-  { name: 'Karnaprayag', lat: 30.2587, lng: 79.2173, radiusKm: 15 },
-  { name: 'Nandaprayag', lat: 30.3308, lng: 79.3242, radiusKm: 15 },
-  { name: 'Chamoli / Gopeshwar', lat: 30.4037, lng: 79.3364, radiusKm: 15 },
-  { name: 'Pipalkoti', lat: 30.4300, lng: 79.4300, radiusKm: 12 },
-  { name: 'Joshimath', lat: 30.5574, lng: 79.5665, radiusKm: 15 },
-  { name: 'Govindghat', lat: 30.6250, lng: 79.5890, radiusKm: 12 },
-  { name: 'Pandukeshwar', lat: 30.6380, lng: 79.5930, radiusKm: 10 },
-  { name: 'Hanuman Chatti', lat: 30.7020, lng: 79.5050, radiusKm: 8 },
-  { name: 'Badrinath Dham', lat: 30.7447, lng: 79.4930, radiusKm: 10 },
-  { name: 'Mana Village (Last Indian Village)', lat: 30.7725, lng: 79.4958, radiusKm: 8 },
-];
-
 /**
  * Haversine distance in kilometers
  */
-function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+export function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Earth radius in km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
@@ -59,21 +45,38 @@ function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
 }
 
 /**
- * Find closest known pilgrimage landmark
+ * Find closest known pilgrimage landmark from PILGRIMAGE_WAYPOINTS
  */
-function findNearestCorridorLandmark(lat: number, lon: number): string | null {
-  let closest: (typeof CORRIDOR_WAYPOINTS)[0] | null = null;
+export function findNearestCorridorLandmark(lat: number, lon: number): { waypoint: PilgrimageWaypoint; distanceKm: number } | null {
+  let closest: PilgrimageWaypoint | null = null;
   let minDistance = Infinity;
 
-  for (const wp of CORRIDOR_WAYPOINTS) {
-    const dist = calculateDistanceKm(lat, lon, wp.lat, wp.lng);
-    if (dist < minDistance && dist <= wp.radiusKm) {
+  for (const wp of PILGRIMAGE_WAYPOINTS) {
+    const dist = calculateDistanceKm(lat, lon, wp.coords[0], wp.coords[1]);
+    if (dist < minDistance) {
       minDistance = dist;
       closest = wp;
     }
   }
 
-  return closest ? closest.name : null;
+  return closest ? { waypoint: closest, distanceKm: minDistance } : null;
+}
+
+/**
+ * Check if coordinates are within proximity threshold of any pilgrimage waypoint
+ */
+export function checkWaypointProximity(lat: number, lon: number, thresholdKm = 2.0): WaypointProximityResult {
+  const nearest = findNearestCorridorLandmark(lat, lon);
+  if (!nearest) {
+    return { waypoint: null, distanceKm: Infinity, isInsideThreshold: false, thresholdKm };
+  }
+
+  return {
+    waypoint: nearest.waypoint,
+    distanceKm: Math.round(nearest.distanceKm * 10) / 10,
+    isInsideThreshold: nearest.distanceKm <= thresholdKm,
+    thresholdKm
+  };
 }
 
 /**
@@ -125,15 +128,17 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string> 
   }
 
   // Offline / fallback: check distance against pilgrimage waypoints
-  const landmark = findNearestCorridorLandmark(lat, lon);
-  if (landmark) return landmark;
+  const nearest = findNearestCorridorLandmark(lat, lon);
+  if (nearest && nearest.distanceKm <= 35) {
+    return nearest.waypoint.name;
+  }
 
   // Generic GPS representation
   return `GPS: ${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E`;
 }
 
 /**
- * Detect hardware GPS and resolve live location name
+ * Detect single-shot hardware GPS and resolve live location name
  */
 export async function detectDeviceLocation(): Promise<DetectedLocation> {
   return new Promise((resolve) => {
@@ -154,6 +159,9 @@ export async function detectDeviceLocation(): Promise<DetectedLocation> {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
         const accuracy = Math.round(pos.coords.accuracy);
+        const speed = pos.coords.speed !== null ? Math.round(pos.coords.speed * 3.6) : null;
+        const heading = pos.coords.heading;
+        const altitude = pos.coords.altitude ? Math.round(pos.coords.altitude) : null;
 
         const placeName = await reverseGeocode(lat, lon);
         const result: DetectedLocation = {
@@ -162,7 +170,10 @@ export async function detectDeviceLocation(): Promise<DetectedLocation> {
           longitude: lon,
           accuracyMeters: accuracy,
           isLiveGps: true,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          speedKmH: speed,
+          headingDegrees: heading,
+          altitudeMeters: altitude
         };
 
         saveLastKnownLocation(result);
@@ -181,11 +192,74 @@ export async function detectDeviceLocation(): Promise<DetectedLocation> {
       },
       {
         enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 120000 // Cache for 2 minutes
+        timeout: 6000,
+        maximumAge: 60000
       }
     );
   });
+}
+
+/**
+ * Continuous Real-Time GPS Tracking for Highway Cab Navigation
+ * Returns an unwatch cleanup function.
+ */
+export function watchDeviceLocation(
+  onUpdate: (location: DetectedLocation) => void,
+  onError?: (err: GeolocationPositionError) => void
+): () => void {
+  if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+    return () => {};
+  }
+
+  let lastReverseGeocodeTime = 0;
+  let lastCachedName = 'Locating...';
+
+  const watchId = navigator.geolocation.watchPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const accuracy = Math.round(pos.coords.accuracy);
+      const speed = pos.coords.speed !== null ? Math.round(pos.coords.speed * 3.6) : null;
+      const heading = pos.coords.heading;
+      const altitude = pos.coords.altitude ? Math.round(pos.coords.altitude) : null;
+
+      // Throttle reverse geocoding to once every 45 seconds or on major movement
+      const now = Date.now();
+      if (now - lastReverseGeocodeTime > 45000 || lastCachedName === 'Locating...') {
+        lastReverseGeocodeTime = now;
+        reverseGeocode(lat, lon).then(name => {
+          lastCachedName = name;
+        });
+      }
+
+      const telemetry: DetectedLocation = {
+        name: lastCachedName,
+        latitude: lat,
+        longitude: lon,
+        accuracyMeters: accuracy,
+        isLiveGps: true,
+        timestamp: new Date().toISOString(),
+        speedKmH: speed,
+        headingDegrees: heading,
+        altitudeMeters: altitude
+      };
+
+      saveLastKnownLocation(telemetry);
+      onUpdate(telemetry);
+    },
+    (err) => {
+      if (onError) onError(err);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 5000,
+      timeout: 10000
+    }
+  );
+
+  return () => {
+    navigator.geolocation.clearWatch(watchId);
+  };
 }
 
 /**

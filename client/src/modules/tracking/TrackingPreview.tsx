@@ -1,7 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DuoId } from '../../shared/types';
 import { FamilyMap } from './components/FamilyMap';
+import { MountainNavigationHUD } from './components/MountainNavigationHUD';
+import { ElevationOxygenHUD } from './components/ElevationOxygenHUD';
+import { SacredLandmarkDrawer } from './components/SacredLandmarkDrawer';
 import { broadcastPilgrimBeacon } from './services/telemetry';
+import { 
+  watchDeviceLocation, 
+  checkWaypointProximity, 
+  calculateDistanceKm,
+  DetectedLocation 
+} from '../../shared/services/locationService';
+import { RouteProfilePoint } from './services/elevationOxygenService';
+import { 
+  downloadCorridorOfflineTiles, 
+  getOfflineTileCacheStatus, 
+  DownloadProgress 
+} from './services/offlineTileCacheService';
+import { 
+  PILGRIMAGE_WAYPOINTS, 
+  PilgrimageWaypoint 
+} from '../../shared/config/pilgrimageRoute.config';
 import { TRAVELLERS_CONFIG } from '../../shared/config/travellers.config';
 import { useUserProfile } from '../../shared/hooks/useUserProfile';
 import { 
@@ -10,16 +29,15 @@ import {
   AlertCircle, 
   Check, 
   Radio,
-  Battery,
-  ShieldCheck,
   UserCheck,
   ChevronUp,
   ChevronDown,
   Smartphone,
   Hospital,
   HeartPulse,
-  Info,
-  X
+  X,
+  DownloadCloud,
+  CheckCircle2
 } from 'lucide-react';
 
 interface TrackingPreviewProps {
@@ -44,14 +62,22 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
     ? activeUser.id
     : (activeUser.duoId === 'DUO_B' ? 'traveller-shreyas' : 'traveller-utkarsh');
 
+  // Real-Time Hardware GPS & Follow-Me Navigation state
+  const [currentLocation, setCurrentLocation] = useState<DetectedLocation | null>(null);
+  const [isFollowMe, setIsFollowMe] = useState<boolean>(false);
+  const [proximityAlertWaypoint, setProximityAlertWaypoint] = useState<PilgrimageWaypoint | null>(null);
+  const [selectedWaypoint, setSelectedWaypoint] = useState<PilgrimageWaypoint | null>(null);
+  const [scrubbedPoint, setScrubbedPoint] = useState<RouteProfilePoint | null>(null);
+
+  // Offline Tile Cache state
+  const [tileCacheStatus, setTileCacheStatus] = useState<{ isCached: boolean; tileCount: number }>({ isCached: false, tileCount: 0 });
+  const [downloadProgress, setDownloadProgress] = useState<DownloadProgress | null>(null);
+  const [isDownloadingTiles, setIsDownloadingTiles] = useState<boolean>(false);
+
+  // Telemetry Beacon state
   const [isPinging, setIsPinging] = useState<boolean>(false);
   const [lastPingTime, setLastPingTime] = useState<string>('Just now');
   const [selectedTravellerId, setSelectedTravellerId] = useState<string>(defaultTravellerId);
-
-  useEffect(() => {
-    setSelectedTravellerId(defaultTravellerId);
-  }, [defaultTravellerId]);
-
   const [checkpointName, setCheckpointName] = useState<string>('Badrinath Temple Valley');
   const [vitalNote, setVitalNote] = useState<string>('Both fathers comfortable; sipping warm water; normal BP');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -62,6 +88,60 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
   const [isSheetExpanded, setIsSheetExpanded] = useState<boolean>(false);
   // Mountain Shadow Guard details modal
   const [showShadowInfo, setShowShadowInfo] = useState<boolean>(false);
+
+  // Watch hardware GPS continuously
+  useEffect(() => {
+    const unwatch = watchDeviceLocation((loc) => {
+      setCurrentLocation(loc);
+      if (loc.altitudeMeters) setLastAltitude(loc.altitudeMeters);
+
+      // Check proximity to landmarks (<2km)
+      const proximity = checkWaypointProximity(loc.latitude, loc.longitude, 2.0);
+      if (proximity.isInsideThreshold && proximity.waypoint) {
+        setProximityAlertWaypoint(proximity.waypoint);
+      } else {
+        setProximityAlertWaypoint(null);
+      }
+    });
+
+    // Check offline tile status
+    getOfflineTileCacheStatus().then(setTileCacheStatus);
+
+    return () => {
+      unwatch();
+    };
+  }, []);
+
+  useEffect(() => {
+    setSelectedTravellerId(defaultTravellerId);
+  }, [defaultTravellerId]);
+
+  // Compute Next Upcoming Waypoint from GPS coordinates
+  const { nextWaypoint, distanceToNextKm } = useMemo(() => {
+    if (!currentLocation) {
+      return { nextWaypoint: PILGRIMAGE_WAYPOINTS[2], distanceToNextKm: 18 }; // Default: Devprayag
+    }
+
+    const lat = currentLocation.latitude;
+    const lon = currentLocation.longitude;
+
+    // Find first waypoint along route whose distance from Haridwar is greater than current position
+    let candidate: PilgrimageWaypoint | null = null;
+    let minDist = Infinity;
+
+    for (const wp of PILGRIMAGE_WAYPOINTS) {
+      const d = calculateDistanceKm(lat, lon, wp.coords[0], wp.coords[1]);
+      if (d > 0.8 && d < minDist) {
+        minDist = d;
+        candidate = wp;
+      }
+    }
+
+    return {
+      nextWaypoint: candidate || PILGRIMAGE_WAYPOINTS[PILGRIMAGE_WAYPOINTS.length - 2],
+      distanceToNextKm: minDist !== Infinity ? Math.round(minDist * 10) / 10 : null
+    };
+  }, [currentLocation]);
 
   const availableTravellers = TRAVELLERS_CONFIG.filter(
     t => activeDuo === 'ALL' || t.duoId === activeDuo
@@ -95,30 +175,46 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
     }
   };
 
-  const isHighAltitudeZone = lastAltitude >= 2000;
+  const handleDownloadTiles = async () => {
+    setIsDownloadingTiles(true);
+    try {
+      await downloadCorridorOfflineTiles((progress) => {
+        setDownloadProgress(progress);
+      });
+      const updatedStatus = await getOfflineTileCacheStatus();
+      setTileCacheStatus(updatedStatus);
+    } catch (err) {
+      console.error('Failed to pre-cache tiles', err);
+    } finally {
+      setIsDownloadingTiles(false);
+    }
+  };
 
   return (
     <div className="relative w-full h-[calc(100vh-64px)] min-h-[580px] bg-slate-950 overflow-hidden flex flex-col">
-      {/* 1. Immersive Full-Bleed Map Canvas */}
+      {/* 1. Immersive Full-Bleed Map Canvas with Satellite & Topo Layers */}
       <div className="absolute inset-0 z-0">
-        <FamilyMap activeDuo={activeDuo} onDuoChange={onDuoChange} />
+        <FamilyMap 
+          activeDuo={activeDuo} 
+          onDuoChange={onDuoChange}
+          liveLocation={currentLocation}
+          isFollowMe={isFollowMe}
+          onSelectWaypoint={(wp) => setSelectedWaypoint(wp)}
+          scrubbedPoint={scrubbedPoint}
+        />
       </div>
 
-      {/* 2. Floating Mountain Cellular Shadow Guard Pill (Top-Center) */}
-      <div className="absolute top-16 left-3 right-3 z-20 flex justify-center pointer-events-auto">
-        <button
-          type="button"
-          onClick={() => setShowShadowInfo(true)}
-          className="tap-active flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-950/85 hover:bg-amber-900/90 text-amber-200 border border-amber-500/50 shadow-2xl backdrop-blur-xl transition-all"
-        >
-          <AlertCircle className="w-3.5 h-3.5 text-amber-400 animate-pulse shrink-0" />
-          <span className="text-[11px] font-bold truncate">
-            Alaknanda Gorge Dead-Zone Active
-          </span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-300 font-mono">
-            NH-7
-          </span>
-        </button>
+      {/* 2. Top Mountain Navigation HUD & Cockpit Telemetry */}
+      <div className="absolute top-16 left-3 right-3 z-20 flex flex-col gap-1.5 pointer-events-auto">
+        <MountainNavigationHUD
+          currentLocation={currentLocation}
+          isFollowMe={isFollowMe}
+          onToggleFollowMe={() => setIsFollowMe(!isFollowMe)}
+          nextWaypoint={nextWaypoint}
+          distanceToNextKm={distanceToNextKm}
+          proximityAlertWaypoint={proximityAlertWaypoint}
+          onOpenSacredGuide={(wp) => setSelectedWaypoint(wp)}
+        />
       </div>
 
       {/* 3. Mountain Shadow Guard Details Modal */}
@@ -147,6 +243,43 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
             <p className="text-xs text-slate-300 leading-relaxed">
               Between Srinagar and Joshimath, steep Himalayan gorges create natural cellular dead-zones. The home dashboard automatically reassures family members that silence up to <strong>2.5 hours</strong> is expected terrain shadow.
             </p>
+
+            {/* Offline Tile Pre-Download Action */}
+            <div className="p-3 rounded-2xl bg-slate-950 border border-white/10 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold text-white flex items-center gap-1.5">
+                  <DownloadCloud className="w-4 h-4 text-sky-400" />
+                  <span>Offline Map Pack</span>
+                </span>
+                {tileCacheStatus.isCached ? (
+                  <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Downloaded ({tileCacheStatus.tileCount} tiles)</span>
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-amber-300 font-mono">Not Cached</span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleDownloadTiles}
+                disabled={isDownloadingTiles}
+                className="tap-active w-full py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 min-h-touch shadow"
+              >
+                {isDownloadingTiles ? (
+                  <>
+                    <div className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    <span>Downloading ({downloadProgress?.percent ?? 0}%)...</span>
+                  </>
+                ) : (
+                  <>
+                    <DownloadCloud className="w-3.5 h-3.5" />
+                    <span>{tileCacheStatus.isCached ? 'Re-Download Offline Map Tiles' : 'Pre-Download NH-7 Map for Offline'}</span>
+                  </>
+                )}
+              </button>
+            </div>
 
             <div className="space-y-2 pt-1">
               <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block">
@@ -207,221 +340,150 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
         </div>
       )}
 
-      {/* 4. Collapsible Elevation & Telemetry Bottom Sheet */}
-      <div className="absolute bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.25rem)] left-3 right-3 z-30 pointer-events-auto">
+      {/* 4. Bottom Elevation & Oxygen Scrubber HUD */}
+      <div className="absolute bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.25rem)] left-3 right-3 z-30 pointer-events-auto flex flex-col gap-2">
+        <ElevationOxygenHUD
+          onScrub={(pt) => setScrubbedPoint(pt)}
+        />
+
+        {/* Collapsible Beacon & Profile Sheet */}
         {!isSheetExpanded ? (
-          /* Slim Floating Bar (Collapsed Mode) */
-          <div className="glass-dock rounded-2xl p-2.5 px-3.5 shadow-2xl border border-white/10 flex items-center justify-between animate-in slide-in-from-bottom-2">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-xl bg-temple-gold/20 text-temple-gold">
-                <Mountain className="w-4 h-4" />
+          <div className="glass-dock rounded-2xl p-2 px-3 shadow-2xl border border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded-lg bg-temple-gold/20 text-temple-gold">
+                <Mountain className="w-3.5 h-3.5" />
               </div>
               <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-extrabold text-white">
-                    {lastAltitude}m
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-400">•</span>
-                  <span className="text-[11px] font-medium text-slate-300">
-                    {checkpointName.split(' ')[0]}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${isHighAltitudeZone ? 'bg-rose-500 animate-pulse' : 'bg-sky-400'}`} />
-                  <span className="font-mono text-[9px]">
-                    {isHighAltitudeZone ? 'High-Altitude Cold Zone' : 'Valley Acclimatized'}
-                  </span>
-                </div>
+                <span className="text-[11px] font-bold text-white">
+                  Telemetry Beacon • {lastAltitude}m
+                </span>
+                <span className="text-[9px] text-slate-400 block font-mono">
+                  {checkpointName.split(' ')[0]} • Battery {lastBattery}% • {lastPingTime}
+                </span>
               </div>
             </div>
 
-            {/* Tap to Expand Button */}
-            <button
-              type="button"
-              onClick={() => setIsSheetExpanded(true)}
-              className="tap-active min-h-touch px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-750 text-white font-bold text-xs flex items-center gap-1.5 border border-white/10 shadow-md"
-            >
-              <span>Beacon & Profile</span>
-              <ChevronUp className="w-4 h-4 text-temple-gold" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShowShadowInfo(true)}
+                className="tap-active px-2 py-1 rounded-xl bg-amber-950/80 text-amber-300 border border-amber-500/40 text-[10px] font-extrabold flex items-center gap-1"
+              >
+                <AlertCircle className="w-3 h-3 text-amber-400" />
+                <span>Dead-Zone</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsSheetExpanded(true)}
+                className="tap-active px-2.5 py-1 rounded-xl bg-slate-800 text-white text-[10px] font-bold flex items-center gap-1 border border-white/10"
+              >
+                <span>Beacon</span>
+                <ChevronUp className="w-3.5 h-3.5 text-temple-gold" />
+              </button>
+            </div>
           </div>
         ) : (
-          /* Expanded Full-Elevation & Telemetry Sheet */
-          <div className="glass-dock rounded-3xl p-4 shadow-2xl border border-white/15 max-h-[62vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom-4">
-            {/* Sheet Header with Collapse Toggle */}
+          <div className="glass-dock rounded-3xl p-4 shadow-2xl border border-white/15 max-h-[55vh] overflow-y-auto space-y-3 animate-in slide-in-from-bottom-3">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <Mountain className="w-4 h-4 text-temple-gold" />
+                <Radio className="w-4 h-4 text-temple-gold animate-pulse" />
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-white">
-                  Route Elevation & Pilgrim Telemetry
+                  Broadcast Pilgrim Telemetry
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsSheetExpanded(false)}
-                className="tap-active p-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-750 text-slate-300 hover:text-white flex items-center gap-1 text-xs font-bold"
+                className="tap-active p-1.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white flex items-center gap-1 text-xs font-bold"
               >
                 <span>Collapse</span>
                 <ChevronDown className="w-4 h-4" />
               </button>
             </div>
 
-            {/* NH-7 Elevation Profile Chart */}
-            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-300">
-                  NH-7 Himalayan Ascent Gradient
-                </span>
-                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                  isHighAltitudeZone
-                    ? 'bg-rose-950 text-rose-300 border-rose-700/80 animate-pulse'
-                    : 'bg-sky-950 text-sky-300 border-sky-800'
-                }`}>
-                  Current: {lastAltitude}m
-                </span>
-              </div>
-
-              {/* Elevation Step Bar Visualization */}
-              <div className="h-20 w-full rounded-xl bg-slate-900/60 p-2 relative flex items-end justify-between border border-slate-800/80">
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-6 bg-emerald-600 rounded-t h-3" />
-                  <span className="text-[8px] text-slate-400 font-mono">Durg 216m</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-6 bg-sky-600 rounded-t h-4" />
-                  <span className="text-[8px] text-slate-400 font-mono">HW 314m</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-6 bg-amber-500 rounded-t h-7" />
-                  <span className="text-[8px] text-slate-400 font-mono">Rudra 895m</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-6 bg-amber-600 rounded-t h-10" />
-                  <span className="text-[8px] text-amber-300 font-mono">Joshi 1890m</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-6 bg-rose-500 rounded-t h-14 relative animate-pulse">
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[7px] text-rose-300 font-black">Dham</span>
-                  </div>
-                  <span className="text-[8px] text-rose-300 font-mono font-bold">Badri 3130m</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-6 bg-purple-500 rounded-t h-15" />
-                  <span className="text-[8px] text-purple-300 font-mono">Mana 3200m</span>
-                </div>
-              </div>
-
-              {isHighAltitudeZone && (
-                <div className="p-2 rounded-xl bg-rose-950/40 border border-rose-800/60 text-[10px] text-rose-200 flex items-start gap-1.5">
-                  <Info className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-                  <span>
-                    <strong>High Altitude Warning (&gt;2,000m):</strong> Pacing required for senior fathers. Hydrate with warm water every 90 mins.
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* One-Tap Checkpoint Telemetry Beacon Broadcaster */}
-            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Radio className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
-                  <span className="text-xs font-bold text-white uppercase tracking-wider">
-                    Broadcast Vital Beacon
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400">
-                  <span className="flex items-center gap-1 text-emerald-400">
-                    <Battery className="w-3 h-3" />
-                    <span>{lastBattery}%</span>
-                  </span>
-                  <span>•</span>
-                  <span>{lastPingTime}</span>
-                </div>
-              </div>
-
-              {/* Pilgrim Selector */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-                  <UserCheck className="w-3 h-3 text-amber-400" />
-                  <span>Broadcasting as Pilgrim:</span>
-                </label>
-                <select
-                  value={selectedTravellerId}
-                  onChange={(e) => setSelectedTravellerId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-temple-gold"
-                >
-                  {availableTravellers.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} — {t.relation}){t.id === defaultTravellerId ? ' — You' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Landmark Checkpoint Input */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 block">
-                  Current Mountain Checkpoint
-                </label>
-                <input
-                  type="text"
-                  value={checkpointName}
-                  onChange={(e) => setCheckpointName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-temple-gold"
-                  placeholder="e.g. Joshimath Acclimatization Camp / Badrinath"
-                />
-              </div>
-
-              {/* Vital Note Input */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 block">
-                  Elder Vitals & Reassurance Note
-                </label>
-                <input
-                  type="text"
-                  value={vitalNote}
-                  onChange={(e) => setVitalNote(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-temple-gold"
-                  placeholder="e.g. Fathers comfortable; tea halt near Devprayag..."
-                />
-              </div>
-
-              {/* Action Button */}
-              <button
-                type="button"
-                onClick={handlePingLocation}
-                disabled={isPinging}
-                className="tap-active w-full py-3 rounded-xl bg-gradient-to-r from-temple-saffron via-amber-500 to-amber-600 text-slate-950 font-black text-xs shadow-lg shadow-amber-950/40 border border-amber-300/40 flex items-center justify-center gap-2 hover:brightness-110 transition-all min-h-touch"
+            {/* Pilgrim Selector */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                <UserCheck className="w-3 h-3 text-amber-400" />
+                <span>Broadcasting as Pilgrim:</span>
+              </label>
+              <select
+                value={selectedTravellerId}
+                onChange={(e) => setSelectedTravellerId(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-temple-gold"
               >
-                {isPinging ? (
-                  <>
-                    <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-                    <span>Acquiring GPS & Telemetry...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Broadcast Checkpoint Beacon</span>
-                  </>
-                )}
-              </button>
-
-              {successMessage && (
-                <div className="p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 animate-in fade-in">
-                  <Check className="w-4 h-4 shrink-0" />
-                  <span className="text-[11px] leading-tight">{successMessage}</span>
-                </div>
-              )}
-
-              <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                <span>Local-First: Telemetry stored in Dexie even with zero signal</span>
-              </div>
+                {availableTravellers.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.duoId === 'DUO_A' ? 'Family A' : 'Family B'} — {t.relation}){t.id === defaultTravellerId ? ' — You' : ''}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {/* Landmark Checkpoint Input */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 block">
+                Current Mountain Checkpoint
+              </label>
+              <input
+                type="text"
+                value={checkpointName}
+                onChange={(e) => setCheckpointName(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-temple-gold"
+                placeholder="e.g. Devprayag / Joshimath"
+              />
+            </div>
+
+            {/* Vital Note Input */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-400 block">
+                Elder Vitals & Reassurance Note
+              </label>
+              <input
+                type="text"
+                value={vitalNote}
+                onChange={(e) => setVitalNote(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-temple-gold"
+                placeholder="e.g. Fathers comfortable; tea halt near Devprayag..."
+              />
+            </div>
+
+            {/* Broadcast Action Button */}
+            <button
+              type="button"
+              onClick={handlePingLocation}
+              disabled={isPinging}
+              className="tap-active w-full py-3 rounded-xl bg-gradient-to-r from-temple-saffron via-amber-500 to-amber-600 text-slate-950 font-black text-xs shadow-lg shadow-amber-950/40 border border-amber-300/40 flex items-center justify-center gap-2 hover:brightness-110 transition-all min-h-touch"
+            >
+              {isPinging ? (
+                <>
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                  <span>Acquiring GPS & Telemetry...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Broadcast Checkpoint Beacon</span>
+                </>
+              )}
+            </button>
+
+            {successMessage && (
+              <div className="p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 animate-in fade-in">
+                <Check className="w-4 h-4 shrink-0" />
+                <span className="text-[11px] leading-tight">{successMessage}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* 5. Sacred Landmark Drawer for Puranic Lore & Voice Audio */}
+      <SacredLandmarkDrawer
+        waypoint={selectedWaypoint}
+        onClose={() => setSelectedWaypoint(null)}
+      />
     </div>
   );
 };

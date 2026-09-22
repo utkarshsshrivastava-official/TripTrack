@@ -1,8 +1,23 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import { DuoId } from '../../../shared/types';
 import { TRAVELLERS_CONFIG } from '../../../shared/config/travellers.config';
-import { Maximize2, Crosshair, Radio } from 'lucide-react';
+import { 
+  PILGRIMAGE_WAYPOINTS, 
+  CELLULAR_DEAD_ZONES, 
+  PilgrimageWaypoint 
+} from '../../../shared/config/pilgrimageRoute.config';
+import { DetectedLocation } from '../../../shared/services/locationService';
+import { RouteProfilePoint } from '../services/elevationOxygenService';
+import { 
+  Maximize2, 
+  Crosshair, 
+  Play, 
+  Square,
+  SignalZero
+} from 'lucide-react';
+
+export type MapTileLayerType = 'SATELLITE' | 'TOPO' | 'DARK';
 
 interface FamilyMapProps {
   activeDuo: DuoId | 'ALL';
@@ -10,79 +25,114 @@ interface FamilyMapProps {
   selectedTravellerId?: string;
   onSelectTraveller?: (id: string) => void;
   className?: string;
+  liveLocation?: DetectedLocation | null;
+  isFollowMe?: boolean;
+  onSelectWaypoint?: (waypoint: PilgrimageWaypoint) => void;
+  scrubbedPoint?: RouteProfilePoint | null;
 }
-
-interface Waypoint {
-  name: string;
-  coords: [number, number];
-  altitudeMeters: number;
-  highlight?: boolean;
-  desc?: string;
-}
-
-const PILGRIMAGE_WAYPOINTS: Waypoint[] = [
-  { name: "Haridwar (Ganga Aarti)", coords: [29.9457, 78.1642], altitudeMeters: 314, desc: "Plains gateway; sacred Ganga bathing ghats." },
-  { name: "Rishikesh (Triveni Ghat)", coords: [30.0869, 78.2676], altitudeMeters: 372, desc: "Foothills transition before mountain ascent." },
-  { name: "Devprayag (Alaknanda-Bhagirathi)", coords: [30.1460, 78.5990], altitudeMeters: 830, desc: "Birthplace of holy Ganga River." },
-  { name: "Srinagar (Garhwal Valley)", coords: [30.2223, 78.7845], altitudeMeters: 560, desc: "Broad valley rest halt & emergency fuel." },
-  { name: "Rudraprayag (Mandakini Sangam)", coords: [30.2858, 78.9811], altitudeMeters: 895, desc: "Confluence point towards Kedarnath & Badrinath split." },
-  { name: "Karnaprayag (Pindar Sangam)", coords: [30.2589, 79.2192], altitudeMeters: 1450, desc: "Historic pilgrimage milestone." },
-  { name: "Nandaprayag (Nandakini Sangam)", coords: [30.3308, 79.3195], altitudeMeters: 1358, desc: "Fourth Prayag confluence." },
-  { name: "Pipalkoti (Roadside Halt)", coords: [30.4297, 79.4312], altitudeMeters: 1259, desc: "Pre-climb lunch & vehicle check." },
-  { name: "Joshimath (Acclimatization Base)", coords: [30.5564, 79.5663], altitudeMeters: 1890, highlight: true, desc: "Winter seat of Badrinath; key acclimatization halt." },
-  { name: "Vishnuprayag (Dhauliganga Sangam)", coords: [30.5645, 79.5712], altitudeMeters: 1372, desc: "Fifth Prayag; entrance to upper gorge." },
-  { name: "Govindghat", coords: [30.6258, 79.5615], altitudeMeters: 1828, desc: "Valley of Flowers & Hemkund Sahib diversion." },
-  { name: "Pandukeshwar (Yog Dhyan Badri)", coords: [30.6397, 79.5490], altitudeMeters: 1829, desc: "Ancient temple dedicated to King Pandu." },
-  { name: "Hanuman Chatti (Barrier)", coords: [30.6974, 79.5078], altitudeMeters: 2400, highlight: true, desc: "High-Altitude Acclimatization check (>2,000m)." },
-  { name: "Badrinath Dham (Sanctum)", coords: [30.7447, 79.4930], altitudeMeters: 3130, highlight: true, desc: "Main Temple Sanctum & Tapt Kund hot sulphur springs." },
-  { name: "Mana (First Indian Village)", coords: [30.7712, 79.4960], altitudeMeters: 3200, desc: "Indo-Tibetan border village, Saraswati river origin & Vyas Gufa." }
-];
 
 export const FamilyMap: React.FC<FamilyMapProps> = ({
   activeDuo,
   onDuoChange,
-  className
+  className,
+  liveLocation,
+  isFollowMe = false,
+  onSelectWaypoint,
+  scrubbedPoint
 }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
-  const [activeFocus, setActiveFocus] = useState<'badrinath' | 'joshimath' | 'full'>('badrinath');
+  const liveGpsMarkerRef = useRef<L.Marker | null>(null);
+  const liveGpsAccuracyRef = useRef<L.Circle | null>(null);
+  const scrubMarkerRef = useRef<L.Marker | null>(null);
 
-  // Realistic live telemetry locations for pilgrims along the route
+  const [activeLayer, setActiveLayer] = useState<MapTileLayerType>('SATELLITE');
+  const [activeFocus, setActiveFocus] = useState<'badrinath' | 'joshimath' | 'full'>('full');
+  const [isTourRunning, setIsTourRunning] = useState<boolean>(false);
+  const tourTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Simulated fallback pilgrim locations if hardware GPS is not available for all 4
   const pilgrimPositions: Record<string, { coords: [number, number]; locationName: string; battery: number; altitude: number }> = {
-    'traveller-utkarsh': { coords: [30.7447, 79.4930], locationName: 'Badrinath Temple Valley', battery: 88, altitude: 3130 },
-    'traveller-rajnish': { coords: [30.7441, 79.4925], locationName: 'Badrinath Temple Valley (With Utkarsh)', battery: 92, altitude: 3130 },
+    'traveller-utkarsh': { 
+      coords: liveLocation ? [liveLocation.latitude, liveLocation.longitude] : [30.7447, 79.4930], 
+      locationName: liveLocation?.name || 'Badrinath Temple Valley', 
+      battery: 88, 
+      altitude: liveLocation?.altitudeMeters || 3130 
+    },
+    'traveller-rajnish': { 
+      coords: liveLocation ? [liveLocation.latitude - 0.0003, liveLocation.longitude - 0.0002] : [30.7441, 79.4925], 
+      locationName: 'With Utkarsh', 
+      battery: 92, 
+      altitude: 3130 
+    },
     'traveller-shreyas': { coords: [30.5564, 79.5663], locationName: 'Joshimath Base Camp', battery: 78, altitude: 1890 },
-    'traveller-sanjay': { coords: [30.5558, 79.5658], locationName: 'Joshimath Base Camp (With Shreyas)', battery: 84, altitude: 1890 }
+    'traveller-sanjay': { coords: [30.5558, 79.5658], locationName: 'Joshimath Base Camp', battery: 84, altitude: 1890 }
   };
 
+  /**
+   * Helper to switch tile providers
+   */
+  const switchTileLayer = useCallback((layerType: MapTileLayerType) => {
+    if (!mapInstanceRef.current) return;
+
+    if (tileLayerRef.current) {
+      mapInstanceRef.current.removeLayer(tileLayerRef.current);
+    }
+
+    let url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+    let className = 'satellite-tiles';
+    let attribution = '&copy; Esri World Imagery';
+
+    if (layerType === 'TOPO') {
+      url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+      className = 'topo-tiles';
+      attribution = '&copy; Esri World Topo';
+    } else if (layerType === 'DARK') {
+      url = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+      className = 'dark-tiles';
+      attribution = '&copy; OpenStreetMap';
+    }
+
+    const newLayer = L.tileLayer(url, {
+      maxZoom: 18,
+      className,
+      attribution
+    }).addTo(mapInstanceRef.current);
+
+    tileLayerRef.current = newLayer;
+    setActiveLayer(layerType);
+  }, []);
+
+  // Initialize Leaflet Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
     if (!mapInstanceRef.current) {
-      // Initialize map centered at Joshimath / Badrinath corridor
+      // Center midway in the Alaknanda valley
       const map = L.map(mapContainerRef.current, {
-        center: [30.65, 79.53],
-        zoom: 10,
+        center: [30.45, 79.25],
+        zoom: 9,
         zoomControl: false,
         attributionControl: false
       });
 
-      // Free OpenStreetMap standard tiles with CSS dark inversion (zero-cost, zero-watermark)
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        className: 'dark-tiles',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      }).addTo(map);
+      // Default to Satellite Imagery for rich aesthetics
+      const defaultTile = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        { maxZoom: 18, className: 'satellite-tiles' }
+      ).addTo(map);
 
-      // Add route polyline
-      const polylineCoords = PILGRIMAGE_WAYPOINTS.map(w => w.coords);
+      tileLayerRef.current = defaultTile;
 
       // Outer glow line for night/mountain visibility
+      const polylineCoords = PILGRIMAGE_WAYPOINTS.map(w => w.coords);
+
       L.polyline(polylineCoords, {
         color: '#f59e0b',
-        weight: 8,
-        opacity: 0.25,
+        weight: 9,
+        opacity: 0.35,
         lineCap: 'round',
         lineJoin: 'round'
       }).addTo(map);
@@ -90,17 +140,42 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({
       // Core route dashed neon line
       L.polyline(polylineCoords, {
         color: '#fbbf24',
-        weight: 3.5,
+        weight: 4,
         opacity: 0.95,
         dashArray: '8, 8',
         lineCap: 'round'
       }).addTo(map);
 
-      // Waypoint circle dots
+      // Dead-Zone Canyon Overlays
+      CELLULAR_DEAD_ZONES.forEach(dz => {
+        const isBlackout = dz.severity === 'COMPLETE_BLACKOUT';
+        const dzPolyline = L.polyline(dz.coords, {
+          color: isBlackout ? '#ef4444' : '#f97316',
+          weight: 7,
+          opacity: 0.65,
+          dashArray: '4, 6'
+        }).addTo(map);
+
+        dzPolyline.bindPopup(`
+          <div style="font-family: inherit; min-width: 180px;">
+            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">
+              <span style="font-size: 13px;">📵</span>
+              <strong style="font-size: 12px; color: ${isBlackout ? '#fca5a5' : '#fed7aa'};">
+                ${dz.name}
+              </strong>
+            </div>
+            <div style="font-size: 10px; color: #94a3b8; line-height: 1.35;">
+              ${dz.reassuranceNote}
+            </div>
+          </div>
+        `);
+      });
+
+      // Waypoint circle dots & interactive popups
       PILGRIMAGE_WAYPOINTS.forEach((wp) => {
         const isHighAlt = wp.altitudeMeters >= 2000;
         const circle = L.circleMarker(wp.coords, {
-          radius: wp.highlight ? 7 : 4.5,
+          radius: wp.highlight ? 8 : 5.5,
           fillColor: isHighAlt ? '#f43f5e' : (wp.highlight ? '#f59e0b' : '#38bdf8'),
           color: '#020617',
           weight: 2,
@@ -108,22 +183,18 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({
           fillOpacity: 0.95
         });
 
-        circle.bindPopup(`
-          <div style="font-family: inherit; min-width: 170px;">
-            <div style="font-size: 13px; font-weight: 800; color: #f8fafc; margin-bottom: 2px;">
-              ${wp.name}
-            </div>
-            <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px;">
-              <span style="font-family: monospace; font-size: 11px; font-weight: 800; color: ${isHighAlt ? '#fda4af' : '#7dd3fc'};">
-                ⛰️ ${wp.altitudeMeters}m
-              </span>
-              ${isHighAlt ? '<span style="font-size: 9px; padding: 1px 5px; border-radius: 9999px; background: #881337; color: #fecdd3; font-weight: 800; letter-spacing: 0.05em;">COLD ZONE</span>' : ''}
-            </div>
-            <div style="font-size: 11px; color: #94a3b8; line-height: 1.35;">
-              ${wp.desc || ''}
-            </div>
+        // Click opens the Sacred Landmark Drawer if handler exists
+        circle.on('click', () => {
+          if (onSelectWaypoint) {
+            onSelectWaypoint(wp);
+          }
+        });
+
+        circle.bindTooltip(`
+          <div style="font-family: inherit; font-size: 11px; font-weight: 800; color: #ffffff;">
+            ${wp.name} • ⛰️ ${wp.altitudeMeters}m
           </div>
-        `);
+        `, { direction: 'top', offset: [0, -6] });
 
         circle.addTo(map);
       });
@@ -134,22 +205,22 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({
     }
 
     return () => {
+      if (tourTimeoutRef.current) clearTimeout(tourTimeoutRef.current);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
         markersLayerRef.current = null;
       }
     };
-  }, []);
+  }, [onSelectWaypoint]);
 
-  // Update Pilgrim Avatar Pins whenever activeDuo changes
+  // Update Pilgrim Avatar Pins whenever activeDuo or liveLocation changes
   useEffect(() => {
     if (!mapInstanceRef.current || !markersLayerRef.current) return;
 
     markersLayerRef.current.clearLayers();
 
     TRAVELLERS_CONFIG.forEach((traveller) => {
-      // Filter out if not matching active Duo
       if (activeDuo !== 'ALL' && traveller.duoId !== activeDuo) {
         return;
       }
@@ -164,8 +235,6 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({
       const initial = traveller.name.charAt(0);
       const isSenior = traveller.isSeniorCitizen;
       const batteryPercent = info.battery;
-
-      // Calculate SVG stroke offset for concentric battery ring (radius 18, circumference ~113.1)
       const circumference = 113.1;
       const strokeDashoffset = circumference - (circumference * batteryPercent) / 100;
       const batteryStrokeColor = batteryPercent > 50 ? '#22c55e' : batteryPercent > 20 ? '#f59e0b' : '#ef4444';
@@ -226,7 +295,7 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({
             justify-content: center;
           ">
             ${initial}
-            ${isSenior ? '<span style="position: absolute; -bottom: 2px; -right: 2px; font-size: 10px; background: #ffffff; color: #020617; border-radius: 9999px; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.5);">👴</span>' : ''}
+            ${isSenior ? '<span style="position: absolute; bottom: -2px; right: -2px; font-size: 10px; background: #ffffff; color: #020617; border-radius: 9999px; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 1px 3px rgba(0,0,0,0.5);">👴</span>' : ''}
           </div>
         </div>
       `;
@@ -235,8 +304,7 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({
         html: markerHtml,
         className: 'custom-pilgrim-pin',
         iconSize: [46, 46],
-        iconAnchor: [23, 23],
-        popupAnchor: [0, -22]
+        iconAnchor: [23, 23]
       });
 
       const marker = L.marker(info.coords, { icon: customIcon });
@@ -248,39 +316,214 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({
               <span style="display: inline-block; width: 10px; height: 10px; border-radius: 9999px; background: ${traveller.avatarColor};"></span>
               <strong style="font-size: 14px; color: #ffffff;">${traveller.name}</strong>
             </div>
-            <span style="font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 9999px; background: ${traveller.avatarColor}33; color: ${traveller.avatarColor}; border: 1px solid ${traveller.avatarColor}66;">
+            <span style="font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 9999px; background: ${traveller.avatarColor}33; color: ${traveller.avatarColor};">
               ${traveller.duoId === 'DUO_A' ? 'Family A' : 'Family B'}
             </span>
           </div>
 
-          <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
-            <span>📍</span>
-            <span>${info.locationName}</span>
+          <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 6px;">
+            📍 ${info.locationName}
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 10px; font-family: monospace; color: #94a3b8; background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 6px; margin-top: 6px;">
-            <div>🔋 Battery: <strong style="color: ${batteryStrokeColor};">${batteryPercent}%</strong></div>
-            <div>⛰️ Alt: <strong style="color: #38bdf8;">${info.altitude}m</strong></div>
-            <div>🩸 Blood: <strong style="color: #f87171;">${traveller.bloodGroup}</strong></div>
-            <div>👥 Role: <strong style="color: #cbd5e1;">${traveller.relation}</strong></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 10px; font-family: monospace; color: #94a3b8; background: #020617; border: 1px solid #1e293b; border-radius: 8px; padding: 6px;">
+            <div>🔋 <strong style="color: ${batteryStrokeColor};">${batteryPercent}%</strong></div>
+            <div>⛰️ <strong style="color: #38bdf8;">${info.altitude}m</strong></div>
+            <div>🩸 <strong style="color: #f87171;">${traveller.bloodGroup}</strong></div>
+            <div>👥 <strong style="color: #cbd5e1;">${traveller.relation}</strong></div>
           </div>
-
-          ${traveller.isSeniorCitizen ? `
-            <div style="margin-top: 8px; padding: 5px 8px; border-radius: 8px; background: #451a03; border: 1px solid #78350f; font-size: 10px; color: #fed7aa; display: flex; items-center; gap: 4px;">
-              <span>⚠️</span>
-              <span><strong>Senior Care:</strong> Warm water hydration & 2,000m pacing active</span>
-            </div>
-          ` : ''}
         </div>
       `);
 
       marker.addTo(markersLayerRef.current!);
     });
-  }, [activeDuo]);
+  }, [activeDuo, liveLocation]);
+
+  // Live Hardware GPS Pin Rendering & Follow-Me Auto-Pan
+  useEffect(() => {
+    if (!mapInstanceRef.current || !liveLocation) return;
+
+    const coords: [number, number] = [liveLocation.latitude, liveLocation.longitude];
+    const heading = liveLocation.headingDegrees ?? 0;
+
+    // Follow-Me Auto-Pan Lock
+    if (isFollowMe) {
+      mapInstanceRef.current.panTo(coords, { animate: true, duration: 1.0 });
+    }
+
+    // Accuracy Circle
+    if (liveLocation.accuracyMeters && liveLocation.accuracyMeters < 500) {
+      if (!liveGpsAccuracyRef.current) {
+        liveGpsAccuracyRef.current = L.circle(coords, {
+          radius: liveLocation.accuracyMeters,
+          fillColor: '#38bdf8',
+          fillOpacity: 0.12,
+          stroke: false
+        }).addTo(mapInstanceRef.current);
+      } else {
+        liveGpsAccuracyRef.current.setLatLng(coords);
+        liveGpsAccuracyRef.current.setRadius(liveLocation.accuracyMeters);
+      }
+    }
+
+    // Vehicle Navigation Pin HTML with Direction Bearing
+    const vehicleIconHtml = `
+      <div style="
+        position: relative;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <!-- Live Ripple Pulse -->
+        <div style="
+          position: absolute;
+          inset: -4px;
+          border-radius: 9999px;
+          background-color: #38bdf8;
+          opacity: 0.4;
+          animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        "></div>
+
+        <!-- Heading Bearing Indicator -->
+        <div style="
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform: rotate(${heading}deg);
+        ">
+          <div style="
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 9px solid #38bdf8;
+            margin-top: -24px;
+          "></div>
+        </div>
+
+        <!-- Center Vehicle Blue Pin -->
+        <div style="
+          width: 24px;
+          height: 24px;
+          border-radius: 9999px;
+          background: #0284c7;
+          border: 2.5px solid #ffffff;
+          box-shadow: 0 0 12px rgba(56, 189, 248, 0.9);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ffffff;
+          font-size: 11px;
+        ">
+          🚗
+        </div>
+      </div>
+    `;
+
+    const vehicleIcon = L.divIcon({
+      html: vehicleIconHtml,
+      className: 'live-gps-vehicle-pin',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    });
+
+    if (!liveGpsMarkerRef.current) {
+      liveGpsMarkerRef.current = L.marker(coords, { icon: vehicleIcon, zIndexOffset: 1000 })
+        .addTo(mapInstanceRef.current);
+    } else {
+      liveGpsMarkerRef.current.setLatLng(coords);
+      liveGpsMarkerRef.current.setIcon(vehicleIcon);
+    }
+  }, [liveLocation, isFollowMe]);
+
+  // Synchronous Crosshair Marker for Elevation Scrubber
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    if (!scrubbedPoint) {
+      if (scrubMarkerRef.current) {
+        mapInstanceRef.current.removeLayer(scrubMarkerRef.current);
+        scrubMarkerRef.current = null;
+      }
+      return;
+    }
+
+    const coords = scrubbedPoint.coords;
+
+    const crosshairIcon = L.divIcon({
+      html: `
+        <div style="
+          width: 28px;
+          height: 28px;
+          border-radius: 9999px;
+          border: 2px dashed #f59e0b;
+          background: rgba(245, 158, 11, 0.25);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: pulse 1.5s infinite;
+        ">
+          <div style="width: 8px; height: 8px; border-radius: 9999px; background: #f59e0b;"></div>
+        </div>
+      `,
+      className: 'scrubber-crosshair',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+
+    if (!scrubMarkerRef.current) {
+      scrubMarkerRef.current = L.marker(coords, { icon: crosshairIcon, zIndexOffset: 900 })
+        .addTo(mapInstanceRef.current);
+    } else {
+      scrubMarkerRef.current.setLatLng(coords);
+    }
+
+    // Smoothly pan to scrub point if far away
+    mapInstanceRef.current.panTo(coords, { animate: true, duration: 0.5 });
+  }, [scrubbedPoint]);
+
+  // Cinematic Route Flyover Tour
+  const startCinematicTour = () => {
+    if (!mapInstanceRef.current) return;
+    setIsTourRunning(true);
+
+    const tourWaypoints = [
+      { coords: [29.9457, 78.1642] as [number, number], zoom: 11, name: 'Haridwar' },
+      { coords: [30.1460, 78.5990] as [number, number], zoom: 12, name: 'Devprayag Sangam' },
+      { coords: [30.2858, 78.9811] as [number, number], zoom: 12, name: 'Rudraprayag' },
+      { coords: [30.5564, 79.5663] as [number, number], zoom: 12, name: 'Joshimath Base' },
+      { coords: [30.7447, 79.4930] as [number, number], zoom: 13, name: 'Badrinath Sanctum' },
+      { coords: [30.7712, 79.4960] as [number, number], zoom: 13, name: 'Mana Border' }
+    ];
+
+    let step = 0;
+    const executeStep = () => {
+      if (step >= tourWaypoints.length) {
+        setIsTourRunning(false);
+        mapInstanceRef.current?.flyTo([30.45, 79.25], 9, { duration: 1.5 });
+        return;
+      }
+
+      const current = tourWaypoints[step];
+      mapInstanceRef.current?.flyTo(current.coords, current.zoom, { duration: 2.5 });
+      step++;
+      tourTimeoutRef.current = setTimeout(executeStep, 4500);
+    };
+
+    executeStep();
+  };
+
+  const stopCinematicTour = () => {
+    if (tourTimeoutRef.current) clearTimeout(tourTimeoutRef.current);
+    setIsTourRunning(false);
+  };
 
   const focusBadrinath = () => {
     setActiveFocus('badrinath');
-    mapInstanceRef.current?.flyTo([30.7447, 79.4930], 12, { duration: 1.2 });
+    mapInstanceRef.current?.flyTo([30.7447, 79.4930], 13, { duration: 1.2 });
   };
 
   const focusJoshimath = () => {
@@ -290,11 +533,13 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({
 
   const focusEntireRoute = () => {
     setActiveFocus('full');
-    mapInstanceRef.current?.flyTo([30.40, 78.85], 8, { duration: 1.2 });
+    mapInstanceRef.current?.flyTo([30.45, 79.25], 9, { duration: 1.2 });
   };
 
   const handleCenterUser = () => {
-    if (activeDuo === 'DUO_B') {
+    if (liveLocation) {
+      mapInstanceRef.current?.flyTo([liveLocation.latitude, liveLocation.longitude], 14, { duration: 1.0 });
+    } else if (activeDuo === 'DUO_B') {
       focusJoshimath();
     } else {
       focusBadrinath();
@@ -302,44 +547,95 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({
   };
 
   return (
-    <div className={`relative w-full h-full min-h-[420px] bg-slate-950 overflow-hidden ${className || ''}`}>
+    <div className={`relative w-full h-full min-h-[440px] bg-slate-950 overflow-hidden ${className || ''}`}>
       {/* Leaflet Map Canvas */}
       <div
         ref={mapContainerRef}
-        className="w-full h-full min-h-[420px] absolute inset-0 z-0"
+        className="w-full h-full min-h-[440px] absolute inset-0 z-0"
       />
 
-      {/* Floating Top Control Bar (Frosted Glass Panel) */}
+      {/* Floating Top Control Bar */}
       <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-2 pointer-events-auto">
-        {/* Left: Active Live Indicator & Duo Pill */}
-        <div className="flex items-center gap-1.5 glass-panel px-2.5 py-1.5 rounded-2xl shadow-xl">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-            <span className="tracking-wide">LIVE GPS</span>
+        {/* Left: Layer Switcher & Duo Pills */}
+        <div className="flex items-center gap-1.5 glass-panel p-1.5 rounded-2xl shadow-xl">
+          {/* Tile Layer Selector */}
+          <div className="flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-xl border border-white/10">
+            <button
+              type="button"
+              onClick={() => switchTileLayer('SATELLITE')}
+              className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all tap-active ${
+                activeLayer === 'SATELLITE'
+                  ? 'bg-temple-gold text-slate-950 shadow'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+              title="ESRI Photorealistic Satellite"
+            >
+              🛰️ Sat
+            </button>
+            <button
+              type="button"
+              onClick={() => switchTileLayer('TOPO')}
+              className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all tap-active ${
+                activeLayer === 'TOPO'
+                  ? 'bg-sky-500 text-slate-950 shadow'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+              title="3D Topographic Terrain"
+            >
+              ⛰️ Topo
+            </button>
+            <button
+              type="button"
+              onClick={() => switchTileLayer('DARK')}
+              className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all tap-active ${
+                activeLayer === 'DARK'
+                  ? 'bg-indigo-600 text-white shadow'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+              title="Alpine Night Mode"
+            >
+              🌙 Dark
+            </button>
           </div>
 
+          {/* Duo Filter */}
           {onDuoChange && (
-            <div className="flex items-center gap-1 border-l border-white/10 pl-2 ml-1">
+            <div className="flex items-center gap-0.5 border-l border-white/10 pl-1.5 ml-0.5">
               {(['ALL', 'DUO_A', 'DUO_B'] as const).map(d => (
                 <button
                   key={d}
                   type="button"
                   onClick={() => onDuoChange(d)}
-                  className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all tap-active ${
+                  className={`px-1.5 py-0.5 rounded-lg text-[9px] font-black transition-all tap-active ${
                     activeDuo === d
-                      ? 'bg-temple-gold text-slate-950 shadow-md'
+                      ? 'bg-white/20 text-white border border-white/30'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  {d === 'ALL' ? 'All' : d === 'DUO_A' ? 'Fam A' : 'Fam B'}
+                  {d === 'ALL' ? 'All' : d === 'DUO_A' ? 'A' : 'B'}
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Right: Quick Camera Focus Pills */}
+        {/* Right: Camera Focus & Cinematic Tour Pills */}
         <div className="flex items-center gap-1 glass-panel p-1 rounded-2xl shadow-xl">
+          {/* Cinematic Flyover button */}
+          <button
+            type="button"
+            onClick={isTourRunning ? stopCinematicTour : startCinematicTour}
+            className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold flex items-center gap-1 transition-all tap-active ${
+              isTourRunning
+                ? 'bg-rose-500 text-white animate-pulse'
+                : 'bg-slate-800 text-amber-300 hover:text-white border border-white/10'
+            }`}
+            title="Cinematic Route Flyover"
+          >
+            {isTourRunning ? <Square className="w-3 h-3 fill-current" /> : <Play className="w-3 h-3 fill-current" />}
+            <span>{isTourRunning ? 'Stop' : 'Tour'}</span>
+          </button>
+
           <button
             type="button"
             onClick={focusBadrinath}
@@ -380,20 +676,24 @@ export const FamilyMap: React.FC<FamilyMapProps> = ({
         type="button"
         onClick={handleCenterUser}
         className="absolute top-16 right-3 z-10 p-2.5 rounded-2xl glass-panel text-white hover:text-temple-gold shadow-2xl border border-white/10 tap-active"
-        title="Center on Pilgrim"
+        title="Center on Vehicle / Pilgrim"
       >
         <Crosshair className="w-4 h-4 text-temple-gold" />
       </button>
 
       {/* Floating Map Legend Indicator */}
-      <div className="absolute top-16 left-3 z-10 glass-panel px-2.5 py-1 rounded-xl text-[10px] text-slate-300 flex items-center gap-2.5 pointer-events-none shadow-lg">
+      <div className="absolute top-16 left-3 z-10 glass-panel px-2.5 py-1 rounded-xl text-[10px] text-slate-300 flex items-center gap-2 pointer-events-none shadow-lg">
         <div className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
           <span className="font-mono text-[9px] text-rose-300">&gt;2,000m</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 border-l border-white/10 pl-1.5">
           <span className="w-2 h-2 rounded-full bg-amber-400" />
-          <span className="font-mono text-[9px] text-amber-200">NH-7 Polyline</span>
+          <span className="font-mono text-[9px] text-amber-200">NH-7</span>
+        </div>
+        <div className="flex items-center gap-1 border-l border-white/10 pl-1.5">
+          <SignalZero className="w-3 h-3 text-rose-400" />
+          <span className="font-mono text-[9px] text-rose-300">Dead Zone</span>
         </div>
       </div>
     </div>
