@@ -151,7 +151,14 @@ interface DaySelectorStripProps {
   onViewModeChange: (mode: 'timeline' | 'sightseeing') => void;
   onOpenAddActivity?: () => void;
   onOpenRouteContingency?: () => void;
-  todayDayId?: string;
+  todayDayId?: string | null;
+  preTripCountdown?: {
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    totalSeconds: number;
+  } | null;
 }
 
 export const DaySelectorStrip: React.FC<DaySelectorStripProps> = ({
@@ -161,7 +168,8 @@ export const DaySelectorStrip: React.FC<DaySelectorStripProps> = ({
   onViewModeChange,
   onOpenAddActivity,
   onOpenRouteContingency,
-  todayDayId
+  todayDayId,
+  preTripCountdown
 }) => {
   const selectedDay = PILGRIMAGE_DAYS.find(d => d.id === selectedDayId) || PILGRIMAGE_DAYS[0];
 
@@ -206,7 +214,7 @@ export const DaySelectorStrip: React.FC<DaySelectorStripProps> = ({
         
         {/* Actions: Live Day Jump & Highway Contingency 'Plan B' */}
         <div className="flex items-center gap-1.5">
-          {todayDayId && (
+          {todayDayId ? (
             <button
               type="button"
               onClick={() => onSelectDay(todayDayId)}
@@ -220,7 +228,21 @@ export const DaySelectorStrip: React.FC<DaySelectorStripProps> = ({
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>Today</span>
             </button>
-          )}
+          ) : preTripCountdown ? (
+            <button
+              type="button"
+              onClick={() => onSelectDay('day-1')}
+              className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 min-h-[32px] rounded-full border transition-all tap-active ${
+                selectedDayId === 'day-1'
+                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-sm'
+                  : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-amber-500/40'
+              }`}
+              title="Trip departs Thu, Sep 24 at 16:30 IST from Durg Jn"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span>Departs in {preTripCountdown.days > 0 ? `${preTripCountdown.days}d ${preTripCountdown.hours}h` : `${preTripCountdown.hours}h`}</span>
+            </button>
+          ) : null}
 
           {onOpenRouteContingency && (
             <button
@@ -239,7 +261,8 @@ export const DaySelectorStrip: React.FC<DaySelectorStripProps> = ({
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar -mx-1 px-1 scroll-smooth">
         {PILGRIMAGE_DAYS.map((day) => {
           const isSelected = selectedDayId === day.id;
-          const isToday = todayDayId === day.id;
+          const isToday = Boolean(todayDayId && todayDayId === day.id);
+          const isDepartureDay = Boolean(!todayDayId && preTripCountdown && day.id === 'day-1');
 
           return (
             <button
@@ -256,8 +279,15 @@ export const DaySelectorStrip: React.FC<DaySelectorStripProps> = ({
             >
               {/* Today Indicator Tag */}
               {isToday && (
-                <span className="absolute -top-1.5 right-1 px-1 py-0.2 rounded-full text-[8px] font-black bg-emerald-500 text-slate-950 shadow-sm leading-tight">
+                <span className="absolute -top-1.5 right-1 px-1.5 py-0.2 rounded-full text-[8px] font-black bg-emerald-500 text-slate-950 shadow-sm leading-tight">
                   TODAY
+                </span>
+              )}
+
+              {/* Pre-Trip Departure Tag */}
+              {isDepartureDay && (
+                <span className="absolute -top-1.5 right-1 px-1.5 py-0.2 rounded-full text-[8px] font-black bg-amber-500 text-slate-950 shadow-sm leading-tight">
+                  DEPARTS
                 </span>
               )}
 

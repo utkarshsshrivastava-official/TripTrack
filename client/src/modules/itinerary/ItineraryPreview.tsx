@@ -90,13 +90,14 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
 
   // Auto-align selectedDayId with active day on initial mount
   useEffect(() => {
-    if (!hasInitializedDay && autoPilotStatus.todayDayId) {
-      setSelectedDayId(autoPilotStatus.todayDayId);
-      const segId = getSegmentIdForDay(autoPilotStatus.todayDayId);
+    if (!hasInitializedDay) {
+      const initialDay = autoPilotStatus.todayDayId || autoPilotStatus.upcomingDayId || 'day-1';
+      setSelectedDayId(initialDay);
+      const segId = getSegmentIdForDay(initialDay);
       setExpandedSegmentId(segId);
       setHasInitializedDay(true);
     }
-  }, [autoPilotStatus.todayDayId, hasInitializedDay]);
+  }, [autoPilotStatus.todayDayId, autoPilotStatus.upcomingDayId, hasInitializedDay]);
 
   // Handle setting/clearing simulation day
   const handleSetSimulation = (simId: string | null) => {
@@ -107,8 +108,9 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
       setExpandedSegmentId(segId);
       showToast(`🧪 Switched to Day ${PILGRIMAGE_DAYS.find(d => d.id === simId)?.dayNumber || ''} Simulation!`);
     } else {
-      setSelectedDayId(autoPilotStatus.todayDayId);
-      const segId = getSegmentIdForDay(autoPilotStatus.todayDayId);
+      const targetDay = autoPilotStatus.todayDayId || autoPilotStatus.upcomingDayId || 'day-1';
+      setSelectedDayId(targetDay);
+      const segId = getSegmentIdForDay(targetDay);
       setExpandedSegmentId(segId);
       showToast('🔄 Reset to live calendar date');
     }
@@ -257,7 +259,7 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
     showToast(`🚕 Hill Cab (${driverInfo.vehiclePlate}) synced across Days 2, 3, 4 & 5!`);
   };
 
-  const todaySegment = segments.find(s => s.id === getSegmentIdForDay(autoPilotStatus.todayDayId)) || segments[0];
+  const todaySegment = segments.find(s => s.id === getSegmentIdForDay(autoPilotStatus.todayDayId || autoPilotStatus.upcomingDayId || 'day-1')) || segments[0];
 
   return (
     <div className="space-y-4 pb-6">
@@ -285,6 +287,7 @@ export const ItineraryPreview: React.FC<ItineraryPreviewProps> = ({
         onOpenAddActivity={() => setIsAddActivityModalOpen(true)}
         onOpenRouteContingency={() => setIsRouteContingencyOpen(true)}
         todayDayId={autoPilotStatus.todayDayId}
+        preTripCountdown={autoPilotStatus.preTripCountdown}
       />
 
       {/* 2. Today at a Glance: Live Auto-Pilot & Next-Up Milestone Ticker */}

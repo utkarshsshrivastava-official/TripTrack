@@ -35,8 +35,10 @@ export const TodayAtAGlanceCard: React.FC<TodayAtAGlanceCardProps> = ({
 }) => {
   const [isSimulatorMenuOpen, setIsSimulatorMenuOpen] = useState(false);
 
-  const todayDayDef = PILGRIMAGE_DAYS.find(d => d.id === status.todayDayId) || PILGRIMAGE_DAYS[1];
-  const isViewingDifferentDay = selectedDayId !== 'all' && selectedDayId !== status.todayDayId;
+  const activeOrUpcomingDayId = status.todayDayId || status.upcomingDayId || 'day-1';
+  const todayDayDef = PILGRIMAGE_DAYS.find(d => d.id === activeOrUpcomingDayId) || PILGRIMAGE_DAYS[1];
+  const targetReferenceDayId = status.todayDayId || (status.phase === 'PRE_TRIP' ? 'day-1' : null);
+  const isViewingDifferentDay = selectedDayId !== 'all' && targetReferenceDayId !== null && selectedDayId !== targetReferenceDayId;
   const viewingDayDef = PILGRIMAGE_DAYS.find(d => d.id === selectedDayId);
 
   // Calculate checkpoint progress
@@ -73,7 +75,7 @@ export const TodayAtAGlanceCard: React.FC<TodayAtAGlanceCardProps> = ({
           ) : status.phase === 'PRE_TRIP' ? (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] font-black">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              <span className="uppercase tracking-wider">Auto-Pilot: Pre-Trip</span>
+              <span className="uppercase tracking-wider">Live Real-Time • Pre-Trip (Today: {status.currentDateFormatted})</span>
             </div>
           ) : (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[11px] font-black">
@@ -295,8 +297,8 @@ export const TodayAtAGlanceCard: React.FC<TodayAtAGlanceCardProps> = ({
         </div>
       )}
 
-      {/* Viewing Different Day Notice / Jump to Today Button */}
-      {isViewingDifferentDay && viewingDayDef && (
+      {/* Viewing Different Day Notice / Jump to Today / Departure Button */}
+      {isViewingDifferentDay && viewingDayDef && targetReferenceDayId && (
         <div className="p-2.5 rounded-2xl bg-sky-950/40 border border-sky-500/30 flex items-center justify-between gap-2 text-xs">
           <div className="min-w-0">
             <div className="text-[10px] text-sky-400 font-bold uppercase">
@@ -308,10 +310,10 @@ export const TodayAtAGlanceCard: React.FC<TodayAtAGlanceCardProps> = ({
           </div>
           <button
             type="button"
-            onClick={() => onSelectDay(status.todayDayId)}
+            onClick={() => onSelectDay(targetReferenceDayId)}
             className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] tap-active shrink-0 flex items-center gap-1 shadow-md"
           >
-            <span>Jump to Today</span>
+            <span>{status.todayDayId ? 'Jump to Today' : 'Jump to Day 1'}</span>
             <ChevronRight className="w-3.5 h-3.5 stroke-[2.5]" />
           </button>
         </div>

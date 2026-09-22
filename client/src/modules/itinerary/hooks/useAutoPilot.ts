@@ -3,7 +3,8 @@ import { PILGRIMAGE_DAYS } from '../components/DaySelectorStrip';
 
 export interface AutoPilotStatus {
   phase: 'PRE_TRIP' | 'DURING_TRIP' | 'POST_TRIP';
-  todayDayId: string;
+  todayDayId: string | null;
+  upcomingDayId: string;
   isSimulated: boolean;
   preTripCountdown: {
     days: number;
@@ -68,7 +69,7 @@ export function useAutoPilot() {
   // Compute real auto-pilot status
   const realStatus: AutoPilotStatus = useMemo(() => {
     const nowMs = currentTime.getTime();
-    const matchedDayId = PILGRIMAGE_DATES_MAP[todayYMD];
+    const matchedDayId = PILGRIMAGE_DATES_MAP[todayYMD] || null;
 
     // Formatted strings
     const dateFormatted = currentTime.toLocaleDateString('en-IN', {
@@ -91,7 +92,8 @@ export function useAutoPilot() {
 
       return {
         phase: 'PRE_TRIP',
-        todayDayId: 'day-1',
+        todayDayId: null,
+        upcomingDayId: 'day-1',
         isSimulated: false,
         preTripCountdown: { days, hours, minutes, seconds, totalSeconds: diffSec },
         currentDateFormatted: dateFormatted,
@@ -102,7 +104,8 @@ export function useAutoPilot() {
     if (nowMs > TRIP_END_EPOCH) {
       return {
         phase: 'POST_TRIP',
-        todayDayId: 'day-9',
+        todayDayId: null,
+        upcomingDayId: 'day-9',
         isSimulated: false,
         preTripCountdown: null,
         currentDateFormatted: dateFormatted,
@@ -114,6 +117,7 @@ export function useAutoPilot() {
     return {
       phase: 'DURING_TRIP',
       todayDayId: matchedDayId || 'day-1',
+      upcomingDayId: matchedDayId || 'day-1',
       isSimulated: false,
       preTripCountdown: null,
       currentDateFormatted: dateFormatted,
@@ -129,6 +133,7 @@ export function useAutoPilot() {
         ...realStatus,
         phase: 'DURING_TRIP',
         todayDayId: simulatedDayId,
+        upcomingDayId: simulatedDayId,
         isSimulated: true,
         currentDateFormatted: simDay ? `${simDay.dateStr} (Simulated)` : realStatus.currentDateFormatted
       };

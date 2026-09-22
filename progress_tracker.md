@@ -1037,6 +1037,11 @@
 - [x] **37.5 Dual-Compilation & Build Verification**
   - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
   - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+- [x] **37.6 Real-Time Pre-Trip Date Calibration & "TODAY" Badge Truthfulness (`useAutoPilot.ts`, `DaySelectorStrip.tsx`, `TodayAtAGlanceCard.tsx`)**
+  - [x] Fixed premature `'TODAY'` tag on Day 1 (Sep 24): When current real-world date is pre-trip (e.g. Sep 22), `todayDayId` is strictly `null` (not `'day-1'`).
+  - [x] Day 1 (Sep 24) is now accurately tagged with an amber `DEPARTS` badge during pre-trip, switching to `TODAY` only when calendar date reaches Sep 24.
+  - [x] Top quick jump action displays `🚀 Departs in Xd Yh` instead of a misleading `Today` button during pre-trip.
+  - [x] `TodayAtAGlanceCard` explicitly shows today's real-time date (`Live Real-Time • Pre-Trip (Today: Tue, Sep 22)`), eliminating all user confusion regarding live timekeeping.
 
 ---
 
