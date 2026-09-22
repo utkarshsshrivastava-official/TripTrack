@@ -49,6 +49,8 @@
 | **Phase 34** | **Daily Hard Cash vs UPI Advisor & Dead-Zone ATM Guard** | ✅ **DONE** | 100% | Completed |
 | **Phase 35** | **Bilingual Driver & Local Voice Phrasebook (Hindi & Garhwali Audio)** | ✅ **DONE** | 100% | Completed |
 | **Phase 36** | **Day Itinerary Export to WhatsApp & Offline Printable Sheet / PDF** | ✅ **DONE** | 100% | Completed |
+| **Phase 37** | **Comprehensive Mobile UI/UX Audit & Pre-Trip Date Calibration** | ✅ **DONE** | 100% | Completed |
+| **Phase 38** | **Live Device GPS Geocoding & Retroactive Feed Location Healing** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -1042,6 +1044,33 @@
   - [x] Day 1 (Sep 24) is now accurately tagged with an amber `DEPARTS` badge during pre-trip, switching to `TODAY` only when calendar date reaches Sep 24.
   - [x] Top quick jump action displays `🚀 Departs in Xd Yh` instead of a misleading `Today` button during pre-trip.
   - [x] `TodayAtAGlanceCard` explicitly shows today's real-time date (`Live Real-Time • Pre-Trip (Today: Tue, Sep 22)`), eliminating all user confusion regarding live timekeeping.
+
+
+---
+
+### ✅ Phase 38: Live Device GPS Geocoding & Retroactive Feed Location Healing
+*Status: Completed & Verified on Sep 22, 2026 (100%)*
+
+- [x] **38.1 Zero-Cost Live Geolocation & Reverse-Geocoding Service (`locationService.ts`)**
+  - [x] Implemented `detectDeviceLocation()` with browser `navigator.geolocation` API, high accuracy enabled, and 8s hardware timeout.
+  - [x] Zero-Cost reverse-geocoding via free OpenStreetMap Nominatim API (`https://nominatim.openstreetmap.org/reverse`) with polite user-agent and 3.5s fetch timeout.
+  - [x] Zero-Signal Himalayan Dead-Zone Fallback: Pre-baked 22 transit corridor waypoints (Durg, Bhilai, Raipur, New Delhi, Meerut, Haridwar, Rishikesh, Devprayag, Srinagar, Rudraprayag, Karnaprayag, Nandaprayag, Chamoli, Pipalkoti, Helang, Joshimath, Govindghat, Pandukeshwar, Hanuman Chatti, Badrinath, Mana) with Haversine distance proximity checks to ensure coordinates resolve instantly without cellular connectivity.
+  - [x] Local caching via `localStorage['triptrack_last_known_location']` for zero-latency instant hydration.
+- [x] **38.2 Interactive Live Location Bar in Feed Composer (`FamilyFeedTab.tsx`)**
+  - [x] Eradicated hardcoded `'Devprayag / NH-7'` state initialization.
+  - [x] Auto-invokes `detectDeviceLocation()` on tab mount and updates location state dynamically.
+  - [x] Added prominent Quick Post Live Location Bar displaying current detected locality, `🟢 Live GPS` badge, and 1-tap `Locate Me` re-sync button.
+  - [x] Click-to-edit inline text box allows manual customization while preserving GPS accuracy.
+  - [x] Added 1-tap GPS refresh button inside the collapsible Voice Studio location input row.
+- [x] **38.3 Retroactive Stale Devprayag Healing Engine (`familyFeedStorage.ts`)**
+  - [x] Implemented `correctStaleDevprayagLocations(actualLocation: string)`:
+    - Scans local timeline storage (`triptrack_family_feed_local`) for any posts stamped with `'Devprayag / NH-7'` or containing `'Devprayag'`.
+    - Automatically updates local feed records to the newly verified live location.
+    - If user is authenticated and online, patches stale posts on MongoDB Atlas backend (`/api/feed/update-location`).
+    - Dispatches `feed:data-changed` event to immediately re-render live feed UI with the healed location.
+- [x] **38.4 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
+  - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
 
 ---
 

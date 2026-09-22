@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Radio,
   Sparkles,
@@ -13,7 +13,8 @@ import {
   Calendar,
   Camera,
   ExternalLink,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import { TRAVELLERS_CONFIG, getTravellerById } from '../../../shared/config/travellers.config';
 import { useUserProfile } from '../../../shared/hooks/useUserProfile';
@@ -26,9 +27,14 @@ import {
   getUnifiedFamilyFeed,
   addFamilyFeedItem,
   deleteFamilyFeedItem,
-  clearAllFamilyFeedItems
+  clearAllFamilyFeedItems,
+  correctStaleDevprayagLocations
 } from '../services/familyFeedStorage';
 import { uploadMedia } from '../../../shared/services/mediaService';
+import {
+  detectDeviceLocation,
+  getLastKnownLocation
+} from '../../../shared/services/locationService';
 
 interface FamilyFeedTabProps {
   activeDuo: DuoId | 'ALL';
@@ -47,8 +53,36 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
   // Quick Post State — Auto-bound to logged-in user profile
   const [quickPostText, setQuickPostText] = useState('');
   const [selectedSpeakerId, setSelectedSpeakerId] = useState(defaultSpeakerId);
-  const [currentLocation, setCurrentLocation] = useState('Devprayag / NH-7');
+  const [currentLocation, setCurrentLocation] = useState<string>(() => {
+    const cached = getLastKnownLocation();
+    return cached?.name || 'Locating GPS...';
+  });
+  const [isLocating, setIsLocating] = useState<boolean>(false);
+  const [isLiveGps, setIsLiveGps] = useState<boolean>(() => {
+    const cached = getLastKnownLocation();
+    return cached?.isLiveGps || false;
+  });
   const [toastNote, setToastNote] = useState<string | null>(null);
+
+  // Auto-detect hardware GPS location and reverse geocode
+  const fetchLiveLocation = useCallback(async () => {
+    setIsLocating(true);
+    try {
+      const loc = await detectDeviceLocation();
+      setCurrentLocation(loc.name);
+      setIsLiveGps(loc.isLiveGps);
+      // Auto-correct any existing stale Devprayag posts to user's real location
+      correctStaleDevprayagLocations(loc.name);
+    } catch (err) {
+      console.warn('⚠️ [Family Feed] Location detection error:', err);
+    } finally {
+      setIsLocating(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLiveLocation();
+  }, [fetchLiveLocation]);
 
   // Sync speaker selection if user profile changes
   useEffect(() => {
@@ -409,18 +443,32 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-purple-400" />
-                <span>Current Location</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <MapPin className={`w-3 h-3 ${isLiveGps ? 'text-emerald-400' : 'text-purple-400'}`} />
+                  <span>Current Location</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={fetchLiveLocation}
+                  disabled={isLocating}
+                  className="text-[9px] font-mono text-purple-300 hover:text-white flex items-center gap-1 tap-active disabled:opacity-50"
+                  title="Detect GPS coordinates"
+                >
+                  <RefreshCw className={`w-2.5 h-2.5 ${isLocating ? 'animate-spin text-sky-400' : 'text-amber-400'}`} />
+                  <span>{isLocating ? 'Locating...' : 'Refresh GPS'}</span>
+                </button>
+              </div>
               <input
                 type="text"
                 value={currentLocation}
-                onChange={e => setCurrentLocation(e.target.value)}
-                placeholder="e.g. Haridwar Hotel / Devprayag"
+                onChange={e => {
+                  setCurrentLocation(e.target.value);
+                  setIsLiveGps(false);
+                }}
+                placeholder="Detecting live location..."
                 className="w-full px-3 py-2 rounded-xl bg-slate-950/90 border border-white/10 text-xs text-white font-medium focus:outline-none focus:border-purple-500 shadow-inner"
-              >
-              </input>
+              />
             </div>
           </div>
 
@@ -522,6 +570,37 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
             onChange={handlePhotoSelect}
             className="hidden"
           />
+
+          {/* Live Location GPS Bar with Auto-Detect & Tap-to-Edit */}
+          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-950/80 border border-white/10">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <MapPin className={`w-3.5 h-3.5 shrink-0 ${isLiveGps ? 'text-emerald-400' : 'text-amber-400'}`} />
+              <input
+                type="text"
+                value={currentLocation}
+                onChange={e => {
+                  setCurrentLocation(e.target.value);
+                  setIsLiveGps(false);
+                }}
+                placeholder="Detecting live location..."
+                className="bg-transparent border-none text-xs text-white font-medium focus:outline-none w-full truncate"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={fetchLiveLocation}
+              disabled={isLocating}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1 shrink-0 tap-active ${
+                isLiveGps
+                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                  : 'bg-slate-800 border-white/10 text-slate-300 hover:text-white'
+              }`}
+              title="Detect hardware GPS coordinates and place name"
+            >
+              <RefreshCw className={`w-3 h-3 ${isLocating ? 'animate-spin text-sky-400' : isLiveGps ? 'text-emerald-400' : 'text-amber-400'}`} />
+              <span>{isLocating ? 'GPS...' : isLiveGps ? 'Live GPS' : 'Locate Me'}</span>
+            </button>
+          </div>
 
           {/* Preset 1-Tap Chips */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">

@@ -248,6 +248,36 @@ export function logItineraryMilestoneToFeed(
   });
 }
 
+// Retroactively fix any feed post that was accidentally assigned hardcoded 'Devprayag'
+export function correctStaleDevprayagLocations(actualLocation: string): void {
+  if (!actualLocation || actualLocation.toLowerCase().includes('devprayag') || actualLocation.includes('Locating')) return;
+  const items = loadSavedTimelineItems();
+  let changed = false;
+
+  const updated = items.map(item => {
+    if (item.locationName === 'Devprayag / NH-7' || item.locationName === 'Devprayag') {
+      changed = true;
+      const modified: FamilyFeedItem = { ...item, locationName: actualLocation };
+      if (navigator.onLine) {
+        fetch(`${getBackendUrl()}/api/feed`, {
+          method: 'POST',
+          headers: getApiHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(modified)
+        }).catch(e => console.warn('⚠️ [Family Feed] Failed to sync corrected location to cloud:', e));
+      }
+      return modified;
+    }
+    return item;
+  });
+
+  if (changed) {
+    saveTimelineItems(updated);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('triptrack_feed_update'));
+    }
+  }
+}
+
 // Delete an item from timeline and broadcast live
 export function deleteFamilyFeedItem(id: string): void {
   const existing = loadSavedTimelineItems();
