@@ -18,7 +18,7 @@ export const BottomDock: React.FC<BottomDockProps> = ({ activeTab, setActiveTab 
   ];
 
   return (
-    <nav className="fixed bottom-3 left-3 right-3 max-w-md mx-auto z-40 pointer-events-none">
+    <nav className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] left-3 right-3 max-w-md mx-auto z-40 pointer-events-none">
       <div className="glass-dock p-1.5 rounded-2xl flex items-center justify-between pointer-events-auto transition-all shadow-2xl">
         {tabs.map((tab) => {
           const Icon = tab.icon;

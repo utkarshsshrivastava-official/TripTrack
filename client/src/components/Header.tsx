@@ -34,13 +34,13 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Hamburger Drawer Button with Active User Badge */}
           <button
             onClick={onOpenSidebar}
-            className="tap-active relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-center text-slate-200 hover:text-white hover:border-slate-700 shadow-sm shrink-0 transition-all"
+            className="tap-active relative w-10 h-10 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-center text-slate-200 hover:text-white hover:border-slate-700 shadow-sm shrink-0 transition-all"
             aria-label="Open Navigation Drawer"
             title={`Active profile: ${activeUser.name}. Tap to open menu & tools.`}
           >
-            <Menu className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300" />
+            <Menu className="w-5 h-5 text-slate-300" />
             <span
-              className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 border-slate-950 flex items-center justify-center text-[8.5px] sm:text-[9px] font-black text-white shadow-xs"
+              className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-950 flex items-center justify-center text-[9px] font-black text-white shadow-xs"
               style={{ backgroundColor: activeUser.avatarColor }}
             >
               {activeUser.name.charAt(0)}

@@ -60,6 +60,82 @@ export interface TripSegment {
   checkpoints: Checkpoint[];
 }
 
+// Day Archetypes & Advanced Day Selector Types
+export type DayArchetype = 'TRANSIT' | 'SACRED_DARSHAN' | 'SIGHTSEEING_EXPLORE' | 'FLEXIBLE_BUFFER';
+
+export type SightseeingCategory = 'TEMPLE' | 'GHAT_AARTI' | 'NATURE_VIEW' | 'ROPEWAY' | 'HERITAGE' | 'SHOPPING';
+export type ElderDifficulty = 'EASY' | 'MODERATE' | 'STEEP';
+export type TimeSlot = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'FLEXIBLE';
+export type SightseeingLocation = 'HARIDWAR' | 'RISHIKESH' | 'ENROUTE' | 'BADRINATH_MANA' | 'DEHRADUN_MUSSOORIE';
+
+export interface SightseeingSpot {
+  id: string;
+  name: string;
+  hindiName?: string;
+  location: SightseeingLocation;
+  category: SightseeingCategory;
+  elderDifficulty: ElderDifficulty;
+  elderComfortTip: string;
+  recommendedTimeSlot: TimeSlot;
+  durationMinutes: number;
+  description: string;
+  highlights: string[];
+  hasRopewayOrLift?: boolean;
+}
+
+export interface CustomActivity {
+  id: string;
+  dayId: string;
+  title: string;
+  timeSlot: TimeSlot;
+  category: SightseeingCategory;
+  elderComfortNote?: string;
+  createdAt: string;
+}
+
+export interface DayOption {
+  id: string; // 'all' or 'day-1', 'day-2', etc.
+  dayNumber: number | null;
+  dateStr: string;
+  dayOfWeek: string;
+  destination: string;
+  archetype: DayArchetype;
+  elevationMeters: number;
+  isPeak?: boolean;
+  badgeIcon: string;
+  weatherOverview: string;
+  highlight: string;
+  location: SightseeingLocation | 'DURG_NDLS' | 'CIRCUIT';
+}
+
+// Haridwar Hill Cab Agency Directory & Inspection Types
+export interface CabAgency {
+  id: string;
+  name: string;
+  location: string;
+  phone: string;
+  alternatePhone?: string;
+  whatsapp: string;
+  rating: number;
+  trustedBadge: string;
+  distanceFromStation: string;
+  estimatedPricing: {
+    ertiga: string;
+    innovaCrysta: string;
+    scorpio?: string;
+  };
+  notes: string;
+  address: string;
+}
+
+export interface HillCabInspectionItem {
+  id: string;
+  title: string;
+  description: string;
+  critical: boolean;
+  checked: boolean;
+}
+
 // Location Tracking & Telemetry
 export interface LocationPing {
   id?: string | number;
@@ -146,4 +222,70 @@ export interface VoiceUpdate {
   locationName?: string;
 }
 
+// Roadside Rest-Stop & Bio-Break Advisor
+export interface RoadsideStop {
+  id: string;
+  highway: 'DELHI_HARIDWAR_EXPRESSWAY' | 'NH7_HIMALAYAN_HIGHWAY';
+  name: string;
+  landmark: string;
+  distanceFromStartKm: number;
+  cleanToiletRating: number; // 1 to 5
+  hasWesternWC: boolean;
+  isWheelchairFriendly: boolean;
+  foodType: string;
+  recommendedTreat: string;
+  elderComfortNotes: string;
+  approxDriveTimeFromOrigin: string;
+}
+
+// Temple Darshan & Aarti Timekeeper
+export interface SacredRitualSlot {
+  id: string;
+  dayId: string;
+  templeName: string;
+  ritualName: string;
+  timeWindow: string;
+  targetTime: string;
+  arriveByTime: string;
+  importance: 'HIGH_MANDATORY' | 'RECOMMENDED' | 'OPTIONAL';
+  elderSeatingAdvice: string;
+  dressCodeAdvice: string;
+  location: string;
+}
+
+// Day-by-Day Outfit & Weather Dress-Code Advisor
+export interface DayOutfitGuidance {
+  dayId: string;
+  tempRange: string;
+  elderWear: string;
+  sonsWear: string;
+  dayBagEssentials: string[];
+  footwear: string;
+  specialNote?: string;
+}
+
+// Daily Hard Cash vs UPI Advisor
+export interface DayCashUpiGuidance {
+  dayId: string;
+  recommendedCashINR: string;
+  upiReliability: 'FULL_UPI' | 'INTERMITTENT' | 'CASH_MANDATORY';
+  primaryCashExpenses: string[];
+  lastAtmLocation: string;
+  denominationTip: string;
+}
+
+// Bilingual Driver & Local Voice Phrasebook
+export interface TravelPhrase {
+  id: string;
+  category: 'DRIVER_SAFETY' | 'GARHWALI_LOCAL' | 'TEMPLE_RITUAL' | 'FOOD_SENIOR' | 'EMERGENCY';
+  hindiDevanagari: string;
+  englishTransliteration: string;
+  englishMeaning: string;
+  contextUsage: string;
+  audioText: string;
+  isPahadi?: boolean;
+}
+
 export * from './user';
+
+

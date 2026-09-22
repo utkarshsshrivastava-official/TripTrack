@@ -289,7 +289,7 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
       </div>
 
       {/* 6. Floating Action Button (FAB) for Adding Expenses */}
-      <div className="fixed bottom-24 right-4 sm:right-auto sm:left-1/2 sm:translate-x-32 z-30 pointer-events-auto">
+      <div className="fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.5rem)] right-4 sm:right-auto sm:left-1/2 sm:translate-x-32 z-30 pointer-events-auto">
         <button
           type="button"
           onClick={() => setIsAddSheetOpen(true)}

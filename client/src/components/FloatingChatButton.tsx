@@ -16,7 +16,7 @@ export const FloatingChatButton: React.FC<FloatingChatButtonProps> = ({
   const showDot = !showBadge && hasUnread;
 
   return (
-    <div className="fixed bottom-[74px] left-3.5 right-3.5 max-w-md mx-auto z-40 pointer-events-none flex justify-start">
+    <div className="fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.25rem)] left-3.5 right-3.5 max-w-md mx-auto z-40 pointer-events-none flex justify-start">
       <button
         type="button"
         onClick={onClick}

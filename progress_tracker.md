@@ -40,6 +40,15 @@
 | **Phase 25** | **Pre-Departure (Sep 19–23) & During-Trip (Sep 24–Oct 02) Scheduled Briefing System** | ✅ **DONE** | 100% | Completed |
 | **Phase 26** | **Zero-Friction Profile Auto-Binding (Gullak, Feed, Vault, Itinerary & GPS)** | ✅ **DONE** | 100% | Completed |
 | **Phase 27** | **Dual-Tier In-App & Standalone WebAPK Push Notification Engine** | ✅ **DONE** | 100% | Completed |
+| **Phase 28** | **Advanced Adaptive Day Selector, 9-Day Itinerary Engine & Himalayan Contingency** | ✅ **DONE** | 100% | Completed |
+| **Phase 29** | **Haridwar Hill Cab Agency Directory, Safety Inspector & Driver Handover Tool** | ✅ **DONE** | 100% | Completed |
+| **Phase 30** | **"Today at a Glance" Live Auto-Pilot Mode & Next-Up Milestone Ticker** | ✅ **DONE** | 100% | Completed |
+| **Phase 31** | **Elder-Care Meal & Bio-Break Interval Advisor (2.5h Highway Limit)** | ✅ **DONE** | 100% | Completed |
+| **Phase 32** | **Temple Darshan & Aarti Timekeeper with 528Hz Bronze Bell Chime** | ✅ **DONE** | 100% | Completed |
+| **Phase 33** | **Day-by-Day Outfit & Weather Dress-Code Advisor (9-Day Matrix)** | ✅ **DONE** | 100% | Completed |
+| **Phase 34** | **Daily Hard Cash vs UPI Advisor & Dead-Zone ATM Guard** | ✅ **DONE** | 100% | Completed |
+| **Phase 35** | **Bilingual Driver & Local Voice Phrasebook (Hindi & Garhwali Audio)** | ✅ **DONE** | 100% | Completed |
+| **Phase 36** | **Day Itinerary Export to WhatsApp & Offline Printable Sheet / PDF** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -755,9 +764,286 @@
 
 ---
 
+### ✅ Phase 28: Advanced Adaptive Day Selector, 9-Day Itinerary Engine & Himalayan Contingency
+*Status: Completed & Verified on Sep 22, 2026*
+
+- [x] **28.1 Full 9-Day Pilgrimage Model Alignment (Sep 24 – Oct 02, 2026)**
+  - [x] Configured 9 distinct segments (`seg-1` to `seg-9`) in both client (`trip.config.ts`) and server (`seed.controller.ts`) covering:
+    - Day 1 (Sep 24): Durg Dep (Train 12441 Bilaspur Rajdhani 2AC)
+    - Day 2 (Sep 25): NDLS 10:40 Arr $\rightarrow$ Delhi-Meerut Expressway to Haridwar hotel $\rightarrow$ Local agency booking for Badrinath round-trip cab
+    - Day 3 (Sep 26): 05:30 Early Departure via NH-7 to Joshimath / Badrinath base
+    - Day 4 (Sep 27): Badrinath Dham Darshan & Brahma Kapal Tarpan (1st Half) $\rightarrow$ Mana Village Vyas Gufa & Bheem Pul (2nd Half)
+    - Day 5 (Sep 28): Return descent via Panch Prayags & Maa Dhari Devi Temple Shaktipeeth $\rightarrow$ Haridwar hotel check-in
+    - Day 6 (Sep 29): Full Day Haridwar Sacred Sightseeing (Mansa Devi & Chandi Devi ropeways, Har Ki Pauri Sandhya Aarti, Bara Bazaar)
+    - Day 7 (Sep 30): Rishikesh Sacred Exploration (Ram Jhula, Janki Setu, Parmarth Niketan Aarti, Beatles Ashram) / Haridwar spillover
+    - Day 8 (Oct 01): Flexible Buffer Day (Mussoorie Kempty Falls OR Dehradun nature tour OR riverside retreat) $\rightarrow$ Hotel near Jolly Grant Airport
+    - Day 9 (Oct 02): 13:15 IndiGo Flight (DED $\rightarrow$ DEL $\rightarrow$ RPR 2-leg) $\rightarrow$ Cab drive home to Durg
+- [x] **28.2 Dynamic Day Selector Strip & Contextual Status Bar (`DaySelectorStrip.tsx`)**
+  - [x] Interactive horizontal pill strip with distinct badges: 🚆 (Train), 🚗 (Cab/Agency), 🏔️ (Ascent), 🛕 (Darshan), 🌊 (Aarti/Return), 🏛️ (Haridwar), 🌿 (Rishikesh), ⛰️ (Buffer), ✈️ (Flight).
+  - [x] Day status bar with day number, destination, archetype pill (`Transit & Travel`, `Sacred Darshan`, `Sightseeing & Explore`, `Flexible Buffer`), altitude meter gauge (`3,133m • High Altitude` vs `314m • Plains`), and weather guideline.
+  - [x] Integrated view switcher (`Timeline` vs `Sightseeing`) and quick action buttons (`+ Activity` and `NH-7 Plan B`).
+- [x] **28.3 Curated Sightseeing Recommendations & 1-Tap Checkpoint Ingestion (`DaySightseeingCard.tsx`)**
+  - [x] Curated pool of 20+ verified pilgrimage and sightseeing spots across Haridwar, Rishikesh, En-route Panch Prayags / Dhari Devi, Mana Village, and Dehradun/Mussoorie.
+  - [x] Color-coded elder walking difficulty tags (`🟢 Easy / Flat`, `🟡 Moderate`, `🔴 Steep / Ropeway Available`), cable car / lift indicators, and elder comfort tips.
+  - [x] 1-Tap **"+ Add to Plan"** action converting any recommendation into an active checkpoint for that day's timeline.
+- [x] **28.4 Custom Activity Creator & Offline Dexie Storage (`AddCustomActivityModal.tsx`)**
+  - [x] Elder-friendly modal to schedule custom activities with preferred time slot (`Morning`, `Afternoon`, `Evening`, `Flexible`), category, and elder comfort notes.
+  - [x] Dexie IndexedDB table `customActivities` (schema version 7) with offline persistence and sync event dispatching.
+  - [x] Option to automatically bind custom activity as a checklist milestone in that day's timeline.
+- [x] **28.5 Himalayan Route Contingency & Gemini AI Rebalancer ("Plan B") (`RouteContingencyModal.tsx`)**
+  - [x] 1-Click contingency presets:
+    - *Plan A: Standard Yatra* (as scheduled)
+    - *Plan B: Hill Delay Buffer (+1 Day in Hills)* (absorbs landslide delays, darshan Sep 28, compresses foothills without touching Oct 02 flight)
+    - *Plan C: Foothills First (Reverse Route)* (if NH-7 is blocked on Sep 26 morning, explore Haridwar & Rishikesh first, then ascend Sep 28)
+  - [x] Natural language AI Schedule Rebalancer powered by `@google/genai` (`gemini-2.5-flash`) via `POST /api/itinerary/rebalance` with elder dignity and flight safety guarantees.
+- [x] **28.6 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed with 0 errors (`vite build` + `tsc -b`).
+  - [x] `npm --prefix server run build`: Passed with 0 errors (`tsc`).
+
+---
+
+### ✅ Phase 29: Haridwar Hill Cab Agency Directory, Safety Inspector & Driver Handover Tool
+*Status: Completed & Verified on Sep 22, 2026*
+
+- [x] **29.1 Curated Haridwar Hill Cab Directory (`trip.config.ts`)**
+  - [x] 7 verified, reputable Haridwar travel agencies (Devpura, Railway Station Circle, Shiv Murti, Lalta Rao Bridge):
+    - Haridwar Taxi Services (Devpura)
+    - Kaka Travels (Near Railway Station)
+    - Haridwar Railway Station Taxi Union Desk
+    - Trayambhkam Tour & Travels (Devpura Chowk)
+    - Triveni Cabs Haridwar
+    - Kaushik Tour & Travels (Shiv Murti Chowk)
+    - Shubh Yatra Cabs (Lalta Rao Bridge)
+  - [x] 2026 realistic price benchmarks (Ertiga: ₹16,000–₹19,000 all-inclusive; Innova Crysta: ₹22,000–₹26,000 with captain seats).
+  - [x] Direct 1-tap phone dialer (`tel:+91...`) and pre-filled WhatsApp quotation generator inquiring about the 3-day Badrinath round trip with pickup date, senior citizen comfort, and all-inclusive pricing.
+- [x] **29.2 Elder-Safety Vehicle Inspection Checklist (`HaridwarCabHubModal.tsx`)**
+  - [x] 8-point critical safety checklist tailored to high-altitude Himalayan ascents (NH-7 Alaknanda valley):
+    - Yellow Commercial Plate (`UK-08` / `UK-07` or `DL`) with valid Hill Green Card / Trip Card.
+    - Mountain-endorsed commercial driver license with 5+ years ghat driving experience.
+    - Middle-row captain seats with operational seatbelts for Rajnish Ji & Uncle Ji (Sanjay).
+    - Mountain tyre health (deep tread grooves $>4\text{mm}$, fully inflated spare stepney, hydraulic jack & wheel spanner).
+    - Functional air conditioning / defogger for heavy mist and valley rain.
+    - All-inclusive written price agreement (Toll, Green Card, Parking, Driver DA $\le$ ₹400/night).
+    - First aid kit with motion sickness bags (Avomine / Ondansetron) and camphor tablets.
+    - Strict agreement on **NO NIGHT DRIVING** after 18:30 dusk on NH-7 curves.
+  - [x] Real-time elder safety rating calculator (`All Clear / Elder Ready` vs `Caution Required`) stored persistently in `localStorage`.
+- [x] **29.3 Driver Itinerary Handover & WhatsApp Briefing Generator**
+  - [x] Form to record confirmed driver name, phone number, vehicle plate, model, and hotel pickup location.
+  - [x] 1-Tap formatted Hindi/English WhatsApp message generator briefing the driver on:
+    - 4 Pilgrims (including 2 senior citizens requiring gentle ghat cornering and prompt rest breaks).
+    - Complete 3-day itinerary milestones (Day 3 Haridwar $\rightarrow$ Joshimath; Day 4 Darshan $\rightarrow$ Mana $\rightarrow$ Joshimath; Day 5 Dhari Devi $\rightarrow$ Haridwar).
+    - Key passenger contacts (Utkarsh & Shreyas) and emergency helplines.
+- [x] **29.4 Cross-Day Logistics Synchronization Engine**
+  - [x] `handleSyncDriverLogistics` in `ItineraryPreview.tsx` automatically cascades the confirmed driver, phone, plate, and vehicle model across `seg-2` (Haridwar Cab Booking), `seg-3` (Ascent), `seg-4` (Darshan), and `seg-5` (Descent) in Dexie IndexedDB.
+  - [x] Contextual Day 2 Cab Booking card banner displayed prominently on Day 2 in the itinerary.
+  - [x] Dedicated "Hill Cab Hub" quick action pill in the preparation pills row for instant 1-tap access anytime.
+- [x] **29.5 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
+  - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+
+---
+
+### ✅ Phase 30: "Today at a Glance" Live Auto-Pilot Mode & Next-Up Milestone Ticker
+*Status: Completed & Verified on Sep 22, 2026*
+
+- [x] **30.1 Real-Time Day Detection & Auto-Pilot Engine (`useAutoPilot.ts`)**
+  - [x] Auto-detects real calendar date against the 9 pilgrimage days (Sep 24 – Oct 02, 2026).
+  - [x] Live 1-second ticking clock in Indian Standard Time (IST).
+  - [x] Pre-Trip Phase: calculates precise days/hours/minutes/seconds countdown until Train 12441 Bilaspur Rajdhani departs Durg Platform 1 (Sep 24, 16:30).
+  - [x] Testing & Simulation Engine: allows instant 1-click preview of any pilgrimage day (e.g. Day 2 Delhi $\rightarrow$ Haridwar, Day 4 Badrinath Darshan) stored in `sessionStorage` with a clean 1-click reset to live calendar date.
+  - [x] Persistent Auto-Pilot active state stored in `localStorage`.
+- [x] **30.2 "Today at a Glance" Live Mission Card (`TodayAtAGlanceCard.tsx`)**
+  - [x] Real-time header with status badge (`LIVE TODAY`, `AUTO-PILOT: PRE-TRIP`, or `DEMO: DAY X`), test days dropdown, and live IST clock.
+  - [x] High-contrast digital departure countdown block for pre-trip preparation.
+  - [x] Next-Up Milestone Ticker: dynamically scans the active day's checkpoints, isolates the upcoming uncompleted task, displays target time, checkpoint name, and elder comfort note.
+  - [x] 1-Tap `✓ Mark Done` action directly on the card with instant Dexie persistence and visual tick animation.
+  - [x] Dynamic Progress Meter: displays completed vs total milestones (e.g., `3/5 Milestones • 60%`) with smooth gradient progress bar.
+  - [x] Celebration card when all checkpoints for the day are accomplished.
+  - [x] "Jump to Today" shortcut when browsing ahead or looking at other days on the day selector strip.
+- [x] **30.3 Day Selector Strip Integration (`DaySelectorStrip.tsx`)**
+  - [x] Glowing green `TODAY` indicator badge placed directly on the active day's pill button in the horizontal strip.
+  - [x] 1-Tap "Today" jump button in the timeline header row.
+- [x] **30.4 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
+  - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+
+---
+
+### ✅ Phase 31: Elder-Care Meal & Bio-Break Interval Advisor (2.5h Highway Limit)
+*Status: Completed & Verified on Sep 22, 2026*
+
+- [x] **31.1 Verified Roadside Rest-Stops Database (`trip.config.ts`)**
+  - [x] Curated 8 verified highway halts tailored for senior fathers (Rajnish Ji & Sanjay Ji):
+    - *Delhi-Meerut / HW Expressway (Day 2)*: Cheetal Grand (Khatauli) & Namaste Midway (Mansurpur) with 5/5 luxury Western washrooms, wheelchair ramps, hot Jain/vegetarian meals, and masala tea.
+    - *NH-7 Mountain Highway (Day 3 & Day 5)*: Teen Dhara Spring Oasis (fresh lime water for altitude nausea), Devprayag Sangam Viewpoint (10-min leg stretch), Srinagar Garhwal (GMVN/Hotel Chahat, hospital & medical shops), Rudraprayag Sangam, Pipalkoti Valley, and Joshimath base.
+  - [x] Each stop includes star cleanliness rating, Western WC availability, wheelchair accessibility, recommended senior treat (e.g. hot ginger tea, yellow dal khichdi, pahadi soup), and driving time from origin.
+- [x] **31.2 Active Driving Timer & Bio-Break Interval Engine (`ElderBreakAdvisorModal.tsx`)**
+  - [x] Live elapsed driving timer calculating time on the road since last stop.
+  - [x] Three-tier elder dignity alert levels:
+    - 🟢 *Drive Time Healthy* ($<2\text{h}$): Normal relaxed travel.
+    - 🟡 *Break Recommended Soon* ($2\text{h} - 2.5\text{h}$): Informs drivers and sons to plan a pull-over within 20 minutes.
+    - 🔴 *Bio-Break Overdue* ($>2.5\text{h}$): High-priority pulsating warning advising immediate stop to prevent joint stiffness and nausea.
+  - [x] 1-Tap "Stopped Here: Reset 2.5h Interval" button with `localStorage` persistence and transient toast confirmation.
+  - [x] Highway filter selector (NH-7 Mountain Ghat vs Delhi-HW Expressway vs All).
+- [x] **31.3 Contextual UI Integration (`ItineraryPreview.tsx`)**
+  - [x] Dedicated "Elder Bio-Breaks" quick action pill in the preparation pills row.
+  - [x] Contextual callout banner automatically displayed on long highway travel days (Day 3 & Day 5) to keep sons and drivers aligned on senior comfort.
+
+---
+
+### ✅ Phase 32: Temple Darshan & Aarti Timekeeper with 528Hz Bronze Bell Chime
+*Status: Completed & Verified on Sep 22, 2026*
+
+- [x] **32.1 Auspicious Rituals & Darshan Slots Schedule (`trip.config.ts`)**
+  - [x] Curated 7 sacred ritual slots across Haridwar, Badrinath, and Rishikesh:
+    - *Day 2 (Sep 25)*: Har Ki Pauri Maha Ganga Sandhya Aarti (17:45 – 18:30; arrive by 16:45 for Malviya Dweep seating).
+    - *Day 4 (Sep 27)*: Shri Badrinath Brahma Muhurta Maha Abhishek & Nirmalya Darshan (04:30 – 06:30; arrive by 04:15).
+    - *Day 4 (Sep 27)*: Brahma Kapal Ghat Ancestral Pind Daan & Tarpan Mahapuja (08:30 – 11:00; arrive by 08:15).
+    - *Day 4 (Sep 27)*: Shri Badrinath Shayan Aarti & Geeta Govinda Recital (18:00 – 19:30; arrive by 17:15).
+    - *Day 5 (Sep 28)*: Maa Dhari Devi Enroute Darshan & Afternoon Bhog (11:30 – 13:00; arrive by 11:15).
+    - *Day 6 (Sep 29)*: Har Ki Pauri Complete Sandhya Aarti & Deep Daan (17:45 – 18:30; arrive by 16:45).
+    - *Day 7 (Sep 30)*: Parmarth Niketan Ganga Aarti & Choir, Rishikesh (17:30 – 18:30; arrive by 16:45).
+  - [x] Detailed elder seating advice (cushions for cold stones, wooden stools, wheelchair access ramps) and traditional attire recommendations (Dhoti/Kurta for Karta, heavy woollen coats for 3,133m altitude chill).
+- [x] **32.2 Offline Sacred Bronze Bell Synthesizer (`sacredBellAudio.ts`)**
+  - [x] Web Audio API synthetic bell generator using 528Hz Ohm fundamental frequency and 4 natural bronze harmonics decaying smoothly over 3.5 seconds.
+  - [x] 100% offline, zero-network, zero-cost audio synthesizer requiring zero external MP3 downloads.
+- [x] **32.3 Sacred Aarti Timekeeper Modal (`SacredAartiTimekeeperModal.tsx`)**
+  - [x] Filter by "Today's Rituals" vs "All Pilgrimage Rituals".
+  - [x] 1-Tap "Ring Bell" button to chime the sacred temple bell.
+  - [x] "Arrive by" queue cutoff notices ensuring seniors never get stuck in peak crowd surges.
+- [x] **32.4 Contextual UI Integration (`ItineraryPreview.tsx`)**
+  - [x] Dedicated "Aarti Timekeeper" quick action pill in the preparation pills row.
+  - [x] Contextual callout banner automatically displayed on sacred temple days (Day 2, Day 4, Day 6, Day 7).
+- [x] **32.5 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
+  - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+
+---
+
+### ✅ Phase 33: Day-by-Day Outfit & Weather Dress-Code Advisor (9-Day Matrix)
+*Status: Completed & Verified on Sep 22, 2026*
+
+- [x] **33.1 Complete 9-Day Weather & Clothing Guidance Data Structure (`trip.config.ts`, `types/index.ts`)**
+  - [x] Defined `DayOutfitGuidance` type covering weather, temperature ranges, elder specific attire, sons attire, footwear, and interactive day-bag checklist.
+  - [x] Detailed climate mappings across the 9-day journey:
+    - *Day 1 (Durg to Delhi AC Train)*: Light cotton layers, travel socks, light shawl for 3AC/2AC train draft.
+    - *Day 2 (Delhi to Haridwar Plains)*: 30°C–34°C humid heat; breathable Kurta/Pajama for Ganga Aarti.
+    - *Day 3 (Haridwar to Joshimath/Badrinath Ascent)*: Temperature plunge from 28°C down to 8°C; mandatory thermal innerwear + fleece jacket at Joshimath checkpost.
+    - *Day 4 (Badrinath Darshan & Mana Village)*: 3°C–12°C high-altitude chill; heavy woollens, monkey cap, muffler, gloves for Rajnish Ji & Sanjay Ji; traditional cotton Dhoti/Kurta for Karta during Brahma Kapal pind daan.
+    - *Day 5 (Return Ghat to Haridwar)*: Transitional layering shedding thermals as descending to plains.
+    - *Day 6–8 (Haridwar & Rishikesh Exploration)*: Modest temple attire, easy slip-on shoes for temple ghats, sun hats.
+    - *Day 9 (Dehradun Airport & IndiGo Flight)*: Comfortable airport apparel, slip-on shoes for security check, light jacket for cabin AC.
+- [x] **33.2 Outfit & Weather Dress-Code Advisor Modal (`OutfitWeatherAdvisorModal.tsx`)**
+  - [x] Horizontal 9-day selector pills allowing instant inspection of any day of the pilgrimage.
+  - [x] Temperature badge, weather conditions, elder attire card with amber accents, sons attire card with sky accents, and footwear recommendation.
+  - [x] Interactive day-bag checklist with tap-to-check state allowing families to verify essential medicines, caps, and water before departing hotel.
+  - [x] High-contrast UI with $\ge 48\text{px}$ touch targets meeting Elder Dignity standards.
+- [x] **33.3 Contextual UI Integration (`ItineraryPreview.tsx`)**
+  - [x] Quick access "Dress & Weather" action pill in Row 3.
+  - [x] Opens directly to the active selected day in the itinerary.
+
+---
+
+### ✅ Phase 34: Daily Hard Cash vs UPI Advisor & Dead-Zone ATM Guard
+*Status: Completed & Verified on Sep 22, 2026*
+
+- [x] **34.1 Complete 9-Day Financial & Connectivity Guidance Data Structure (`trip.config.ts`, `types/index.ts`)**
+  - [x] Defined `DayCashUpiGuidance` type with recommended cash per duo, UPI reliability classification (`FULL_UPI`, `INTERMITTENT`, `CASH_MANDATORY`), primary cash expenses list, last reliable ATM alert, and optimal currency denomination split.
+  - [x] High-fidelity Himalayan reality mapping:
+    - *Day 1–2 (Plains & Delhi/Haridwar)*: Full UPI functionality; minimal cash needed (₹1,500 for auto/rickshaws).
+    - *Day 3 (Highway Ascent)*: Intermittent UPI in river canyons; ₹3,000 cash needed for dhabas and toll-points.
+    - *Day 4 (Badrinath & Mana)*: **Zero-signal dead zone / Cash Mandatory!** ATMs frequently dry or offline. Explicit alert to carry ₹6,000–₹8,000 in crisp ₹100, ₹200, and ₹500 notes for Panda dakshina at Brahma Kapal, temple offerings, and Mana Village tea stalls. Alert warns that **Joshimath (Day 3)** is the last 100% reliable ATM.
+    - *Day 5–9 (Descent & Return)*: Cash requirements decrease back to standard tourist levels; Haridwar & Rishikesh markets accept UPI.
+- [x] **34.2 Hard Cash vs UPI Advisor Modal (`CashVsUpiAdvisorModal.tsx`)**
+  - [x] 9-day day-switcher strip with visual connectivity indicators.
+  - [x] Distinct color badges for UPI status (Emerald for Full UPI, Amber for Intermittent, Rose for Cash Mandatory).
+  - [x] Prominent "Last Reliable ATM" warning callout box with location pins.
+  - [x] Itemized cash expense list and recommended denomination breakdown chips (e.g. ₹500 × 8, ₹200 × 10, ₹100 × 15, ₹50 × 10).
+- [x] **34.3 Contextual UI Integration (`ItineraryPreview.tsx`)**
+  - [x] Quick access "Cash vs UPI" action pill in Row 3.
+  - [x] Seamless modal switching aligned with the active itinerary view.
+- [x] **34.4 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
+  - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+
+---
+
+### ✅ Phase 35: Bilingual Driver & Local Voice Phrasebook (Hindi & Garhwali Audio)
+*Status: Completed & Verified on Sep 22, 2026*
+
+- [x] **35.1 Curated Himalayan & Driver Phrasebook Database (`trip.config.ts`, `types/index.ts`)**
+  - [x] Defined `TravelPhrase` schema with Devanagari Hindi, phonetic English transliteration, English meaning, context tip, audio text, and Pahadi marker.
+  - [x] Curated 20 essential phrases across 5 critical pilgrimage categories:
+    - *Cab & Driving Safety*: Polite requests to slow down on hairpin curves for senior motion sickness ("Bhaiya thoda aaram se chalaiye..."), 2.5h bio-break requests, cracking windows for fresh mountain air, no-overtake reminders on blind curves, and dusk arrival check.
+    - *Garhwali / Pahadi Local*: Traditional respectful greetings ("Bhaaiji, saadar dandavat pranaam!"), health inquiries ("Kanduk chho aap?"), road & landslide status ("Aagai baatu theek cha?"), Badrinath distance inquiries, and divine gratitude ("Bhagwan Badrivishal tum tain khush raakhin!").
+    - *Temple, Rituals & Pandas*: Inquiring about Brahma Kapal ancestral Tarpan & Pind Daan rituals, accessible elder queues / ramps, Aarti timing & crowd queue cutoff recommendations, and safe non-slip bathing at Tapt Kund.
+    - *Food & Senior Digestive Care*: Yellow moong dal khichdi without chillies/onion/garlic for fathers, clean boiled/lukewarm drinking water, and hot ginger-tulsi tea for altitude chill.
+    - *Emergency & Medical*: Nearest chemist / PHC location, portable oxygen canister & BP check availability, and SDRF / police disaster assistance booth locator.
+- [x] **35.2 Web Speech API Native Offline Audio Playback (`DriverVoicePhrasebookModal.tsx`)**
+  - [x] Web Speech API integration (`SpeechSynthesisUtterance`) with automatic `hi-IN` Hindi voice selection.
+  - [x] 100% offline, zero-network, zero-cost audio pronunciation with 0.88x gentle rate for mountain clarity.
+  - [x] Active speech status with pulsating button and 1-tap "Stop Voice" toggle.
+  - [x] Category selector tabs + instant live search input for keywords (e.g. AC, oxygen, dal, stop, nausea).
+  - [x] 1-Tap "Copy" to clipboard with checkmark confirmation and 1-Tap "Share via WhatsApp".
+- [x] **35.3 Contextual UI Integration (`ItineraryPreview.tsx`)**
+  - [x] Quick access "Voice Phrasebook" pill in Row 4 with speaker volume icon.
+
+---
+
+### ✅ Phase 36: Day Itinerary Export to WhatsApp & Offline Printable Sheet / PDF
+*Status: Completed & Verified on Sep 22, 2026*
+
+- [x] **36.1 Rich WhatsApp Briefing Generator (`DayItineraryExportModal.tsx`)**
+  - [x] Generates beautifully formatted WhatsApp text with bold headers, italics, dates, elevations, weather overview, cash recommendations, sacred Aarti muhurtas, milestones with elder notes, transit logistics, and emergency contacts.
+  - [x] Toggle between "Single Day Schedule" (Day 1–9) and "Entire 9-Day Master Dossier".
+  - [x] 1-Tap "Copy WhatsApp Text" to clipboard with animated visual confirmation.
+  - [x] 1-Tap "Open in WhatsApp" via encoded deep link (`https://api.whatsapp.com/send?text=...`).
+- [x] **36.2 Printer-Ready Offline Sheet / PDF Layout (`DayItineraryExportModal.tsx`)**
+  - [x] High-contrast, clean-border print layout for physical paper printing or "Save as PDF".
+  - [x] Pilgrim roster header: Family A (Utkarsh & Rajnish Ji) & Family B (Shreyas & Sanjay Ji).
+  - [x] Itemized timetable table with milestone times and elder care notes.
+  - [x] Prominent emergency contact box (SDRF: 1070 / 112, Badrinath Control Room, Railway Helpline, AIIMS Rishikesh).
+  - [x] 1-Tap "Print Sheet / Save as PDF" button triggering native `window.print()`.
+- [x] **36.3 Contextual UI Integration (`ItineraryPreview.tsx`)**
+  - [x] Quick access "Export & WhatsApp" pill in Row 4 with share icon.
+- [x] **36.4 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
+  - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+
+---
+
+### ✅ Phase 37: Comprehensive Page-to-Page Mobile UI/UX Audit & Ergonomic Hardening
+*Status: Completed & Verified on Sep 22, 2026 (100%)*
+
+- [x] **37.1 Safe-Area Inset Ergonomics (`BottomDock.tsx`, `FloatingChatButton.tsx`, `App.tsx`)**
+  - [x] Upgraded bottom dock positioning from static `bottom-3` to dynamic `bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))]` to eliminate collision with modern iOS gesture indicators and Android navigation bars.
+  - [x] Upgraded floating AI assistant bubble to `bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.25rem)]` for consistent spacing above the dock across all device aspect ratios.
+  - [x] Hardened main scroll container bottom padding to `pb-[calc(6rem+env(safe-area-inset-bottom,0px))]` so bottom-most content and cards scroll cleanly above the floating dock.
+- [x] **37.2 Floating Action Buttons & Elevation Sheet Alignment**
+  - [x] Upgraded Vault scan pass FAB to `bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.5rem)]`.
+  - [x] Upgraded Gullak add expense FAB to `bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.5rem)]`.
+  - [x] Upgraded Tracking elevation & telemetry bottom sheet to `bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.25rem)]`.
+- [x] **37.3 Touch Targets ($\ge 48\text{px}$ `min-h-touch`) Enforced Across All Modules**
+  - [x] `ItineraryPreview.tsx`: Applied `min-h-touch` across all action rows (Packing, Brahma Kapal, Cab Hub, Bio-Breaks, Aarti, Dress Code, Cash vs UPI, Voice Phrasebook, WhatsApp Export).
+  - [x] `DaySelectorStrip.tsx`: Enforced `min-h-[52px]` and `min-w-[78px]` on day pill buttons; added smooth auto-scroll to center active day pill on selection change.
+  - [x] `EmergencyModal.tsx`: Upgraded 108/112/1364/Joshimath speed dials, medical directory, and 2G SMS buttons to `min-h-touch`.
+  - [x] `AppSidebar.tsx`: Upgraded manual cloud sync and Emergency SOS protocol buttons to `min-h-touch`.
+  - [x] `Header.tsx`: Upgraded hamburger drawer button to `w-10 h-10` with comfortable touch targets.
+  - [x] `VoiceFeedPreview.tsx` & `FamilyFeedTab.tsx`: Enforced `min-h-touch` on Chants open, Voice Studio toggle, photo attach, and publish buttons.
+  - [x] `RouteGuardTab.tsx`: Enforced `min-h-touch` on Gemini live scan and road obstruction spotter buttons.
+  - [x] `TrackingPreview.tsx`: Upgraded Mountain Shadow relief launchers to `min-h-touch`.
+- [x] **37.4 Offline Printable Sheet Stylesheet (`index.css`)**
+  - [x] Added dedicated `@media print` rules hiding app navigation chrome, header, floating buttons, and rendering clean, high-contrast black-and-white trip dossiers.
+- [x] **37.5 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
+  - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+
+---
+
 ## 🧭 Key Architectural Invariants (Must Never Be Broken)
 
 1. **Elder Dignity & High Contrast First:** All text must meet minimum contrast ratios; all touch buttons must be $\ge 48\text{px}$; no tiny links or confusing gestures.
 2. **Local-First Supremacy:** Any action taken in a cellular dead zone (marking a checkpoint, viewing a ticket, pinging location, logging an expense, tracking $SpO_2$, writing a chat message) must work immediately via Dexie IndexedDB and silently queue for background synchronization.
 3. **Paired Family Identity:** Always preserve family distinctions (Family A: Utkarsh & Rajnish Ji, Family B: Shreyas & Sanjay).
 4. **Zero-Cost Constraint:** Use free-tier tooling exclusively (Google AI Studio `@google/genai`, OpenStreetMap tiles via Leaflet, MongoDB Atlas M0, Google SMTP via Gmail App Password, Vercel/Render free tiers).
+

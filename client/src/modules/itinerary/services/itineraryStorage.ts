@@ -1,6 +1,6 @@
-import { localDB, OfflineSegmentRecord } from '../../../shared/db/dexie';
+import { localDB, OfflineSegmentRecord, OfflineCustomActivityRecord } from '../../../shared/db/dexie';
 import { TRIP_SEED_SEGMENTS } from '../../../shared/config/trip.config';
-import { TripSegment, SegmentStatus, LogisticsInfo } from '../../../shared/types';
+import { TripSegment, SegmentStatus, LogisticsInfo, Checkpoint, CustomActivity } from '../../../shared/types';
 import { logItineraryMilestoneToFeed, addFamilyFeedItem } from '../../voice-feed/services/familyFeedStorage';
 import { onFamilyEvent, emitFamilyEvent } from '../../../shared/services/socketClient';
 import { getActiveUserId } from '../../../shared/hooks/useUserProfile';
@@ -103,7 +103,7 @@ export async function syncItineraryWithCloud(): Promise<TripSegment[]> {
 }
 
 /**
- * Initialize Dexie with Seed Segments if empty
+ * Initialize Dexie with Seed Segments if empty or missing new segments
  */
 export async function initializeItineraryStorage(): Promise<TripSegment[]> {
   try {
@@ -117,6 +117,22 @@ export async function initializeItineraryStorage(): Promise<TripSegment[]> {
       await localDB.offlineSegments.bulkAdd(records);
       console.log(`🧭 [Dexie Itinerary] Initialized ${records.length} trip segments in offline store.`);
       return TRIP_SEED_SEGMENTS;
+    }
+
+    // Check if new segments (e.g. seg-6 to seg-9) are missing from existing store
+    const existingRecords = await localDB.offlineSegments.toArray();
+    const existingIds = new Set(existingRecords.map(r => r.id));
+    const missingSeeds = TRIP_SEED_SEGMENTS.filter(s => !existingIds.has(s.id));
+    
+    if (missingSeeds.length > 0) {
+      console.log(`🧭 [Dexie Itinerary] Adding ${missingSeeds.length} newly configured segments into offline store.`);
+      for (const seg of missingSeeds) {
+        await localDB.offlineSegments.put({
+          id: seg.id,
+          segmentData: seg,
+          modifiedLocallyAt: Date.now()
+        });
+      }
     }
 
     // Initial background sync with cloud
@@ -136,7 +152,7 @@ export async function initializeItineraryStorage(): Promise<TripSegment[]> {
 export async function getSegmentsFromDexie(): Promise<TripSegment[]> {
   try {
     const records = await localDB.offlineSegments.toArray();
-    if (!records || records.length === 0) {
+    if (!records || records.length === 0 || records.length < TRIP_SEED_SEGMENTS.length) {
       return await initializeItineraryStorage();
     }
     return records.map(r => r.segmentData);
@@ -338,4 +354,107 @@ export async function updateLogisticsInDexie(
   }
 
   return updatedSegment;
+}
+
+/**
+ * Add a new checkpoint (e.g. from Sightseeing recommendation or Custom activity) directly to a segment
+ */
+export async function addCheckpointToSegment(
+  segmentId: string,
+  checkpoint: Omit<Checkpoint, 'id' | 'done'> & { id?: string }
+): Promise<TripSegment | null> {
+  const record = await localDB.offlineSegments.get(segmentId);
+  if (!record) return null;
+
+  const newCheckpoint: Checkpoint = {
+    id: checkpoint.id || `cp-${segmentId}-${Date.now()}`,
+    name: checkpoint.name,
+    estimatedTime: checkpoint.estimatedTime || 'Flexible',
+    done: false,
+    elderComfortNote: checkpoint.elderComfortNote
+  };
+
+  const updatedSegment: TripSegment = {
+    ...record.segmentData,
+    checkpoints: [...record.segmentData.checkpoints, newCheckpoint]
+  };
+
+  await saveSegmentToDexie(updatedSegment);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('triptrack_itinerary_update', { detail: { segmentId } }));
+  }
+
+  // Live broadcast via Socket.io
+  emitFamilyEvent('segment_updated', { segmentId, segment: updatedSegment });
+
+  return updatedSegment;
+}
+
+/**
+ * Fetch custom activities from Dexie
+ */
+export async function getCustomActivitiesFromDexie(dayId?: string): Promise<CustomActivity[]> {
+  try {
+    let activities: OfflineCustomActivityRecord[];
+    if (dayId && dayId !== 'all') {
+      activities = await localDB.customActivities.where('dayId').equals(dayId).toArray();
+    } else {
+      activities = await localDB.customActivities.toArray();
+    }
+    return activities.map(a => ({
+      id: a.id,
+      dayId: a.dayId,
+      title: a.title,
+      timeSlot: a.timeSlot,
+      category: a.category as any,
+      elderComfortNote: a.elderComfortNote,
+      createdAt: a.createdAt
+    }));
+  } catch (err) {
+    console.warn('Failed to get custom activities from Dexie:', err);
+    return [];
+  }
+}
+
+/**
+ * Persist a custom activity in Dexie
+ */
+export async function addCustomActivityInDexie(activity: CustomActivity): Promise<void> {
+  try {
+    await localDB.customActivities.put({
+      id: activity.id,
+      dayId: activity.dayId,
+      title: activity.title,
+      timeSlot: activity.timeSlot,
+      category: activity.category,
+      elderComfortNote: activity.elderComfortNote,
+      createdAt: activity.createdAt
+    });
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('triptrack_custom_activities_update', { detail: { activity } }));
+    }
+
+    emitFamilyEvent('custom_activity_added', { activity });
+  } catch (err) {
+    console.warn('Failed to save custom activity to Dexie:', err);
+  }
+}
+
+/**
+ * Remove a custom activity from Dexie
+ */
+export async function deleteCustomActivityInDexie(activityId: string): Promise<void> {
+  try {
+    await localDB.customActivities.delete(activityId);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('triptrack_custom_activities_update', { detail: { activityId } }));
+    }
+
+    emitFamilyEvent('custom_activity_deleted', { activityId });
+  } catch (err) {
+    console.warn('Failed to delete custom activity from Dexie:', err);
+  }
 }

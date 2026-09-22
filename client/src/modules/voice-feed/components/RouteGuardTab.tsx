@@ -323,7 +323,7 @@ export const RouteGuardTab: React.FC = () => {
         <button
           type="button"
           onClick={() => setIsSpotterModalOpen(true)}
-          className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-950/60 transition-all tap-active min-h-[46px]"
+          className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-950/60 transition-all tap-active min-h-touch"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Spot Road Obstruction / Landslide</span>

@@ -154,7 +154,7 @@ export const VaultPreview: React.FC<VaultPreviewProps> = ({ activeDuo }) => {
       </div>
 
       {/* 4. Floating Action Button (FAB) for Mobile Scan & Upload */}
-      <div className="fixed bottom-20 right-4 z-30 pointer-events-none">
+      <div className="fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.5rem)] right-4 z-30 pointer-events-none">
         <button
           onClick={() => setIsUploadOpen(true)}
           className="tap-active pointer-events-auto p-3 rounded-full bg-gradient-to-tr from-amber-600 to-amber-400 text-slate-950 font-black text-xs shadow-2xl shadow-amber-900/80 flex items-center gap-1.5 border border-amber-300 hover:scale-105 transition-transform"

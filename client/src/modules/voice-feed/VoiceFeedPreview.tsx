@@ -85,7 +85,7 @@ export const VoiceFeedPreview: React.FC<VoiceFeedPreviewProps> = ({
           <button
             type="button"
             onClick={onOpenSacredChants}
-            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs shadow-md tap-active shrink-0 min-h-[38px]"
+            className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs shadow-md tap-active shrink-0 min-h-touch flex items-center justify-center"
           >
             Open
           </button>

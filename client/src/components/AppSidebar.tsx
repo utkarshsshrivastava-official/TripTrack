@@ -415,7 +415,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
               <button
                 onClick={onManualSync}
                 disabled={isSyncing}
-                className="w-full tap-active mt-1 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-700"
+                className="w-full tap-active mt-1 py-2.5 px-3 min-h-touch rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-700"
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-sky-400 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span>{isSyncing ? 'Syncing with Atlas...' : 'Force Cloud Sync'}</span>
@@ -428,17 +428,17 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         <div className="p-3 border-t border-slate-800/80 bg-slate-950 pb-safe">
           <button
             onClick={() => handleAction(onOpenEmergency)}
-            className="w-full tap-active py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-950/60 border border-rose-500 transition-all"
+            className="w-full tap-active py-2.5 px-3 min-h-touch rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-950/60 border border-rose-500 transition-all"
           >
             <ShieldAlert className="w-4 h-4" />
             <span>Open Emergency SOS Protocols</span>
           </button>
-          <div className="flex items-center justify-center gap-3 mt-2 text-[10px] text-slate-500 font-mono">
-            <a href="tel:108" className="hover:text-rose-400">Ambulance: 108</a>
+          <div className="flex items-center justify-around gap-2 mt-2 pt-1 text-[11px] text-slate-400 font-mono">
+            <a href="tel:108" className="hover:text-rose-400 p-1 font-bold">🚑 108</a>
             <span>•</span>
-            <a href="tel:112" className="hover:text-sky-400">Police: 112</a>
+            <a href="tel:112" className="hover:text-sky-400 p-1 font-bold">👮 112</a>
             <span>•</span>
-            <a href="tel:1364" className="hover:text-amber-400">Yatra: 1364</a>
+            <a href="tel:1364" className="hover:text-amber-400 p-1 font-bold">🏔️ 1364</a>
           </div>
         </div>
       </aside>

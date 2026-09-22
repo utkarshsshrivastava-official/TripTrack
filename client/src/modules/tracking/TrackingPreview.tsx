@@ -157,7 +157,7 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
                 <button
                   type="button"
                   onClick={() => { setShowShadowInfo(false); onOpenOfflineSms(); }}
-                  className="tap-active w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold text-xs flex items-center justify-between shadow-md"
+                  className="tap-active w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold text-xs flex items-center justify-between shadow-md min-h-touch"
                 >
                   <div className="flex items-center gap-2">
                     <Smartphone className="w-4 h-4" />
@@ -171,7 +171,7 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
                 <button
                   type="button"
                   onClick={() => { setShowShadowInfo(false); onOpenMedicalDirectory(); }}
-                  className="tap-active w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-between"
+                  className="tap-active w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs flex items-center justify-between min-h-touch"
                 >
                   <div className="flex items-center gap-2">
                     <Hospital className="w-4 h-4 text-emerald-400" />
@@ -185,7 +185,7 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
                 <button
                   type="button"
                   onClick={() => { setShowShadowInfo(false); onOpenOximeter(); }}
-                  className="tap-active w-full py-2.5 px-3 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-800 font-bold text-xs flex items-center justify-between"
+                  className="tap-active w-full py-2.5 px-3 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-800 font-bold text-xs flex items-center justify-between min-h-touch"
                 >
                   <div className="flex items-center gap-2">
                     <HeartPulse className="w-4 h-4 text-rose-400" />
@@ -199,7 +199,7 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
             <button
               type="button"
               onClick={() => setShowShadowInfo(false)}
-              className="w-full py-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-xs font-bold tap-active"
+              className="w-full py-2.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white text-xs font-bold tap-active min-h-touch"
             >
               Close
             </button>
@@ -208,7 +208,7 @@ export const TrackingPreview: React.FC<TrackingPreviewProps> = ({
       )}
 
       {/* 4. Collapsible Elevation & Telemetry Bottom Sheet */}
-      <div className="absolute bottom-20 left-3 right-3 z-30 pointer-events-auto">
+      <div className="absolute bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.25rem)] left-3 right-3 z-30 pointer-events-auto">
         {!isSheetExpanded ? (
           /* Slim Floating Bar (Collapsed Mode) */
           <div className="glass-dock rounded-2xl p-2.5 px-3.5 shadow-2xl border border-white/10 flex items-center justify-between animate-in slide-in-from-bottom-2">

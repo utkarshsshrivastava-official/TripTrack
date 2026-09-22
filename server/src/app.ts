@@ -52,6 +52,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/seed', familyPinMutationsOnly, seedRoutes);
 app.use('/api/documents', familyPinMutationsOnly, vaultRoutes);
 app.use('/api/segments', familyPinMutationsOnly, segmentRoutes);
+app.use('/api/itinerary', familyPinMutationsOnly, segmentRoutes);
 app.use('/api/telemetry', familyPinMutationsOnly, telemetryRoutes);
 app.use('/api/tracking', familyPinMutationsOnly, telemetryRoutes);
 app.use('/api/voice', familyPinMutationsOnly, voiceRoutes);

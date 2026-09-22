@@ -256,7 +256,7 @@ export const App: React.FC = () => {
         />
 
         {/* Main Scrollable View Area with safe dock bottom padding */}
-        <main className={`flex-1 ${activeTab === 'tracking' ? 'p-0 overflow-hidden relative flex flex-col' : 'px-3 pt-2 pb-24 overflow-y-auto'}`}>
+        <main className={`flex-1 ${activeTab === 'tracking' ? 'p-0 overflow-hidden relative flex flex-col' : 'px-3 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] overflow-y-auto'}`}>
           {activeTab === 'itinerary' && (
             <ItineraryPreview
               activeDuo={activeDuo}

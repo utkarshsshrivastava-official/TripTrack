@@ -133,3 +133,30 @@
   animation: shimmer 2s infinite;
 }
 
+/* Offline Printable Sheet Styles */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  /* Hide global navigation and floating chrome */
+  header, 
+  nav, 
+  #bottom-dock, 
+  #floating-chat-btn, 
+  .no-print {
+    display: none !important;
+  }
+
+  /* Ensure printable trip sheet takes full printable page */
+  #printable-trip-sheet {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #000000 !important;
+  }
+}

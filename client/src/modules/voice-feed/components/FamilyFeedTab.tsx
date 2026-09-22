@@ -363,12 +363,12 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
         <button
           type="button"
           onClick={() => setIsVoiceStudioOpen(!isVoiceStudioOpen)}
-          className={`px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md tap-active shrink-0 min-h-[42px] ${isVoiceStudioOpen
+          className={`px-3 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-md tap-active shrink-0 min-h-touch ${isVoiceStudioOpen
               ? 'bg-purple-600 text-white shadow-purple-950/80 border border-purple-400'
               : 'bg-purple-950/80 hover:bg-purple-900 border border-purple-600/50 text-purple-200'
             }`}
         >
-          <Mic className="w-3.5 h-3.5" />
+          <Mic className="w-4 h-4" />
           <span>{isVoiceStudioOpen ? 'Close Mic' : 'Voice Studio'}</span>
         </button>
       </div>
@@ -579,14 +579,14 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
               <button
                 type="button"
                 onClick={() => photoInputRef.current?.click()}
-                className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 tap-active transition-all ${
+                className={`px-3 py-2 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 tap-active min-h-[40px] transition-all ${
                   postPhotoFile
                     ? 'bg-purple-950/80 border-purple-500 text-purple-200'
                     : 'bg-slate-950 border-white/10 text-slate-300 hover:text-white'
                 }`}
                 title="Attach photo from highway or shrine"
               >
-                <Camera className="w-3.5 h-3.5 text-amber-400" />
+                <Camera className="w-4 h-4 text-amber-400" />
                 <span>{postPhotoFile ? 'Photo Attached' : 'Photo'}</span>
               </button>
             </div>
@@ -594,7 +594,7 @@ export const FamilyFeedTab: React.FC<FamilyFeedTabProps> = ({ activeDuo: initial
             <button
               type="submit"
               disabled={(!quickPostText.trim() && !postPhotoFile) || isPosting}
-              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-black flex items-center gap-1.5 tap-active min-h-[42px] shadow-lg shadow-purple-950/80"
+              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-black flex items-center gap-1.5 tap-active min-h-touch shadow-lg shadow-purple-950/80"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{isPosting ? 'Posting...' : 'Publish to Feed'}</span>

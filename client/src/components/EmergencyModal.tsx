@@ -156,7 +156,7 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({
           <div className="grid grid-cols-2 gap-2">
             <a
               href="tel:108"
-              className="tap-active flex items-center gap-2 p-3 rounded-xl bg-rose-900/60 border border-rose-600/80 text-rose-100 hover:bg-rose-900"
+              className="tap-active flex items-center gap-2 p-3 rounded-xl bg-rose-900/60 border border-rose-600/80 text-rose-100 hover:bg-rose-900 min-h-touch"
             >
               <PhoneCall className="w-4 h-4 text-rose-300 shrink-0" />
               <div>
@@ -166,7 +166,7 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({
             </a>
             <a
               href="tel:112"
-              className="tap-active flex items-center gap-2 p-3 rounded-xl bg-amber-950/80 border border-amber-600/80 text-amber-100 hover:bg-amber-900"
+              className="tap-active flex items-center gap-2 p-3 rounded-xl bg-amber-950/80 border border-amber-600/80 text-amber-100 hover:bg-amber-900 min-h-touch"
             >
               <PhoneCall className="w-4 h-4 text-amber-300 shrink-0" />
               <div>
@@ -176,7 +176,7 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({
             </a>
             <a
               href="tel:1364"
-              className="tap-active flex items-center gap-2 p-3 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-200"
+              className="tap-active flex items-center gap-2 p-3 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-200 min-h-touch"
             >
               <PhoneCall className="w-4 h-4 text-sky-400 shrink-0" />
               <div>
@@ -186,7 +186,7 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({
             </a>
             <a
               href="tel:01372252102"
-              className="tap-active flex items-center gap-2 p-3 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-200"
+              className="tap-active flex items-center gap-2 p-3 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-200 min-h-touch"
             >
               <PhoneCall className="w-4 h-4 text-emerald-400 shrink-0" />
               <div>
@@ -205,7 +205,7 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({
                   onClose();
                   onOpenMedicalDirectory();
                 }}
-                className="min-h-[44px] p-2.5 rounded-xl bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-700/80 text-emerald-200 text-xs font-bold flex items-center gap-2 tap-active shadow-sm"
+                className="min-h-touch p-2.5 rounded-xl bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-700/80 text-emerald-200 text-xs font-bold flex items-center gap-2 tap-active shadow-sm"
               >
                 <Hospital className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span className="truncate">NH-7 Hospital & O₂ Directory</span>
@@ -219,7 +219,7 @@ export const EmergencyModal: React.FC<EmergencyModalProps> = ({
                   onClose();
                   onOpenOfflineSms();
                 }}
-                className="min-h-[44px] p-2.5 rounded-xl bg-amber-950/70 hover:bg-amber-900/80 border border-amber-700/80 text-amber-200 text-xs font-bold flex items-center gap-2 tap-active shadow-sm"
+                className="min-h-touch p-2.5 rounded-xl bg-amber-950/70 hover:bg-amber-900/80 border border-amber-700/80 text-amber-200 text-xs font-bold flex items-center gap-2 tap-active shadow-sm"
               >
                 <Smartphone className="w-4 h-4 text-amber-400 shrink-0" />
                 <span className="truncate">Zero-Signal 2G SMS Dispatcher</span>

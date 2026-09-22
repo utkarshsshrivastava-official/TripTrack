@@ -127,6 +127,16 @@ export interface OfflineRouteAlertRecord {
   isSynced?: boolean;
 }
 
+export interface OfflineCustomActivityRecord {
+  id: string;
+  dayId: string;
+  title: string;
+  timeSlot: 'MORNING' | 'AFTERNOON' | 'EVENING' | 'FLEXIBLE';
+  category: string;
+  elderComfortNote?: string;
+  createdAt: string;
+}
+
 export class TripTrackDexieDB extends Dexie {
   cachedDocs!: Table<CachedDocRecord, string>;
   queuedPings!: Table<QueuedPingRecord, number>;
@@ -138,6 +148,7 @@ export class TripTrackDexieDB extends Dexie {
   medicationLogs!: Table<OfflineMedicationRecord, string>;
   travellers!: Table<OfflineTravellerRecord, string>;
   offlineRouteAlerts!: Table<OfflineRouteAlertRecord, string>;
+  customActivities!: Table<OfflineCustomActivityRecord, string>;
 
   constructor() {
     super('TripTrackDB');
@@ -193,6 +204,19 @@ export class TripTrackDexieDB extends Dexie {
       medicationLogs: 'id, travellerId, date, timeSlot',
       travellers: 'id, duoId, role, name, isSeniorCitizen',
       offlineRouteAlerts: 'id, stretch, severity, eventType, timestamp, isFamilyReport'
+    });
+    this.version(7).stores({
+      cachedDocs: 'id, passengerId, category, updatedAt',
+      queuedPings: '++id, passengerId, deviceTimestamp',
+      offlineSegments: 'id, modifiedLocallyAt',
+      offlineExpenses: 'id, category, paidBy, createdAt',
+      offlineVoiceLogs: 'id, speakerId, recordedAt',
+      offlineChatMessages: 'id, senderId, senderName, timestamp, status',
+      oximeterLogs: 'id, travellerId, recordedAt, spo2',
+      medicationLogs: 'id, travellerId, date, timeSlot',
+      travellers: 'id, duoId, role, name, isSeniorCitizen',
+      offlineRouteAlerts: 'id, stretch, severity, eventType, timestamp, isFamilyReport',
+      customActivities: 'id, dayId, timeSlot, category, createdAt'
     });
   }
 }

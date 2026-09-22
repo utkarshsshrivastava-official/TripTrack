@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TripSegment, SegmentStatus, LogisticsInfo } from '../../../shared/types';
+import { TripSegment, SegmentStatus, LogisticsInfo, Checkpoint } from '../../../shared/types';
 import {
   getSegmentsFromDexie,
   toggleCheckpointInDexie,
   updateSegmentStatusInDexie,
-  updateLogisticsInDexie
+  updateLogisticsInDexie,
+  addCheckpointToSegment
 } from '../services/itineraryStorage';
 
 export function useItinerary() {
@@ -79,6 +80,11 @@ export function useItinerary() {
     await updateLogisticsInDexie(segmentId, logisticsUpdate);
   };
 
+  const addCheckpoint = async (segmentId: string, checkpoint: Omit<Checkpoint, 'id' | 'done'> & { id?: string }) => {
+    await addCheckpointToSegment(segmentId, checkpoint);
+    await loadSegments();
+  };
+
   const activeSegment = segments.find(s => s.id === activeSegmentId) || segments[0];
 
   return {
@@ -90,6 +96,7 @@ export function useItinerary() {
     toggleCheckpoint,
     setSegmentStatus,
     updateLogistics,
+    addCheckpoint,
     reload: loadSegments
   };
 }
