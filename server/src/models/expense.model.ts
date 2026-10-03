@@ -43,7 +43,8 @@ const ExpenseSchema = new Schema({
   owedSplits: {
     utkarshOwesINR: Number,
     shreyasOwesINR: Number
-  }
-}, { timestamps: true });
+  },
+  createdAt: { type: Date, default: Date.now }
+}, { timestamps: { createdAt: false, updatedAt: true } });
 
 export const ExpenseModel = mongoose.model<IExpense>('Expense', ExpenseSchema);

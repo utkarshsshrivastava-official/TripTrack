@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ExpenseCategory, ExpenseSplitMode } from '../../../shared/types';
+import { Expense, ExpenseCategory, ExpenseSplitMode } from '../../../shared/types';
 import { DUO_A_SON, DUO_B_SON } from '../../../shared/config/travellers.config';
 import { useUserProfile } from '../../../shared/hooks/useUserProfile';
 import { uploadMedia } from '../../../shared/services/mediaService';
@@ -20,28 +20,36 @@ import {
   Users,
   Scale,
   CheckCircle2,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Calendar,
+  Clock,
+  Pencil
 } from 'lucide-react';
+
+export interface SaveExpenseData {
+  id?: string;
+  title: string;
+  amountINR: number;
+  paidBy: string;
+  category: ExpenseCategory;
+  receiptUrl?: string;
+  paymentSplits?: {
+    utkarshPaidINR: number;
+    shreyasPaidINR: number;
+  };
+  splitMode?: ExpenseSplitMode;
+  owedSplits?: {
+    utkarshOwesINR: number;
+    shreyasOwesINR: number;
+  };
+  createdAt?: string;
+}
 
 interface AddExpenseSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddExpense: (data: {
-    title: string;
-    amountINR: number;
-    paidBy: string;
-    category: ExpenseCategory;
-    receiptUrl?: string;
-    paymentSplits?: {
-      utkarshPaidINR: number;
-      shreyasPaidINR: number;
-    };
-    splitMode?: ExpenseSplitMode;
-    owedSplits?: {
-      utkarshOwesINR: number;
-      shreyasOwesINR: number;
-    };
-  }) => Promise<void>;
+  editingExpense?: Expense | null;
+  onSaveExpense: (data: SaveExpenseData) => Promise<void>;
 }
 
 const PRESET_AMOUNTS = [200, 500, 1000, 2500, 5000];
@@ -63,10 +71,34 @@ const CATEGORIES: { id: ExpenseCategory; label: string; icon: React.FC<{ classNa
   { id: 'MISC', label: 'Medical & Misc', icon: MoreHorizontal },
 ];
 
+function formatDateForInput(dateInput?: Date | string): string {
+  const d = dateInput ? new Date(dateInput) : new Date();
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function formatDisplayDateTime(dateStr: string): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return (
+    d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) +
+    ' • ' +
+    d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  );
+}
+
 export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   isOpen,
   onClose,
-  onAddExpense
+  editingExpense,
+  onSaveExpense
 }) => {
   const { activeUser } = useUserProfile();
   const isDuoB = activeUser.id === 'traveller-shreyas' || activeUser.id === 'traveller-sanjay' || activeUser.duoId === 'DUO_B';
@@ -76,28 +108,80 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('FOOD');
 
+  // Custom Date & Time State
+  const [expenseDateTime, setExpenseDateTime] = useState<string>(formatDateForInput(new Date()));
+
   // Splitwise-Grade Multi-Payer State — Auto-default to logged in coordinator
   const [payerMode, setPayerMode] = useState<'UTKARSH' | 'SHREYAS' | 'BOTH'>(defaultPayer);
   const [utkarshPaid, setUtkarshPaid] = useState('');
   const [shreyasPaid, setShreyasPaid] = useState('');
-
-  // Auto-sync payer when user profile changes or modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setPayerMode(isDuoB ? 'SHREYAS' : 'UTKARSH');
-    }
-  }, [isOpen, isDuoB]);
 
   // Splitwise-Grade Split Mode State
   const [splitMode, setSplitMode] = useState<ExpenseSplitMode>('EQUAL_50_50');
   const [utkarshOwes, setUtkarshOwes] = useState('');
   const [shreyasOwes, setShreyasOwes] = useState('');
 
-
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync state when opening modal or switching between add/edit
+  useEffect(() => {
+    if (isOpen) {
+      if (editingExpense) {
+        setTitle(editingExpense.title);
+        setAmount(editingExpense.amountINR.toString());
+        setCategory(editingExpense.category);
+
+        const hasBothPaid = Boolean(
+          editingExpense.paymentSplits &&
+          (Number(editingExpense.paymentSplits.utkarshPaidINR) > 0 || Number(editingExpense.paymentSplits.shreyasPaidINR) > 0)
+        );
+
+        if (hasBothPaid || editingExpense.paidBy === 'Multiple') {
+          setPayerMode('BOTH');
+          setUtkarshPaid(editingExpense.paymentSplits?.utkarshPaidINR ? String(editingExpense.paymentSplits.utkarshPaidINR) : '');
+          setShreyasPaid(editingExpense.paymentSplits?.shreyasPaidINR ? String(editingExpense.paymentSplits.shreyasPaidINR) : '');
+        } else if (editingExpense.paidBy === DUO_B_SON.name) {
+          setPayerMode('SHREYAS');
+          setUtkarshPaid('');
+          setShreyasPaid('');
+        } else {
+          setPayerMode('UTKARSH');
+          setUtkarshPaid('');
+          setShreyasPaid('');
+        }
+
+        setSplitMode(editingExpense.splitMode || 'EQUAL_50_50');
+        if (editingExpense.owedSplits) {
+          setUtkarshOwes(editingExpense.owedSplits.utkarshOwesINR !== undefined ? String(editingExpense.owedSplits.utkarshOwesINR) : '');
+          setShreyasOwes(editingExpense.owedSplits.shreyasOwesINR !== undefined ? String(editingExpense.owedSplits.shreyasOwesINR) : '');
+        } else {
+          setUtkarshOwes('');
+          setShreyasOwes('');
+        }
+
+        setExpenseDateTime(formatDateForInput(editingExpense.createdAt));
+        setReceiptPreviewUrl(editingExpense.receiptUrl || null);
+        setReceiptFile(null);
+      } else {
+        // Adding new expense
+        setTitle('');
+        setAmount('');
+        setCategory('FOOD');
+        setPayerMode(isDuoB ? 'SHREYAS' : 'UTKARSH');
+        setUtkarshPaid('');
+        setShreyasPaid('');
+        setSplitMode('EQUAL_50_50');
+        setUtkarshOwes('');
+        setShreyasOwes('');
+        setExpenseDateTime(formatDateForInput(new Date()));
+        setReceiptPreviewUrl(null);
+        setReceiptFile(null);
+      }
+    }
+  }, [isOpen, editingExpense, isDuoB]);
 
   if (!isOpen) return null;
 
@@ -139,7 +223,6 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   const isPaidBalanced = payerMode !== 'BOTH' || (Math.round(liveUPaid + liveSPaid) === Math.round(totalNum) && totalNum > 0);
   const isSplitBalanced = splitMode !== 'CUSTOM_AMOUNTS' || (Math.round(liveUOwes + liveSOwes) === Math.round(totalNum) && totalNum > 0);
 
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -150,7 +233,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   };
 
   const handleRemoveReceipt = () => {
-    if (receiptPreviewUrl) {
+    if (receiptPreviewUrl && !receiptPreviewUrl.startsWith('http')) {
       URL.revokeObjectURL(receiptPreviewUrl);
     }
     setReceiptFile(null);
@@ -160,28 +243,40 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
     }
   };
 
+  const setPresetTime = (hours: number, minutes: number) => {
+    const current = expenseDateTime ? new Date(expenseDateTime) : new Date();
+    current.setHours(hours, minutes, 0, 0);
+    setExpenseDateTime(formatDateForInput(current));
+  };
+
+  const shiftDays = (deltaDays: number) => {
+    const current = expenseDateTime ? new Date(expenseDateTime) : new Date();
+    current.setDate(current.getDate() + deltaDays);
+    setExpenseDateTime(formatDateForInput(current));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
     if (!isPaidBalanced || !isSplitBalanced) return;
 
     setIsSubmitting(true);
-    let receiptUrl: string | undefined = undefined;
+    let finalReceiptUrl: string | undefined = receiptPreviewUrl || undefined;
 
     try {
       if (receiptFile) {
         if (navigator.onLine) {
           try {
             const uploadRes = await uploadMedia(receiptFile, 'receipt');
-            receiptUrl = uploadRes.url;
+            finalReceiptUrl = uploadRes.url;
           } catch (uploadErr) {
             console.warn('⚠️ [Gullak] Cloud upload failed, falling back to local data URL:', uploadErr);
           }
         }
 
         // Offline or upload fallback: convert to base64 data URL
-        if (!receiptUrl) {
-          receiptUrl = await new Promise<string>((resolve) => {
+        if (!finalReceiptUrl || !finalReceiptUrl.startsWith('http')) {
+          finalReceiptUrl = await new Promise<string>((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result as string);
             reader.readAsDataURL(receiptFile);
@@ -195,12 +290,15 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
           ? DUO_B_SON.name 
           : 'Multiple';
 
-      await onAddExpense({
+      const createdAtIso = expenseDateTime ? new Date(expenseDateTime).toISOString() : new Date().toISOString();
+
+      await onSaveExpense({
+        id: editingExpense?.id,
         title: title.trim(),
         amountINR: Math.round(totalNum),
         paidBy: computedPaidBy,
         category,
-        receiptUrl,
+        receiptUrl: finalReceiptUrl,
         paymentSplits: payerMode === 'BOTH' ? {
           utkarshPaidINR: Math.round(liveUPaid),
           shreyasPaidINR: Math.round(liveSPaid)
@@ -215,20 +313,14 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         } : splitMode === 'FULL_FAMILY_B' ? {
           utkarshOwesINR: 0,
           shreyasOwesINR: Math.round(totalNum)
-        } : undefined
+        } : undefined,
+        createdAt: createdAtIso
       });
-      setTitle('');
-      setAmount('');
-      setPayerMode('UTKARSH');
-      setUtkarshPaid('');
-      setShreyasPaid('');
-      setSplitMode('EQUAL_50_50');
-      setUtkarshOwes('');
-      setShreyasOwes('');
+
       handleRemoveReceipt();
       onClose();
     } catch (err) {
-      console.error('Failed to log expense', err);
+      console.error('Failed to save expense', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -261,12 +353,22 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
           <div className="w-10 h-1 rounded-full bg-slate-700 sm:hidden" />
           <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-amber-500/20 text-temple-gold flex items-center justify-center border border-amber-500/30">
-                <DollarSign className="w-5 h-5" />
+              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center border ${
+                editingExpense 
+                  ? 'bg-amber-500/20 text-temple-gold border-amber-500/40' 
+                  : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+              }`}>
+                {editingExpense ? <Pencil className="w-4 h-4" /> : <DollarSign className="w-5 h-5" />}
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-white">Log Pilgrimage Expense</h3>
-                <p className="text-[11px] text-slate-400 font-mono">Shared 50/50 between Son Coordinators</p>
+                <h3 className="text-sm font-extrabold text-white">
+                  {editingExpense ? 'Edit Pilgrimage Expense' : 'Log Pilgrimage Expense'}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-mono">
+                  {editingExpense 
+                    ? `Modifying #${editingExpense.id.slice(-6)} • Update amount, split, or date` 
+                    : 'Shared 50/50 between Son Coordinators'}
+                </p>
               </div>
             </div>
             <button
@@ -302,13 +404,13 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             </div>
 
             {/* Fast Preset Amount Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
               {PRESET_AMOUNTS.map(val => (
                 <button
                   key={val}
                   type="button"
                   onClick={() => handleSelectPresetAmount(val)}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold border transition-all tap-active ${
+                  className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold border transition-all tap-active shrink-0 ${
                     amount === val.toString()
                       ? 'bg-temple-gold text-slate-950 border-amber-400 shadow'
                       : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white hover:border-slate-700'
@@ -349,109 +451,148 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             </div>
           </div>
 
-          {/* 1. Who Paid? (Splitwise Multi-Payer Selector) */}
-          <div className="space-y-2">
+          {/* 📅 Date & Time Picker Section */}
+          <div className="space-y-2 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                Who Paid for this Bill?
+              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-temple-gold" />
+                <span>Transaction Date & Time</span>
               </label>
-              {payerMode === 'BOTH' && (
-                <span className="text-[10px] font-mono text-purple-300 font-bold flex items-center gap-1">
-                  <Users className="w-3 h-3 text-purple-400" /> Split Payment
+              {expenseDateTime && (
+                <span className="text-[10px] font-mono text-amber-300 font-bold truncate max-w-[190px]">
+                  {formatDisplayDateTime(expenseDateTime)}
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="relative">
+              <input
+                type="datetime-local"
+                required
+                value={expenseDateTime}
+                onChange={e => setExpenseDateTime(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-temple-gold shadow-inner"
+              />
+            </div>
+
+            {/* Quick Timestamp Presets */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+              <button
+                type="button"
+                onClick={() => setExpenseDateTime(formatDateForInput(new Date()))}
+                className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[10px] text-slate-300 hover:text-amber-300 hover:border-amber-500/40 flex items-center gap-1 tap-active shrink-0"
+              >
+                <Clock className="w-2.5 h-2.5 text-temple-gold" />
+                <span>Now</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPresetTime(9, 0)}
+                className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[10px] text-slate-300 hover:text-amber-300 hover:border-amber-500/40 flex items-center gap-1 tap-active shrink-0"
+              >
+                <span>🌅 Morning (9 AM)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPresetTime(14, 0)}
+                className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[10px] text-slate-300 hover:text-amber-300 hover:border-amber-500/40 flex items-center gap-1 tap-active shrink-0"
+              >
+                <span>☀️ Afternoon (2 PM)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPresetTime(20, 30)}
+                className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[10px] text-slate-300 hover:text-amber-300 hover:border-amber-500/40 flex items-center gap-1 tap-active shrink-0"
+              >
+                <span>🌙 Dinner (8:30 PM)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => shiftDays(-1)}
+                className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-[10px] text-slate-300 hover:text-amber-300 hover:border-amber-500/40 flex items-center gap-1 tap-active shrink-0"
+              >
+                <span>📅 Yesterday</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Who Paid Section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-amber-400" />
+                <span>Who Paid from Pocket?</span>
+              </label>
+              <span className="text-[10px] font-mono text-slate-400">
+                Payer Split
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setPayerMode('UTKARSH')}
-                className={`p-2.5 rounded-2xl border text-center flex flex-col items-center gap-1 transition-all tap-active ${
+                className={`p-2.5 rounded-xl border text-center transition-all tap-active ${
                   payerMode === 'UTKARSH'
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md font-bold'
+                    ? 'bg-temple-gold/20 border-amber-400 text-amber-300 font-extrabold shadow'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <span className="text-xs font-bold leading-tight truncate w-full flex items-center justify-center gap-1">
-                  <span>{DUO_A_SON.name}</span>
-                  {!isDuoB && (
-                    <span className="text-[9px] px-1 rounded bg-amber-500/30 text-amber-300 font-extrabold">You</span>
-                  )}
-                </span>
-                <span className="text-[9px] font-mono text-slate-400">Paid 100%</span>
+                <div className="text-xs font-black">{DUO_A_SON.name}</div>
+                <div className="text-[10px] text-slate-400 font-mono">100% Full</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setPayerMode('SHREYAS')}
-                className={`p-2.5 rounded-2xl border text-center flex flex-col items-center gap-1 transition-all tap-active ${
+                className={`p-2.5 rounded-xl border text-center transition-all tap-active ${
                   payerMode === 'SHREYAS'
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md font-bold'
+                    ? 'bg-temple-gold/20 border-amber-400 text-amber-300 font-extrabold shadow'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <span className="text-xs font-bold leading-tight truncate w-full flex items-center justify-center gap-1">
-                  <span>{DUO_B_SON.name}</span>
-                  {isDuoB && (
-                    <span className="text-[9px] px-1 rounded bg-amber-500/30 text-amber-300 font-extrabold">You</span>
-                  )}
-                </span>
-                <span className="text-[9px] font-mono text-slate-400">Paid 100%</span>
+                <div className="text-xs font-black">{DUO_B_SON.name}</div>
+                <div className="text-[10px] text-slate-400 font-mono">100% Full</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   setPayerMode('BOTH');
-                  if (!utkarshPaid && !shreyasPaid && totalNum > 0) {
+                  if (totalNum > 0 && !utkarshPaid && !shreyasPaid) {
                     setUtkarshPaid(Math.round(totalNum / 2).toString());
                     setShreyasPaid((totalNum - Math.round(totalNum / 2)).toString());
                   }
                 }}
-                className={`p-2.5 rounded-2xl border text-center flex flex-col items-center gap-1 transition-all tap-active ${
+                className={`p-2.5 rounded-xl border text-center transition-all tap-active ${
                   payerMode === 'BOTH'
-                    ? 'bg-purple-500/25 border-purple-500 text-purple-200 shadow-md font-bold'
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-extrabold shadow'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <span className="text-xs font-bold leading-tight flex items-center justify-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-purple-400" />
-                  <span>Both Paid</span>
-                </span>
-                <span className="text-[9px] font-mono text-slate-400">Custom ₹ Shares</span>
+                <div className="text-xs font-black">Both Paid</div>
+                <div className="text-[10px] text-slate-400 font-mono">Custom Cash</div>
               </button>
             </div>
 
-            {/* When BOTH is selected, show dual inputs with auto-balance */}
+            {/* Multi-Payer Breakdown Inputs */}
             {payerMode === 'BOTH' && (
-              <div className="p-3 rounded-2xl bg-purple-950/40 border border-purple-800/60 space-y-2.5 animate-in fade-in">
-                <div className="flex items-center justify-between text-[11px] font-bold text-purple-200">
-                  <span>Enter contributions for ₹{totalNum || 0} bill:</span>
-                  {isPaidBalanced ? (
-                    <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-mono">
-                      <CheckCircle2 className="w-3 h-3" /> Exact Balance
+              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 animate-in fade-in">
+                <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
+                  <span>Enter cash paid by each brother:</span>
+                  {!isPaidBalanced && (
+                    <span className="text-rose-400 font-mono">
+                      Sum ₹{liveUPaid + liveSPaid} ≠ Total ₹{totalNum}
                     </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const diff = totalNum - (Number(utkarshPaid) || 0);
-                        setShreyasPaid(Math.max(0, diff).toString());
-                      }}
-                      className="text-[10px] text-amber-300 underline font-mono tap-active"
-                    >
-                      Auto-balance Shreyas
-                    </button>
                   )}
                 </div>
-
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] font-mono text-purple-300 block mb-1 font-bold">
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">
                       {DUO_A_SON.name} Paid
                     </label>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-purple-400">₹</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
                       <input
                         type="number"
                         min="0"
@@ -464,89 +605,86 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                           }
                         }}
                         placeholder="0"
-                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-950 border border-purple-700/50 text-xs font-mono font-bold text-white focus:outline-none focus:border-purple-400 shadow-inner"
+                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 shadow-inner"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-mono text-purple-300 block mb-1 font-bold">
+                    <label className="text-[10px] font-mono text-slate-400 block mb-1">
                       {DUO_B_SON.name} Paid
                     </label>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-purple-400">₹</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
                       <input
                         type="number"
                         min="0"
                         value={shreyasPaid}
                         onChange={e => setShreyasPaid(e.target.value)}
                         placeholder="0"
-                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-950 border border-purple-700/50 text-xs font-mono font-bold text-white focus:outline-none focus:border-purple-400 shadow-inner"
+                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 shadow-inner"
                       />
                     </div>
                   </div>
                 </div>
-
-                {!isPaidBalanced && totalNum > 0 && (
-                  <p className="text-[10px] text-rose-400 font-mono">
-                    ⚠️ Total contributions (₹{(Number(utkarshPaid) || 0) + (Number(shreyasPaid) || 0)}) must equal bill total (₹{totalNum}).
-                  </p>
-                )}
               </div>
             )}
           </div>
 
-          {/* 2. Split How? (Splitwise Split Mode) */}
+          {/* How is this Expense Shared? */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Scale className="w-3.5 h-3.5 text-amber-400" />
-                <span>Split Between Families</span>
+                <Scale className="w-3.5 h-3.5 text-temple-gold" />
+                <span>How is this Split?</span>
               </label>
               <span className="text-[10px] font-mono text-slate-400">
-                {splitMode === 'EQUAL_50_50' ? '50/50 Equal' : splitMode === 'FULL_FAMILY_A' ? '100% Family A' : splitMode === 'FULL_FAMILY_B' ? '100% Family B' : 'Custom'}
+                Responsibility
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setSplitMode('EQUAL_50_50')}
-                className={`p-2 rounded-xl border text-center transition-all tap-active ${
+                className={`p-2.5 rounded-xl border text-center transition-all tap-active ${
                   splitMode === 'EQUAL_50_50'
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-extrabold shadow'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <div className="text-[11px] font-bold">⚖️ 50-50 Equal</div>
-                <div className="text-[9px] font-mono text-slate-400">Shared meal/cab</div>
+                <div className="text-xs font-black">50 / 50 Equal Split</div>
+                <div className="text-[10px] font-mono text-slate-400">Standard Pool Rule</div>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   setSplitMode('CUSTOM_AMOUNTS');
-                  if (!utkarshOwes && !shreyasOwes && totalNum > 0) {
+                  if (totalNum > 0 && !utkarshOwes && !shreyasOwes) {
                     setUtkarshOwes(Math.round(totalNum / 2).toString());
                     setShreyasOwes((totalNum - Math.round(totalNum / 2)).toString());
                   }
                 }}
-                className={`p-2 rounded-xl border text-center transition-all tap-active ${
+                className={`p-2.5 rounded-xl border text-center transition-all tap-active ${
                   splitMode === 'CUSTOM_AMOUNTS'
-                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-extrabold shadow'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <div className="text-[11px] font-bold">✏️ Custom Share</div>
-                <div className="text-[9px] font-mono text-slate-400">Exact amounts</div>
+                <div className="text-xs font-black">Custom Share</div>
+                <div className="text-[10px] font-mono text-slate-400">Different Amounts</div>
               </button>
+            </div>
 
+            {/* Single Family Full-Payer Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setSplitMode('FULL_FAMILY_A')}
                 className={`p-2 rounded-xl border text-center transition-all tap-active ${
                   splitMode === 'FULL_FAMILY_A'
-                    ? 'bg-indigo-950/60 border-indigo-500 text-indigo-300 font-bold'
+                    ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300 font-bold'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -630,7 +768,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
               </div>
             )}
 
-            {/* Live Splitwise Settlement Result Banner */}
+            {/* Live Settlement Result Banner */}
             {totalNum > 0 && isPaidBalanced && isSplitBalanced && (
               <div className={`p-2.5 rounded-2xl border flex items-center justify-between text-xs font-bold ${
                 liveNetUtkarsh === 0
@@ -716,7 +854,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                       {receiptFile?.name || 'Receipt Photo Attached'}
                     </p>
                     <p className="text-[10px] font-mono text-emerald-400">
-                      Ready to upload ({Math.round((receiptFile?.size || 0) / 1024)} KB)
+                      {receiptFile ? `Ready to upload (${Math.round(receiptFile.size / 1024)} KB)` : 'Existing bill saved'}
                     </p>
                   </div>
                 </div>
@@ -746,12 +884,21 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="tap-active min-h-touch w-full py-3.5 rounded-2xl bg-gradient-to-r from-temple-saffron via-amber-500 to-amber-600 text-slate-950 font-black text-sm shadow-xl shadow-amber-950/50 border border-amber-300/40 flex items-center justify-center gap-2 hover:brightness-110 transition-all"
+              className={`tap-active min-h-touch w-full py-3.5 rounded-2xl font-black text-sm shadow-xl border flex items-center justify-center gap-2 hover:brightness-110 transition-all ${
+                editingExpense
+                  ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 border-emerald-300/40 shadow-emerald-950/50'
+                  : 'bg-gradient-to-r from-temple-saffron via-amber-500 to-amber-600 text-slate-950 border-amber-300/40 shadow-amber-950/50'
+              }`}
             >
               {isSubmitting ? (
                 <>
                   <div className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
                   <span>Saving to Dexie...</span>
+                </>
+              ) : editingExpense ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Save Changes</span>
                 </>
               ) : (
                 <>

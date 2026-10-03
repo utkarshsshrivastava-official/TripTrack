@@ -245,6 +245,44 @@ export async function saveExpenseToDexie(expense: Omit<Expense, 'id'>): Promise<
 }
 
 /**
+ * Update existing expense in Dexie and broadcast update live via Socket.io and REST PUT
+ */
+export async function updateExpenseInDexie(expense: Expense): Promise<Expense> {
+  const updatedRecord: OfflineExpenseRecord = {
+    ...expense,
+    isSynced: navigator.onLine
+  };
+
+  // 1. Optimistic local persistence in Dexie
+  await localDB.offlineExpenses.put(updatedRecord);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('triptrack_expense_update', { detail: updatedRecord }));
+  }
+
+  // 2. Real-time broadcast and MongoDB persistence if online
+  if (navigator.onLine) {
+    emitFamilyEvent('send_expense', updatedRecord);
+
+    fetch(`/api/expenses/${expense.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-family-pin': localStorage.getItem('triptrack_family_pin') || '2026'
+      },
+      body: JSON.stringify(updatedRecord)
+    }).then(async (res) => {
+      if (res.ok) {
+        await localDB.offlineExpenses.update(updatedRecord.id, { isSynced: true });
+      }
+    }).catch(err => {
+      console.warn('⚠️ [Gullak] Deferred cloud expense update sync:', err);
+    });
+  }
+
+  return toExpense(updatedRecord);
+}
+
+/**
  * Delete expense from Dexie and broadcast deletion live
  */
 export async function deleteExpenseFromDexie(id: string): Promise<void> {

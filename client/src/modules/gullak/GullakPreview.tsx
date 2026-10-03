@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Expense, ExpenseCategory, ExpenseSplitMode, DuoId } from '../../shared/types';
+import { Expense, ExpenseCategory, DuoId } from '../../shared/types';
 import { 
   Plus, 
   Car, 
@@ -12,7 +12,8 @@ import {
   Award,
   ReceiptText,
   ExternalLink,
-  X
+  X,
+  Pencil
 } from 'lucide-react';
 import { 
   DUO_A_SON, 
@@ -21,12 +22,13 @@ import {
 import { 
   getExpensesFromDexie, 
   saveExpenseToDexie, 
+  updateExpenseInDexie,
   deleteExpenseFromDexie, 
   calculateGullakSummary 
 } from './services/expenseStorage';
 import { GullakBalanceHero } from './components/GullakBalanceHero';
 import { SettlementGauge } from './components/SettlementGauge';
-import { AddExpenseSheet } from './components/AddExpenseSheet';
+import { AddExpenseSheet, SaveExpenseData } from './components/AddExpenseSheet';
 
 interface GullakPreviewProps {
   activeDuo: DuoId | 'ALL';
@@ -36,6 +38,7 @@ interface GullakPreviewProps {
 export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenMemorial }) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isAddSheetOpen, setIsAddSheetOpen] = useState<boolean>(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'ALL'>('ALL');
   const [viewingReceipt, setViewingReceipt] = useState<{
     url: string;
@@ -56,35 +59,38 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
 
   const summary = calculateGullakSummary(expenses);
 
-  const handleAddExpense = async (data: {
-    title: string;
-    amountINR: number;
-    paidBy: string;
-    category: ExpenseCategory;
-    receiptUrl?: string;
-    paymentSplits?: {
-      utkarshPaidINR: number;
-      shreyasPaidINR: number;
-    };
-    splitMode?: ExpenseSplitMode;
-    owedSplits?: {
-      utkarshOwesINR: number;
-      shreyasOwesINR: number;
-    };
-  }) => {
-    const added = await saveExpenseToDexie({
-      title: data.title,
-      amountINR: data.amountINR,
-      paidBy: data.paidBy,
-      category: data.category,
-      receiptUrl: data.receiptUrl,
-      paymentSplits: data.paymentSplits,
-      splitMode: data.splitMode,
-      owedSplits: data.owedSplits,
-      createdAt: new Date().toISOString()
-    });
-
-    setExpenses(prev => [added, ...prev]);
+  const handleSaveExpense = async (data: SaveExpenseData) => {
+    if (data.id) {
+      // Editing existing expense
+      const updated = await updateExpenseInDexie({
+        id: data.id,
+        title: data.title,
+        amountINR: data.amountINR,
+        paidBy: data.paidBy,
+        category: data.category,
+        receiptUrl: data.receiptUrl,
+        paymentSplits: data.paymentSplits,
+        splitMode: data.splitMode,
+        owedSplits: data.owedSplits,
+        createdAt: data.createdAt || new Date().toISOString()
+      });
+      setExpenses(prev => prev.map(e => e.id === data.id ? updated : e));
+      setEditingExpense(null);
+    } else {
+      // Adding new expense
+      const added = await saveExpenseToDexie({
+        title: data.title,
+        amountINR: data.amountINR,
+        paidBy: data.paidBy,
+        category: data.category,
+        receiptUrl: data.receiptUrl,
+        paymentSplits: data.paymentSplits,
+        splitMode: data.splitMode,
+        owedSplits: data.owedSplits,
+        createdAt: data.createdAt || new Date().toISOString()
+      });
+      setExpenses(prev => [added, ...prev]);
+    }
   };
 
   const handleDeleteExpense = async (id: string) => {
@@ -123,7 +129,13 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
   return (
     <div className="relative space-y-4 pb-28">
       {/* 1. Apple Card-Grade Balance Hero */}
-      <GullakBalanceHero summary={summary} onOpenAddModal={() => setIsAddSheetOpen(true)} />
+      <GullakBalanceHero 
+        summary={summary} 
+        onOpenAddModal={() => {
+          setEditingExpense(null);
+          setIsAddSheetOpen(true);
+        }} 
+      />
 
       {/* 2. Bilateral 50/50 Settlement Gauge & 1-Tap WhatsApp Dispatcher */}
       <SettlementGauge summary={summary} />
@@ -199,7 +211,10 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
             <p className="text-xs font-medium">No expenses logged under this filter.</p>
             <button
               type="button"
-              onClick={() => setIsAddSheetOpen(true)}
+              onClick={() => {
+                setEditingExpense(null);
+                setIsAddSheetOpen(true);
+              }}
               className="text-xs text-temple-gold font-bold underline"
             >
               Log an expense now
@@ -247,12 +262,14 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
                     )}
 
                     <span className="text-slate-600">•</span>
-                    <span className="text-slate-400">{new Date(expense.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                    <span className="text-slate-400">
+                      {new Date(expense.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(expense.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0 ml-2">
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
                 {expense.receiptUrl && (
                   <button
                     type="button"
@@ -271,14 +288,25 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
                     <span>Bill</span>
                   </button>
                 )}
-                <span className="text-sm font-black font-mono text-white">
+                <span className="text-sm font-black font-mono text-white mr-1">
                   ₹{expense.amountINR.toLocaleString('en-IN')}
                 </span>
                 <button
                   type="button"
+                  onClick={() => {
+                    setEditingExpense(expense);
+                    setIsAddSheetOpen(true);
+                  }}
+                  className="p-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-amber-950/40 tap-active min-h-touch min-w-touch flex items-center justify-center transition-all"
+                  title="Edit Expense"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleDeleteExpense(expense.id)}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 tap-active"
-                  title="Delete"
+                  className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 tap-active min-h-touch min-w-touch flex items-center justify-center transition-all"
+                  title="Delete Expense"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -292,7 +320,10 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
       <div className="fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.5rem)] right-4 sm:right-auto sm:left-1/2 sm:translate-x-32 z-30 pointer-events-auto">
         <button
           type="button"
-          onClick={() => setIsAddSheetOpen(true)}
+          onClick={() => {
+            setEditingExpense(null);
+            setIsAddSheetOpen(true);
+          }}
           className="tap-active flex items-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-temple-saffron via-amber-500 to-amber-600 text-slate-950 font-black text-xs shadow-2xl shadow-amber-950/80 border border-amber-300/60 hover:scale-105 active:scale-95 transition-all min-h-touch"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
@@ -300,11 +331,15 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
         </button>
       </div>
 
-      {/* 7. Frictionless Add Expense Bottom Sheet */}
+      {/* 7. Frictionless Add/Edit Expense Bottom Sheet */}
       <AddExpenseSheet
         isOpen={isAddSheetOpen}
-        onClose={() => setIsAddSheetOpen(false)}
-        onAddExpense={handleAddExpense}
+        onClose={() => {
+          setIsAddSheetOpen(false);
+          setEditingExpense(null);
+        }}
+        editingExpense={editingExpense}
+        onSaveExpense={handleSaveExpense}
       />
 
       {/* 8. Receipt Proof Viewer Modal */}

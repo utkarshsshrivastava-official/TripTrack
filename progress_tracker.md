@@ -52,6 +52,7 @@
 | **Phase 37** | **Comprehensive Mobile UI/UX Audit & Pre-Trip Date Calibration** | ✅ **DONE** | 100% | Completed |
 | **Phase 38** | **Live Device GPS Geocoding & Retroactive Feed Location Healing** | ✅ **DONE** | 100% | Completed |
 | **Phase 39** | **Alpine Pilgrimage Navigation, Satellite Cartography & Himalayan HUD** | ✅ **DONE** | 100% | Completed |
+| **Phase 40** | **Gullak Expense Tracker — Entry Editor & Custom Date-Time Support** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -1104,6 +1105,29 @@
   - [x] Color-coded red/amber dead-zone canyon overlays for Byasi-Devprayag, Sirobagarh, and Govindghat-Badrinath stretches.
   - [x] 1-tap "Pre-Download Pilgrimage Map" button downloading tile sets into browser `CacheStorage` for 100% offline operation in deep canyons without internet.
 - [x] **39.7 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
+  - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+
+---
+
+### ✅ Phase 40: Gullak Expense Tracker — Entry Editor & Custom Date-Time Support (100% COMPLETE)
+
+- [x] **40.1 Full Entry Editing Lifecycle (`GullakPreview.tsx`, `AddExpenseSheet.tsx`)**
+  - [x] Added 1-tap Edit (Pencil) action button on every expense ledger item with $\ge 48\text{px}$ touch targets (`min-h-touch min-w-touch`).
+  - [x] Seamless pre-population of expense state: title, amount (₹), paid-by entity (Utkarsh, Shreyas, or Both with exact contributions), category chips, split mode (`50/50`, `100% Fam A`, `100% Fam B`, `Custom Split`), and receipt image attachment.
+  - [x] Dynamic Sheet header & submission button morphing between "Log New Expense" and "Edit Expense Entry" / "Save Changes".
+- [x] **40.2 Custom Date & Time Picker with Quick Mountain Presets (`AddExpenseSheet.tsx`)**
+  - [x] Integrated custom date-time selector allowing users to backdate or forward-date any transaction (e.g. logging a highway dhaba receipt later in the evening).
+  - [x] Quick time presets: `⚡ Now`, `🌅 Morning (08:00)`, `☀️ Afternoon (13:30)`, `🌆 Evening (19:30)`, and `⏮️ Yesterday`.
+  - [x] Native `<input type="datetime-local">` picker with real-time formatted date feedback (`Thu, 24 Sep • 01:30 PM`).
+- [x] **40.3 Offline-First Upsert & Cloud Sync Engine (`expenseStorage.ts`, `expense.controller.ts`, `expense.model.ts`)**
+  - [x] Added `updateExpenseInDexie()` supporting instant zero-signal local updates in Dexie IndexedDB (`offlineExpenses.put(record)`).
+  - [x] Dispatches `triptrack_expense_update` window event so Gullak balances, settlement gauges, and itemized transaction counts reactively recalculate without page reload.
+  - [x] Mongoose model hardened with `{ timestamps: { createdAt: false, updatedAt: true } }` ensuring custom user timestamps are never overridden by server clock upon update.
+  - [x] Backend endpoint `PUT /api/expenses/:id` updates MongoDB Atlas with memory-store fallback and Socket.io `receive_expense` broadcast to both families.
+- [x] **40.4 Formatted Date & Time Display in Transaction Ledger (`GullakPreview.tsx`)**
+  - [x] Ledger records display both human date and 12-hour timestamp (e.g., `Sep 24 • 01:30 PM`).
+- [x] **40.5 Dual-Compilation & Build Verification**
   - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
   - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
 

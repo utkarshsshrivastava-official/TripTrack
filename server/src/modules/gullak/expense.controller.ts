@@ -99,6 +99,71 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
   }
 }
 
+export async function updateExpenseHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    const { title, amountINR, paidBy, category, receiptUrl, paymentSplits, splitMode, owedSplits, createdAt } = req.body;
+
+    if (!id || !title || amountINR === undefined || !paidBy || !category) {
+      res.status(400).json({ success: false, error: 'Missing required expense fields for update' });
+      return;
+    }
+
+    const payload: any = {
+      title,
+      amountINR: Number(amountINR),
+      paidBy,
+      category,
+      receiptUrl,
+      paymentSplits,
+      splitMode,
+      owedSplits
+    };
+
+    if (createdAt) {
+      payload.createdAt = new Date(createdAt);
+    }
+
+    let updatedRecord: any = null;
+
+    if (isMongoConnected()) {
+      updatedRecord = await ExpenseModel.findOneAndUpdate(
+        { id },
+        { $set: payload },
+        { new: true }
+      );
+    } else {
+      const idx = memoryExpenses.findIndex(e => e.id === id);
+      if (idx >= 0) {
+        memoryExpenses[idx] = {
+          ...memoryExpenses[idx],
+          ...payload,
+          createdAt: payload.createdAt ? payload.createdAt.toISOString() : memoryExpenses[idx].createdAt
+        };
+        updatedRecord = memoryExpenses[idx];
+      }
+    }
+
+    // Broadcast updated expense to all devices in the room
+    const io = getIO();
+    if (io) {
+      io.to(FAMILY_ROOM).emit('receive_expense', {
+        id,
+        ...payload,
+        createdAt: payload.createdAt ? payload.createdAt.toISOString() : (updatedRecord?.createdAt?.toISOString() || new Date().toISOString())
+      });
+    }
+
+    res.json({
+      success: true,
+      data: updatedRecord || { id, ...payload, createdAt: payload.createdAt?.toISOString() || new Date().toISOString() }
+    });
+  } catch (err: any) {
+    console.error('⚠️ [Expenses API] Error updating expense:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
 export async function syncBulkExpensesHandler(req: Request, res: Response): Promise<void> {
   try {
     const { expenses } = req.body;
