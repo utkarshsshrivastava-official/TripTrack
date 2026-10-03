@@ -19,7 +19,10 @@ import {
   ShoppingBag,
   HeartPulse,
   MapPin,
-  Tag as TagIcon
+  Tag as TagIcon,
+  Share2,
+  BarChart3,
+  Table
 } from 'lucide-react';
 import { 
   DUO_A_SON, 
@@ -36,6 +39,10 @@ import {
 import { GullakBalanceHero } from './components/GullakBalanceHero';
 import { SettlementGauge } from './components/SettlementGauge';
 import { AddExpenseSheet, SaveExpenseData } from './components/AddExpenseSheet';
+import { GullakExportModal } from './components/GullakExportModal';
+import { PrintableSettlementReport } from './components/PrintableSettlementReport';
+import { RapidGridEditor } from './components/RapidGridEditor';
+import { GullakAnalyticsView } from './components/GullakAnalyticsView';
 
 interface GullakPreviewProps {
   activeDuo: DuoId | 'ALL';
@@ -48,8 +55,11 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'ALL'>('ALL');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grouped' | 'stream'>('grouped');
+  const [viewMode, setViewMode] = useState<'grouped' | 'stream' | 'grid'>('grouped');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [showAnalytics, setShowAnalytics] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [isPrintReportOpen, setIsPrintReportOpen] = useState<boolean>(false);
   const [viewingReceipt, setViewingReceipt] = useState<{
     url: string;
     title: string;
@@ -430,6 +440,44 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
         }}
       />
 
+      {/* Top Action Utility Bar: Export Hub & Analytics Toggles */}
+      <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setShowAnalytics(prev => !prev)}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all tap-active min-h-touch ${
+              showAnalytics
+                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-950/30'
+                : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>{showAnalytics ? 'Hide Analytics' : 'Analytics & Charts'}</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setIsExportModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-amber-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all tap-active min-h-touch"
+            title="Export to WhatsApp, PDF Statement or CSV"
+          >
+            <Share2 className="w-4 h-4 text-temple-gold" />
+            <span>Export & Share</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Visual Analytics Hub (Item 7) */}
+      {showAnalytics && (
+        <GullakAnalyticsView
+          expenses={expenses}
+          summary={summary}
+        />
+      )}
+
       {/* 2. Splitwise-Grade Dynamic Debt Settlement Gauge */}
       <SettlementGauge summary={summary} />
 
@@ -522,32 +570,62 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
           </div>
         )}
 
-        {/* Chronological & Grouping Auto-Adjust Controls Bar */}
+        {/* Chronological & Grouping Auto-Adjust Controls Bar with Rapid Grid Mode */}
         <div className="flex items-center justify-between gap-2 px-1 pt-0.5 text-[11px] font-mono text-slate-400">
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setViewMode(prev => prev === 'grouped' ? 'stream' : 'grouped')}
+              onClick={() => setViewMode('grouped')}
               className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all tap-active min-h-touch ${
                 viewMode === 'grouped'
                   ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-bold'
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
               }`}
-              title="Toggle Day-wise Grouping vs Flat Stream"
+              title="Day-wise Grouping"
             >
               <Calendar className="w-3.5 h-3.5 text-temple-gold" />
-              <span>{viewMode === 'grouped' ? 'By Day' : 'Stream'}</span>
+              <span>By Day</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-              className="px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white flex items-center gap-1.5 transition-all tap-active min-h-touch"
-              title="Toggle Sort: Newest vs Oldest"
+              onClick={() => setViewMode('stream')}
+              className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all tap-active min-h-touch ${
+                viewMode === 'stream'
+                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-bold'
+                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+              }`}
+              title="Chronological Flat Stream"
             >
-              <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" />
-              <span>{sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Stream</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all tap-active min-h-touch ${
+                viewMode === 'grid'
+                  ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold'
+                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+              }`}
+              title="Rapid Spreadsheet Batch Entry"
+            >
+              <Table className="w-3.5 h-3.5 text-emerald-400" />
+              <span>⚡ Rapid Grid</span>
+            </button>
+
+            {viewMode !== 'grid' && (
+              <button
+                type="button"
+                onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                className="px-2 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white flex items-center gap-1 transition-all tap-active min-h-touch"
+                title="Toggle Sort: Newest vs Oldest"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" />
+                <span>{sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-1 font-bold text-slate-300 bg-slate-950/80 px-2.5 py-1 rounded-xl border border-slate-800">
@@ -559,58 +637,66 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
         </div>
       </div>
 
-      {/* 5. Itemized Transaction Ledger (Color-Coded & Auto-Adjusted by Date & Time) */}
-      <div className="space-y-3">
-        {sortedFilteredExpenses.length === 0 ? (
-          <div className="p-8 text-center rounded-3xl bg-slate-900/50 border border-slate-800 text-slate-400 space-y-2">
-            <p className="text-xs font-medium">No expenses logged under this filter.</p>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingExpense(null);
-                setIsAddSheetOpen(true);
-              }}
-              className="text-xs text-temple-gold font-bold underline"
-            >
-              Log an expense now
-            </button>
-          </div>
-        ) : viewMode === 'grouped' ? (
-          groupedExpenses.map(group => (
-            <div key={group.dateKey} className="space-y-2">
-              {/* Day Section Header with Day Total Subtotal */}
-              <div className="flex items-center justify-between px-2 pt-2.5 pb-1 border-b border-slate-800/80">
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-temple-gold">
-                    <Calendar className="w-3 h-3" />
-                  </div>
-                  <span className="text-xs font-black text-slate-200 uppercase tracking-wide">
-                    {group.displayDate}
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-500">
-                    ({group.expenses.length} {group.expenses.length === 1 ? 'item' : 'items'})
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-bold text-slate-400">Day Total:</span>
-                  <span className="text-xs font-black font-mono text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/25">
-                    ₹{group.dayTotalINR.toLocaleString('en-IN')}
-                  </span>
-                </div>
-              </div>
-
-              {/* Transactions in this Day */}
-              <div className="space-y-2">
-                {group.expenses.map(expense => renderExpenseCard(expense, false))}
-              </div>
+      {/* 5. View Mode Rendering: Rapid Grid Mode (Item 4) vs Itemized Transaction Ledger */}
+      {viewMode === 'grid' ? (
+        <RapidGridEditor
+          expenses={sortedFilteredExpenses}
+          onSaveExpense={handleSaveExpense}
+          onDeleteExpense={handleDeleteExpense}
+        />
+      ) : (
+        <div className="space-y-3">
+          {sortedFilteredExpenses.length === 0 ? (
+            <div className="p-8 text-center rounded-3xl bg-slate-900/50 border border-slate-800 text-slate-400 space-y-2">
+              <p className="text-xs font-medium">No expenses logged under this filter.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingExpense(null);
+                  setIsAddSheetOpen(true);
+                }}
+                className="text-xs text-temple-gold font-bold underline"
+              >
+                Log an expense now
+              </button>
             </div>
-          ))
-        ) : (
-          <div className="space-y-2">
-            {sortedFilteredExpenses.map(expense => renderExpenseCard(expense, true))}
-          </div>
-        )}
-      </div>
+          ) : viewMode === 'grouped' ? (
+            groupedExpenses.map(group => (
+              <div key={group.dateKey} className="space-y-2">
+                {/* Day Section Header with Day Total Subtotal */}
+                <div className="flex items-center justify-between px-2 pt-2.5 pb-1 border-b border-slate-800/80">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-temple-gold">
+                      <Calendar className="w-3 h-3" />
+                    </div>
+                    <span className="text-xs font-black text-slate-200 uppercase tracking-wide">
+                      {group.displayDate}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500">
+                      ({group.expenses.length} {group.expenses.length === 1 ? 'item' : 'items'})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Day Total:</span>
+                    <span className="text-xs font-black font-mono text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/25">
+                      ₹{group.dayTotalINR.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Transactions in this Day */}
+                <div className="space-y-2">
+                  {group.expenses.map(expense => renderExpenseCard(expense, false))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="space-y-2">
+              {sortedFilteredExpenses.map(expense => renderExpenseCard(expense, true))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 6. Floating Action Button (FAB) for Adding Expenses */}
       <div className="fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.5rem)] right-4 sm:right-auto sm:left-1/2 sm:translate-x-32 z-30 pointer-events-auto">
@@ -701,6 +787,24 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
             </div>
           </div>
         </div>
+      )}
+
+      {/* 9. Financial Export Hub Modal (Item 3) */}
+      <GullakExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        expenses={expenses}
+        summary={summary}
+        onOpenPrintReport={() => setIsPrintReportOpen(true)}
+      />
+
+      {/* 10. Printable / PDF Settlement Statement Document (Item 3) */}
+      {isPrintReportOpen && (
+        <PrintableSettlementReport
+          expenses={expenses}
+          summary={summary}
+          onClose={() => setIsPrintReportOpen(false)}
+        />
       )}
     </div>
   );
