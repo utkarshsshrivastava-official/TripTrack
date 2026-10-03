@@ -186,7 +186,11 @@ export type ExpenseCategory =
   | 'RITUAL'
   | 'PORTER_DANDI'
   | 'HOTEL'
+  | 'SHOPPING'
+  | 'MEDICAL'
   | 'MISC';
+
+export type PaymentMethod = 'UPI' | 'CASH' | 'CARD' | 'NET_BANKING' | 'OTHER';
 
 export type ExpenseSplitMode = 'EQUAL_50_50' | 'CUSTOM_AMOUNTS' | 'FULL_FAMILY_A' | 'FULL_FAMILY_B';
 
@@ -196,6 +200,10 @@ export interface Expense {
   amountINR: number;
   paidBy: string; // Utkarsh, Shreyas, or Multiple
   category: ExpenseCategory;
+  paymentMethod?: PaymentMethod;
+  tags?: string[];
+  venueName?: string;
+  venueLocation?: string;
   receiptUrl?: string;
   createdAt: string;
 

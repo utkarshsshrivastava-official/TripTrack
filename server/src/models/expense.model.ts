@@ -5,7 +5,11 @@ export interface IExpense extends Document {
   title: string;
   amountINR: number;
   paidBy: string;
-  category: 'FOOD' | 'TOLL_TAXI' | 'RITUAL' | 'PORTER_DANDI' | 'HOTEL' | 'MISC';
+  category: 'FOOD' | 'TOLL_TAXI' | 'RITUAL' | 'PORTER_DANDI' | 'HOTEL' | 'SHOPPING' | 'MEDICAL' | 'MISC';
+  paymentMethod?: 'UPI' | 'CASH' | 'CARD' | 'NET_BANKING' | 'OTHER';
+  tags?: string[];
+  venueName?: string;
+  venueLocation?: string;
   receiptUrl?: string;
   paymentSplits?: {
     utkarshPaidINR: number;
@@ -27,9 +31,17 @@ const ExpenseSchema = new Schema({
   paidBy: { type: String, required: true },
   category: { 
     type: String, 
-    enum: ['FOOD', 'TOLL_TAXI', 'RITUAL', 'PORTER_DANDI', 'HOTEL', 'MISC'], 
+    enum: ['FOOD', 'TOLL_TAXI', 'RITUAL', 'PORTER_DANDI', 'HOTEL', 'SHOPPING', 'MEDICAL', 'MISC'], 
     required: true 
   },
+  paymentMethod: {
+    type: String,
+    enum: ['UPI', 'CASH', 'CARD', 'NET_BANKING', 'OTHER'],
+    default: 'UPI'
+  },
+  tags: [{ type: String }],
+  venueName: { type: String },
+  venueLocation: { type: String },
   receiptUrl: { type: String },
   paymentSplits: {
     utkarshPaidINR: Number,

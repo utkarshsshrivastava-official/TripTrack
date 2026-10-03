@@ -53,6 +53,7 @@
 | **Phase 38** | **Live Device GPS Geocoding & Retroactive Feed Location Healing** | ✅ **DONE** | 100% | Completed |
 | **Phase 39** | **Alpine Pilgrimage Navigation, Satellite Cartography & Himalayan HUD** | ✅ **DONE** | 100% | Completed |
 | **Phase 40** | **Gullak Expense Tracker — Entry Editor & Custom Date-Time Support** | ✅ **DONE** | 100% | Completed |
+| **Phase 41** | **Gullak Layered Tagging, Categories, Venue & Post-Trip Batch Ledger** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -1136,6 +1137,41 @@
   - [x] Active filtered total expenditure counter directly in the toolbar (`Total: ₹XX,XXX`).
   - [x] Server-side in-memory array `memoryExpenses` auto-sorted on create, update, and bulk-sync.
 - [x] **40.6 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
+  - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+
+---
+
+### ✅ Phase 41: Gullak Layered Tagging, Categories, Venue & Post-Trip Batch Ledger (100% COMPLETE)
+
+- [x] **41.1 Layered Tagging System with Quick Chips & Custom Input (`AddExpenseSheet.tsx`, `GullakPreview.tsx`)**
+  - [x] Implemented dynamic tagging system (`tags: string[]`) supporting multi-tag assignment per expense.
+  - [x] Integrated 16 suggested Himalayan pilgrimage tags: `#Badrinath`, `#Joshimath`, `#Haridwar`, `#Rishikesh`, `#Lunch`, `#Dinner`, `#Breakfast`, `#Chai`, `#Puja`, `#Woolens`, `#Medicine`, `#Prasad`, `#Taxi`, `#Toll`, `#Hotel`, `#Porter`.
+  - [x] Tap-to-toggle chip selection + Custom Tag input box with Enter key / `+ Add` button.
+  - [x] Interactive Tag Filter Ribbon in `GullakPreview.tsx` listing all unique tags currently present across expenses for 1-tap ledger filtering.
+- [x] **41.2 Expanded Categories: Shopping & Medical Integration**
+  - [x] Added `SHOPPING` (`ShoppingBag` icon, pink accent) for woolens, shawls, and souvenirs.
+  - [x] Added `MEDICAL` (`HeartPulse` icon, rose accent) for altitude sickness medicine, ORS, and vitals.
+  - [x] Updated types (`ExpenseCategory`), Dexie schema (`OfflineExpenseRecord`), Mongoose model (`expense.model.ts`), and `GullakBalanceHero.tsx` category metrics breakdown.
+- [x] **41.3 Payment Method Selector (`PaymentMethod`)**
+  - [x] Segmented selector for transaction method: `UPI (GPay / PhonePe)` (`📱`), `Hard Cash` (`💵`), `Debit / Credit Card` (`💳`), `Net Banking / NEFT` (`🏦`), and `Other` (`🏷️`).
+  - [x] Persisted in client Dexie DB and MongoDB Atlas; displayed as high-contrast badge on every ledger card.
+- [x] **41.4 Optional Venue Details & Quick Town Chips (`venueName`, `venueLocation`)**
+  - [x] Added optional fields for Venue Name (e.g., "Hotel Snow Crest", "Saket Bhojnalaya") and Venue Location / Address (e.g., "Near Temple Gate, Badrinath").
+  - [x] 1-Tap Quick Town chips (`Haridwar`, `Rishikesh`, `Devprayag`, `Srinagar`, `Rudraprayag`, `Karnaprayag`, `Pipalkoti`, `Joshimath`, `Govindghat`, `Badrinath`, `Mana`) auto-populating location and adding corresponding town tag.
+  - [x] Visual `MapPin` badge rendered on transaction cards for instant place recognition.
+- [x] **41.5 Color-Coded Ledger for Both Families (`GullakPreview.tsx`)**
+  - [x] Color-coded left highlight stripe on every ledger card:
+    - 🔵 `Utkarsh (Son A)`: `border-l-4 border-l-sky-400 bg-slate-900/90`
+    - 🟢 `Shreyas (Son B)`: `border-l-4 border-l-emerald-400 bg-slate-900/90`
+    - 🟡 `Both Split`: `border-l-4 border-l-amber-400 bg-slate-900/90`
+  - [x] Header Color Legend bar explaining payer color coding at a glance.
+  - [x] Individual payer badges with color-coded dot indicators.
+- [x] **41.6 Post-Trip Bulk Fill Ergonomics & Continuous Batch Entry Mode**
+  - [x] Fast 9-Day Pilgrimage Selector (`Day 1 • 24 Sep (Haridwar)` through `Day 9 • 02 Oct (Delhi)`): 1-tap sets exact timestamp, pre-selects town location, and tags entry.
+  - [x] Continuous batch entry workflow: Added secondary action button **"Save & Add Next (+)"** beside "Save to Gullak Pool".
+  - [x] When logging multiple receipts together, tapping "Save & Add Next" saves to Dexie, shows confirmation toast (`Saved ₹1,200 ("Lunch")! Ready for next receipt...`), clears title and amount, and preserves current day, date, town location, payer, and category so subsequent receipts can be logged in seconds.
+- [x] **41.7 Dual-Compilation & Build Verification**
   - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
   - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
 

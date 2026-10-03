@@ -1,7 +1,7 @@
 import React from 'react';
 import { GullakFinancialSummary } from '../services/expenseStorage';
 import { DUO_A_SON, DUO_B_SON } from '../../../shared/config/travellers.config';
-import { Wallet, ShieldCheck, Car, Flame, Utensils, Hotel, Accessibility, MoreHorizontal } from 'lucide-react';
+import { Wallet, ShieldCheck, Car, Flame, Utensils, Hotel, Accessibility, MoreHorizontal, ShoppingBag, HeartPulse } from 'lucide-react';
 import { ExpenseCategory } from '../../../shared/types';
 
 interface GullakBalanceHeroProps {
@@ -15,7 +15,9 @@ const CATEGORY_COLORS: Record<ExpenseCategory, { name: string; color: string; bg
   RITUAL: { name: 'Rituals & Pujas', color: '#f59e0b', bg: 'bg-amber-500', icon: Flame },
   HOTEL: { name: 'Hotels & Stay', color: '#a855f7', bg: 'bg-purple-500', icon: Hotel },
   PORTER_DANDI: { name: 'Porters & Dandi', color: '#f97316', bg: 'bg-orange-500', icon: Accessibility },
-  MISC: { name: 'Medical & Misc', color: '#64748b', bg: 'bg-slate-500', icon: MoreHorizontal }
+  SHOPPING: { name: 'Shopping & Gifts', color: '#ec4899', bg: 'bg-pink-500', icon: ShoppingBag },
+  MEDICAL: { name: 'Medical & Pharma', color: '#ef4444', bg: 'bg-rose-500', icon: HeartPulse },
+  MISC: { name: 'Misc & Other', color: '#64748b', bg: 'bg-slate-500', icon: MoreHorizontal }
 };
 
 export const GullakBalanceHero: React.FC<GullakBalanceHeroProps> = ({ summary }) => {

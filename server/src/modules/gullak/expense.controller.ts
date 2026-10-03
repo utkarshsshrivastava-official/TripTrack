@@ -19,6 +19,10 @@ export async function getExpensesHandler(_req: Request, res: Response): Promise<
           amountINR: e.amountINR,
           paidBy: e.paidBy,
           category: e.category,
+          paymentMethod: e.paymentMethod || 'UPI',
+          tags: e.tags || [],
+          venueName: e.venueName,
+          venueLocation: e.venueLocation,
           receiptUrl: e.receiptUrl,
           paymentSplits: e.paymentSplits,
           splitMode: e.splitMode,
@@ -42,7 +46,22 @@ export async function getExpensesHandler(_req: Request, res: Response): Promise<
 
 export async function createExpenseHandler(req: Request, res: Response): Promise<void> {
   try {
-    const { id, title, amountINR, paidBy, category, receiptUrl, paymentSplits, splitMode, owedSplits, createdAt } = req.body;
+    const { 
+      id, 
+      title, 
+      amountINR, 
+      paidBy, 
+      category, 
+      paymentMethod,
+      tags,
+      venueName,
+      venueLocation,
+      receiptUrl, 
+      paymentSplits, 
+      splitMode, 
+      owedSplits, 
+      createdAt 
+    } = req.body;
 
     if (!id || !title || amountINR === undefined || !paidBy || !category) {
       res.status(400).json({ success: false, error: 'Missing required expense fields' });
@@ -55,6 +74,10 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
       amountINR: Number(amountINR),
       paidBy,
       category,
+      paymentMethod: paymentMethod || 'UPI',
+      tags: Array.isArray(tags) ? tags : [],
+      venueName: venueName || undefined,
+      venueLocation: venueLocation || undefined,
       receiptUrl,
       paymentSplits,
       splitMode,
@@ -103,7 +126,21 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
 export async function updateExpenseHandler(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
-    const { title, amountINR, paidBy, category, receiptUrl, paymentSplits, splitMode, owedSplits, createdAt } = req.body;
+    const { 
+      title, 
+      amountINR, 
+      paidBy, 
+      category, 
+      paymentMethod,
+      tags,
+      venueName,
+      venueLocation,
+      receiptUrl, 
+      paymentSplits, 
+      splitMode, 
+      owedSplits, 
+      createdAt 
+    } = req.body;
 
     if (!id || !title || amountINR === undefined || !paidBy || !category) {
       res.status(400).json({ success: false, error: 'Missing required expense fields for update' });
@@ -120,6 +157,11 @@ export async function updateExpenseHandler(req: Request, res: Response): Promise
       splitMode,
       owedSplits
     };
+
+    if (paymentMethod !== undefined) payload.paymentMethod = paymentMethod;
+    if (tags !== undefined) payload.tags = Array.isArray(tags) ? tags : [];
+    if (venueName !== undefined) payload.venueName = venueName;
+    if (venueLocation !== undefined) payload.venueLocation = venueLocation;
 
     if (createdAt) {
       payload.createdAt = new Date(createdAt);
@@ -185,6 +227,10 @@ export async function syncBulkExpensesHandler(req: Request, res: Response): Prom
           amountINR: Number(item.amountINR) || 0,
           paidBy: item.paidBy,
           category: item.category,
+          paymentMethod: item.paymentMethod || 'UPI',
+          tags: Array.isArray(item.tags) ? item.tags : [],
+          venueName: item.venueName,
+          venueLocation: item.venueLocation,
           receiptUrl: item.receiptUrl,
           paymentSplits: item.paymentSplits,
           splitMode: item.splitMode,
@@ -210,6 +256,10 @@ export async function syncBulkExpensesHandler(req: Request, res: Response): Prom
         const idx = memoryExpenses.findIndex(e => e.id === item.id);
         const record = {
           ...item,
+          paymentMethod: item.paymentMethod || 'UPI',
+          tags: Array.isArray(item.tags) ? item.tags : [],
+          venueName: item.venueName,
+          venueLocation: item.venueLocation,
           createdAt: item.createdAt || new Date().toISOString()
         };
         if (idx >= 0) {

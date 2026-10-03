@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Expense, ExpenseCategory, ExpenseSplitMode } from '../../../shared/types';
+import { Expense, ExpenseCategory, ExpenseSplitMode, PaymentMethod } from '../../../shared/types';
 import { DUO_A_SON, DUO_B_SON } from '../../../shared/config/travellers.config';
 import { useUserProfile } from '../../../shared/hooks/useUserProfile';
 import { uploadMedia } from '../../../shared/services/mediaService';
@@ -23,7 +23,12 @@ import {
   ArrowRightLeft,
   Calendar,
   Clock,
-  Pencil
+  Pencil,
+  ShoppingBag,
+  HeartPulse,
+  MapPin,
+  CreditCard,
+  Tag as TagIcon
 } from 'lucide-react';
 
 export interface SaveExpenseData {
@@ -32,6 +37,10 @@ export interface SaveExpenseData {
   amountINR: number;
   paidBy: string;
   category: ExpenseCategory;
+  paymentMethod?: PaymentMethod;
+  tags?: string[];
+  venueName?: string;
+  venueLocation?: string;
   receiptUrl?: string;
   paymentSplits?: {
     utkarshPaidINR: number;
@@ -59,16 +68,75 @@ const PRESET_TITLES = [
   'Temple Special Entry / Puja',
   'NH-7 Taxi Toll & Fuel',
   'Porters / Dandi Luggage',
-  'Emergency Medication / Vitals'
+  'Emergency Medication / Vitals',
+  'Warm Shawls & Woolens',
+  'Badrinath Mahaprasad Boxes',
+  'Night Hotel Stay'
+];
+
+const PILGRIMAGE_DAYS = [
+  { day: 'Day 1', date: '2026-09-24T13:00', label: 'Day 1 • 24 Sep', town: 'Haridwar' },
+  { day: 'Day 2', date: '2026-09-25T13:00', label: 'Day 2 • 25 Sep', town: 'Rishikesh' },
+  { day: 'Day 3', date: '2026-09-26T13:00', label: 'Day 3 • 26 Sep', town: 'Devprayag' },
+  { day: 'Day 4', date: '2026-09-27T13:00', label: 'Day 4 • 27 Sep', town: 'Rudraprayag' },
+  { day: 'Day 5', date: '2026-09-28T13:00', label: 'Day 5 • 28 Sep', town: 'Joshimath' },
+  { day: 'Day 6', date: '2026-09-29T13:00', label: 'Day 6 • 29 Sep', town: 'Badrinath' },
+  { day: 'Day 7', date: '2026-09-30T13:00', label: 'Day 7 • 30 Sep', town: 'Mana Village' },
+  { day: 'Day 8', date: '2026-10-01T13:00', label: 'Day 8 • 01 Oct', town: 'Pipalkoti' },
+  { day: 'Day 9', date: '2026-10-02T13:00', label: 'Day 9 • 02 Oct', town: 'Delhi' },
+];
+
+const QUICK_TOWNS = [
+  'Haridwar',
+  'Rishikesh',
+  'Devprayag',
+  'Srinagar',
+  'Rudraprayag',
+  'Karnaprayag',
+  'Pipalkoti',
+  'Joshimath',
+  'Govindghat',
+  'Pandukeshwar',
+  'Badrinath',
+  'Mana'
+];
+
+const SUGGESTED_TAGS = [
+  'Badrinath',
+  'Joshimath',
+  'Haridwar',
+  'Rishikesh',
+  'Lunch',
+  'Dinner',
+  'Breakfast',
+  'Chai',
+  'Puja',
+  'Woolens',
+  'Medicine',
+  'Prasad',
+  'Taxi',
+  'Toll',
+  'Hotel',
+  'Porter'
+];
+
+const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: string }[] = [
+  { id: 'UPI', label: 'UPI (GPay / PhonePe)', icon: '📱' },
+  { id: 'CASH', label: 'Hard Cash', icon: '💵' },
+  { id: 'CARD', label: 'Card (Debit / Credit)', icon: '💳' },
+  { id: 'NET_BANKING', label: 'Net Banking / NEFT', icon: '🏦' },
+  { id: 'OTHER', label: 'Other', icon: '🏷️' }
 ];
 
 const CATEGORIES: { id: ExpenseCategory; label: string; icon: React.FC<{ className?: string }> }[] = [
   { id: 'FOOD', label: 'Food & Tea', icon: Utensils },
   { id: 'TOLL_TAXI', label: 'Cab & Toll', icon: Car },
-  { id: 'RITUAL', label: 'Pujas & Rituals', icon: Flame },
   { id: 'HOTEL', label: 'Hotel & Stay', icon: Hotel },
+  { id: 'SHOPPING', label: 'Shopping & Woolens', icon: ShoppingBag },
+  { id: 'RITUAL', label: 'Pujas & Rituals', icon: Flame },
   { id: 'PORTER_DANDI', label: 'Porter / Dandi', icon: Accessibility },
-  { id: 'MISC', label: 'Medical & Misc', icon: MoreHorizontal },
+  { id: 'MEDICAL', label: 'Medical & Vitals', icon: HeartPulse },
+  { id: 'MISC', label: 'Misc & Cash', icon: MoreHorizontal },
 ];
 
 function formatDateForInput(dateInput?: Date | string): string {
@@ -108,6 +176,17 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>('FOOD');
 
+  // Venue & Location State
+  const [venueName, setVenueName] = useState('');
+  const [venueLocation, setVenueLocation] = useState('');
+
+  // Payment Method State
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI');
+
+  // Layered Tagging State
+  const [tags, setTags] = useState<string[]>([]);
+  const [customTagInput, setCustomTagInput] = useState('');
+
   // Custom Date & Time State
   const [expenseDateTime, setExpenseDateTime] = useState<string>(formatDateForInput(new Date()));
 
@@ -124,6 +203,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [batchSuccessMsg, setBatchSuccessMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync state when opening modal or switching between add/edit
@@ -133,6 +213,12 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         setTitle(editingExpense.title);
         setAmount(editingExpense.amountINR.toString());
         setCategory(editingExpense.category);
+        setVenueName(editingExpense.venueName || '');
+        setVenueLocation(editingExpense.venueLocation || '');
+        setPaymentMethod(editingExpense.paymentMethod || 'UPI');
+        setTags(editingExpense.tags || []);
+        setCustomTagInput('');
+        setBatchSuccessMsg(null);
 
         const hasBothPaid = Boolean(
           editingExpense.paymentSplits &&
@@ -170,6 +256,12 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         setTitle('');
         setAmount('');
         setCategory('FOOD');
+        setVenueName('');
+        setVenueLocation('');
+        setPaymentMethod('UPI');
+        setTags([]);
+        setCustomTagInput('');
+        setBatchSuccessMsg(null);
         setPayerMode(isDuoB ? 'SHREYAS' : 'UTKARSH');
         setUtkarshPaid('');
         setShreyasPaid('');
@@ -223,6 +315,32 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   const isPaidBalanced = payerMode !== 'BOTH' || (Math.round(liveUPaid + liveSPaid) === Math.round(totalNum) && totalNum > 0);
   const isSplitBalanced = splitMode !== 'CUSTOM_AMOUNTS' || (Math.round(liveUOwes + liveSOwes) === Math.round(totalNum) && totalNum > 0);
 
+  const toggleTag = (tagName: string) => {
+    const clean = tagName.replace(/^#/, '').trim();
+    if (!clean) return;
+    setTags(prev => prev.includes(clean) ? prev.filter(t => t !== clean) : [...prev, clean]);
+  };
+
+  const handleAddCustomTag = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const clean = customTagInput.replace(/^#/, '').trim();
+    if (clean && !tags.includes(clean)) {
+      setTags(prev => [...prev, clean]);
+      setCustomTagInput('');
+    }
+  };
+
+  const handleSelectPilgrimageDay = (dayItem: typeof PILGRIMAGE_DAYS[0]) => {
+    setExpenseDateTime(dayItem.date);
+    if (!venueLocation || QUICK_TOWNS.includes(venueLocation) || PILGRIMAGE_DAYS.some(d => d.town === venueLocation)) {
+      setVenueLocation(dayItem.town);
+    }
+    const cleanTag = dayItem.town.replace(' Village', '');
+    if (!tags.includes(cleanTag)) {
+      setTags(prev => [...prev, cleanTag]);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -255,8 +373,8 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
     setExpenseDateTime(formatDateForInput(current));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent, addAnother: boolean = false) => {
+    if (e) e.preventDefault();
     if (!title.trim() || !amount || isNaN(Number(amount)) || Number(amount) <= 0) return;
     if (!isPaidBalanced || !isSplitBalanced) return;
 
@@ -298,6 +416,10 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         amountINR: Math.round(totalNum),
         paidBy: computedPaidBy,
         category,
+        paymentMethod,
+        tags: tags.filter(t => t.trim().length > 0),
+        venueName: venueName.trim() || undefined,
+        venueLocation: venueLocation.trim() || undefined,
         receiptUrl: finalReceiptUrl,
         paymentSplits: payerMode === 'BOTH' ? {
           utkarshPaidINR: Math.round(liveUPaid),
@@ -318,7 +440,18 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
       });
 
       handleRemoveReceipt();
-      onClose();
+
+      if (addAnother) {
+        const savedTitle = title.trim();
+        const savedAmt = Math.round(totalNum);
+        setTitle('');
+        setAmount('');
+        setVenueName('');
+        setCustomTagInput('');
+        setBatchSuccessMsg(`Saved ₹${savedAmt.toLocaleString('en-IN')} ("${savedTitle}")! Ready for next receipt...`);
+      } else {
+        onClose();
+      }
     } catch (err) {
       console.error('Failed to save expense', err);
     } finally {
@@ -367,7 +500,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                 <p className="text-[11px] text-slate-400 font-mono">
                   {editingExpense 
                     ? `Modifying #${editingExpense.id.slice(-6)} • Update amount, split, or date` 
-                    : 'Shared 50/50 between Son Coordinators'}
+                    : 'Fast Post-Trip Entry • Tagging • Venue Details • Color Ledger'}
                 </p>
               </div>
             </div>
@@ -381,7 +514,24 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Batch Success Banner when logging multiple receipts */}
+        {batchSuccessMsg && (
+          <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center justify-between animate-in fade-in">
+            <div className="flex items-center gap-2 truncate">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="truncate">{batchSuccessMsg}</span>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => setBatchSuccessMsg(null)}
+              className="text-slate-400 hover:text-white ml-2 text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        <form onSubmit={e => handleSubmit(e, false)} className="space-y-4">
           {/* Amount Input with Quick Preset Chips */}
           <div className="space-y-2">
             <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
@@ -451,7 +601,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             </div>
           </div>
 
-          {/* 📅 Date & Time Picker Section */}
+          {/* 📅 Date & Time Picker Section + Post-Trip Pilgrimage Day Fast Selectors */}
           <div className="space-y-2 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -465,7 +615,27 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
               )}
             </div>
 
-            <div className="relative">
+            {/* Pilgrimage Day Fast Presets */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-semibold text-slate-400 block">
+                ⚡ Fast Pilgrimage Day Presets (Auto-fills date, town & tag):
+              </span>
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                {PILGRIMAGE_DAYS.map(dayItem => (
+                  <button
+                    key={dayItem.day}
+                    type="button"
+                    onClick={() => handleSelectPilgrimageDay(dayItem)}
+                    className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-amber-400/80 text-[10px] font-bold text-slate-300 hover:text-amber-300 transition-all shrink-0 tap-active"
+                  >
+                    <span>{dayItem.label}</span>
+                    <span className="text-slate-500 font-normal ml-1">({dayItem.town})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative pt-1">
               <input
                 type="datetime-local"
                 required
@@ -516,6 +686,167 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             </div>
           </div>
 
+          {/* 📍 Venue & Location Details (Optional for Hotel, Restaurant, Shop) */}
+          <div className="space-y-2 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-rose-400" />
+              <span>Venue & Location (Optional)</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={venueName}
+                  onChange={e => setVenueName(e.target.value)}
+                  placeholder="Venue / Hotel / Dhaba Name"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-400"
+                />
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={venueLocation}
+                  onChange={e => setVenueLocation(e.target.value)}
+                  placeholder="Town / Location (e.g. Badrinath)"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-400"
+                />
+              </div>
+            </div>
+
+            {/* Quick Town Chips for 1-Tap Location setting */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+              <span className="text-[9px] uppercase font-bold text-slate-500 shrink-0">Towns:</span>
+              {QUICK_TOWNS.map(town => (
+                <button
+                  key={town}
+                  type="button"
+                  onClick={() => {
+                    setVenueLocation(town);
+                    if (!tags.includes(town)) {
+                      setTags(prev => [...prev, town]);
+                    }
+                  }}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-all shrink-0 tap-active ${
+                    venueLocation === town
+                      ? 'bg-rose-500/20 border-rose-500 text-rose-300'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {town}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 💳 Payment Method Selector */}
+          <div className="space-y-1.5 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <CreditCard className="w-3.5 h-3.5 text-sky-400" />
+              <span>Payment Method</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {PAYMENT_METHODS.map(method => (
+                <button
+                  key={method.id}
+                  type="button"
+                  onClick={() => setPaymentMethod(method.id)}
+                  className={`px-2.5 py-2 rounded-xl text-xs font-bold border transition-all tap-active flex items-center gap-2 ${
+                    paymentMethod === method.id
+                      ? 'bg-sky-500/20 border-sky-400 text-sky-300 shadow'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <span className="text-sm">{method.icon}</span>
+                  <span className="truncate text-[11px]">{method.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 🏷️ Layered Tagging System */}
+          <div className="space-y-2 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <TagIcon className="w-3.5 h-3.5 text-amber-400" />
+                <span>Layered Tags & Filters</span>
+              </label>
+              <span className="text-[10px] font-mono text-slate-400">
+                {tags.length} selected
+              </span>
+            </div>
+
+            {/* Active Selected Tags */}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pb-1">
+                {tags.map(t => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold font-mono"
+                  >
+                    <span>#{t}</span>
+                    <button
+                      type="button"
+                      onClick={() => toggleTag(t)}
+                      className="hover:text-rose-400 ml-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Quick Suggested Tags */}
+            <div className="space-y-1">
+              <span className="text-[10px] text-slate-400 font-semibold block">
+                Quick Tags (Tap to toggle):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {SUGGESTED_TAGS.map(st => {
+                  const isSelected = tags.includes(st);
+                  return (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => toggleTag(st)}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-medium border transition-all tap-active ${
+                        isSelected
+                          ? 'bg-amber-500 text-slate-950 font-bold border-amber-400'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                      }`}
+                    >
+                      #{st}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom Tag Input */}
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="text"
+                value={customTagInput}
+                onChange={e => setCustomTagInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCustomTag();
+                  }
+                }}
+                placeholder="Type custom tag and press Enter..."
+                className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddCustomTag()}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 text-xs font-bold tap-active shrink-0"
+              >
+                + Add Tag
+              </button>
+            </div>
+          </div>
+
           {/* Who Paid Section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -531,68 +862,81 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setPayerMode('UTKARSH')}
-                className={`p-2.5 rounded-xl border text-center transition-all tap-active ${
+                onClick={() => {
+                  setPayerMode('UTKARSH');
+                  setUtkarshPaid('');
+                  setShreyasPaid('');
+                }}
+                className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1 transition-all tap-active ${
                   payerMode === 'UTKARSH'
-                    ? 'bg-temple-gold/20 border-amber-400 text-amber-300 font-extrabold shadow'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-sky-500/20 border-sky-400 text-sky-300 shadow-lg shadow-sky-950/30'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <div className="text-xs font-black">{DUO_A_SON.name}</div>
-                <div className="text-[10px] text-slate-400 font-mono">100% Full</div>
+                <div className="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-[10px]">
+                  U
+                </div>
+                <span>{DUO_A_SON.name}</span>
+                <span className="text-[9px] font-mono text-slate-500">100% Out of Pocket</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setPayerMode('SHREYAS')}
-                className={`p-2.5 rounded-xl border text-center transition-all tap-active ${
+                onClick={() => {
+                  setPayerMode('SHREYAS');
+                  setUtkarshPaid('');
+                  setShreyasPaid('');
+                }}
+                className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1 transition-all tap-active ${
                   payerMode === 'SHREYAS'
-                    ? 'bg-temple-gold/20 border-amber-400 text-amber-300 font-extrabold shadow'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-lg shadow-emerald-950/30'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <div className="text-xs font-black">{DUO_B_SON.name}</div>
-                <div className="text-[10px] text-slate-400 font-mono">100% Full</div>
+                <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px]">
+                  S
+                </div>
+                <span>{DUO_B_SON.name}</span>
+                <span className="text-[9px] font-mono text-slate-500">100% Out of Pocket</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   setPayerMode('BOTH');
-                  if (totalNum > 0 && !utkarshPaid && !shreyasPaid) {
+                  if (totalNum > 0) {
                     setUtkarshPaid(Math.round(totalNum / 2).toString());
                     setShreyasPaid((totalNum - Math.round(totalNum / 2)).toString());
                   }
                 }}
-                className={`p-2.5 rounded-xl border text-center transition-all tap-active ${
+                className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1 transition-all tap-active ${
                   payerMode === 'BOTH'
-                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-extrabold shadow'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-lg shadow-amber-950/30'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <div className="text-xs font-black">Both Paid</div>
-                <div className="text-[10px] text-slate-400 font-mono">Custom Cash</div>
+                <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-[10px]">
+                  U+S
+                </div>
+                <span>Both Paid</span>
+                <span className="text-[9px] font-mono text-slate-500">Custom Payer Split</span>
               </button>
             </div>
 
-            {/* Multi-Payer Breakdown Inputs */}
+            {/* Custom Multi-Payer Breakdown if BOTH chosen */}
             {payerMode === 'BOTH' && (
-              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 animate-in fade-in">
-                <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
-                  <span>Enter cash paid by each brother:</span>
-                  {!isPaidBalanced && (
-                    <span className="text-rose-400 font-mono">
-                      Sum ₹{liveUPaid + liveSPaid} ≠ Total ₹{totalNum}
-                    </span>
-                  )}
+              <div className="p-3 rounded-2xl bg-slate-950/90 border border-amber-500/30 space-y-2.5 animate-in fade-in">
+                <div className="flex items-center justify-between text-[11px] font-bold text-amber-300">
+                  <span>Enter amounts contributed by each:</span>
+                  <span className="font-mono">Total: ₹{totalNum}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    <label className="text-[10px] text-slate-400 font-bold block mb-1">
                       {DUO_A_SON.name} Paid
                     </label>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-amber-400">₹</span>
                       <input
                         type="number"
                         min="0"
@@ -600,137 +944,136 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                         onChange={e => {
                           const val = e.target.value;
                           setUtkarshPaid(val);
-                          if (totalNum > 0 && val !== '') {
-                            setShreyasPaid(Math.max(0, totalNum - Number(val)).toString());
+                          const num = Number(val) || 0;
+                          if (totalNum > 0) {
+                            setShreyasPaid(Math.max(0, totalNum - num).toString());
                           }
                         }}
+                        className="w-full pl-6 pr-2 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400"
                         placeholder="0"
-                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 shadow-inner"
                       />
                     </div>
                   </div>
-
                   <div>
-                    <label className="text-[10px] font-mono text-slate-400 block mb-1">
+                    <label className="text-[10px] text-slate-400 font-bold block mb-1">
                       {DUO_B_SON.name} Paid
                     </label>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-amber-400">₹</span>
                       <input
                         type="number"
                         min="0"
                         value={shreyasPaid}
-                        onChange={e => setShreyasPaid(e.target.value)}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setShreyasPaid(val);
+                          const num = Number(val) || 0;
+                          if (totalNum > 0) {
+                            setUtkarshPaid(Math.max(0, totalNum - num).toString());
+                          }
+                        }}
+                        className="w-full pl-6 pr-2 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400"
                         placeholder="0"
-                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 shadow-inner"
                       />
                     </div>
                   </div>
                 </div>
+
+                {!isPaidBalanced && totalNum > 0 && (
+                  <p className="text-[10px] font-mono text-rose-400 flex items-center gap-1">
+                    <span>⚠️ Payer sum (₹{liveUPaid + liveSPaid}) does not equal total amount (₹{totalNum})</span>
+                  </p>
+                )}
               </div>
             )}
           </div>
 
-          {/* How is this Expense Shared? */}
+          {/* Split Mode Section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Scale className="w-3.5 h-3.5 text-temple-gold" />
-                <span>How is this Split?</span>
+                <Scale className="w-3.5 h-3.5 text-amber-400" />
+                <span>How is this bill split?</span>
               </label>
               <span className="text-[10px] font-mono text-slate-400">
                 Responsibility
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <button
                 type="button"
                 onClick={() => setSplitMode('EQUAL_50_50')}
-                className={`p-2.5 rounded-xl border text-center transition-all tap-active ${
+                className={`p-2.5 rounded-xl border text-[11px] font-bold transition-all tap-active flex flex-col items-center gap-1 ${
                   splitMode === 'EQUAL_50_50'
-                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-extrabold shadow'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <div className="text-xs font-black">50 / 50 Equal Split</div>
-                <div className="text-[10px] font-mono text-slate-400">Standard Pool Rule</div>
+                <span>50 / 50</span>
+                <span className="text-[9px] font-mono text-slate-500">Shared Trip</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSplitMode('FULL_FAMILY_A')}
+                className={`p-2.5 rounded-xl border text-[11px] font-bold transition-all tap-active flex flex-col items-center gap-1 ${
+                  splitMode === 'FULL_FAMILY_A'
+                    ? 'bg-sky-500/20 border-sky-400 text-sky-300'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <span>100% Fam A</span>
+                <span className="text-[9px] font-mono text-slate-500">{DUO_A_SON.name}'s Family</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSplitMode('FULL_FAMILY_B')}
+                className={`p-2.5 rounded-xl border text-[11px] font-bold transition-all tap-active flex flex-col items-center gap-1 ${
+                  splitMode === 'FULL_FAMILY_B'
+                    ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <span>100% Fam B</span>
+                <span className="text-[9px] font-mono text-slate-500">{DUO_B_SON.name}'s Family</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   setSplitMode('CUSTOM_AMOUNTS');
-                  if (totalNum > 0 && !utkarshOwes && !shreyasOwes) {
+                  if (totalNum > 0) {
                     setUtkarshOwes(Math.round(totalNum / 2).toString());
                     setShreyasOwes((totalNum - Math.round(totalNum / 2)).toString());
                   }
                 }}
-                className={`p-2.5 rounded-xl border text-center transition-all tap-active ${
+                className={`p-2.5 rounded-xl border text-[11px] font-bold transition-all tap-active flex flex-col items-center gap-1 ${
                   splitMode === 'CUSTOM_AMOUNTS'
-                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 font-extrabold shadow'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-indigo-500/20 border-indigo-400 text-indigo-300'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <div className="text-xs font-black">Custom Share</div>
-                <div className="text-[10px] font-mono text-slate-400">Different Amounts</div>
+                <span>Custom</span>
+                <span className="text-[9px] font-mono text-slate-500">Unequal Split</span>
               </button>
             </div>
 
-            {/* Single Family Full-Payer Buttons */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setSplitMode('FULL_FAMILY_A')}
-                className={`p-2 rounded-xl border text-center transition-all tap-active ${
-                  splitMode === 'FULL_FAMILY_A'
-                    ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300 font-bold'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <div className="text-[11px] font-bold">🅰️ 100% Fam A</div>
-                <div className="text-[9px] font-mono text-slate-400">Utkarsh & Papa</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setSplitMode('FULL_FAMILY_B')}
-                className={`p-2 rounded-xl border text-center transition-all tap-active ${
-                  splitMode === 'FULL_FAMILY_B'
-                    ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300 font-bold'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <div className="text-[11px] font-bold">🅱️ 100% Fam B</div>
-                <div className="text-[9px] font-mono text-slate-400">Shreyas & Sanjay</div>
-              </button>
-            </div>
-
-            {/* Custom Share Inputs */}
+            {/* Custom Split breakdown if CUSTOM_AMOUNTS chosen */}
             {splitMode === 'CUSTOM_AMOUNTS' && (
-              <div className="p-3 rounded-2xl bg-slate-950 border border-amber-600/40 space-y-2 animate-in fade-in">
-                <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
-                  <span>Who was responsible for what share?</span>
-                  {!isSplitBalanced && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const diff = totalNum - (Number(utkarshOwes) || 0);
-                        setShreyasOwes(Math.max(0, diff).toString());
-                      }}
-                      className="text-amber-400 underline font-mono tap-active"
-                    >
-                      Auto-balance
-                    </button>
-                  )}
+              <div className="p-3 rounded-2xl bg-slate-950/90 border border-indigo-500/30 space-y-2.5 animate-in fade-in">
+                <div className="flex items-center justify-between text-[11px] font-bold text-indigo-300">
+                  <span>Enter share owed by each family:</span>
+                  <span className="font-mono">Total: ₹{totalNum}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="text-[10px] font-mono text-slate-400 block mb-1">
-                      {DUO_A_SON.name} Share
+                    <label className="text-[10px] text-slate-400 font-bold block mb-1">
+                      {DUO_A_SON.name}'s Share
                     </label>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-indigo-400">₹</span>
                       <input
                         type="number"
                         min="0"
@@ -738,45 +1081,52 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                         onChange={e => {
                           const val = e.target.value;
                           setUtkarshOwes(val);
-                          if (totalNum > 0 && val !== '') {
-                            setShreyasOwes(Math.max(0, totalNum - Number(val)).toString());
+                          const num = Number(val) || 0;
+                          if (totalNum > 0) {
+                            setShreyasOwes(Math.max(0, totalNum - num).toString());
                           }
                         }}
+                        className="w-full pl-6 pr-2 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-indigo-400"
                         placeholder="0"
-                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 shadow-inner"
                       />
                     </div>
                   </div>
-
                   <div>
-                    <label className="text-[10px] font-mono text-slate-400 block mb-1">
-                      {DUO_B_SON.name} Share
+                    <label className="text-[10px] text-slate-400 font-bold block mb-1">
+                      {DUO_B_SON.name}'s Share
                     </label>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₹</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-indigo-400">₹</span>
                       <input
                         type="number"
                         min="0"
                         value={shreyasOwes}
-                        onChange={e => setShreyasOwes(e.target.value)}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setShreyasOwes(val);
+                          const num = Number(val) || 0;
+                          if (totalNum > 0) {
+                            setUtkarshOwes(Math.max(0, totalNum - num).toString());
+                          }
+                        }}
+                        className="w-full pl-6 pr-2 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-indigo-400"
                         placeholder="0"
-                        className="w-full pl-6 pr-2 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white focus:outline-none focus:border-amber-400 shadow-inner"
                       />
                     </div>
                   </div>
                 </div>
+
+                {!isSplitBalanced && totalNum > 0 && (
+                  <p className="text-[10px] font-mono text-rose-400 flex items-center gap-1">
+                    <span>⚠️ Owed sum (₹{liveUOwes + liveSOwes}) does not equal total amount (₹{totalNum})</span>
+                  </p>
+                )}
               </div>
             )}
 
-            {/* Live Settlement Result Banner */}
-            {totalNum > 0 && isPaidBalanced && isSplitBalanced && (
-              <div className={`p-2.5 rounded-2xl border flex items-center justify-between text-xs font-bold ${
-                liveNetUtkarsh === 0
-                  ? 'bg-slate-950/80 border-slate-800 text-slate-300'
-                  : liveNetUtkarsh > 0
-                    ? 'bg-amber-950/50 border-amber-500/40 text-amber-200'
-                    : 'bg-emerald-950/50 border-emerald-500/40 text-emerald-200'
-              }`}>
+            {/* Splitwise-Grade Impact Summary Preview */}
+            {totalNum > 0 && (
+              <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] font-mono text-slate-300 flex items-center justify-between">
                 <div className="flex items-center gap-1.5 truncate">
                   <ArrowRightLeft className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span className="truncate">
@@ -799,7 +1149,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
               Spending Category
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-4 gap-2">
               {CATEGORIES.map(cat => {
                 const Icon = cat.icon;
                 const isSelected = category === cat.id;
@@ -879,34 +1229,57 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             )}
           </div>
 
-          {/* Submit Button */}
+          {/* Submit Actions: Save & Add Next (Continuous Bulk Entry) vs Save & Finish */}
           <div className="pt-2">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`tap-active min-h-touch w-full py-3.5 rounded-2xl font-black text-sm shadow-xl border flex items-center justify-center gap-2 hover:brightness-110 transition-all ${
-                editingExpense
-                  ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 border-emerald-300/40 shadow-emerald-950/50'
-                  : 'bg-gradient-to-r from-temple-saffron via-amber-500 to-amber-600 text-slate-950 border-amber-300/40 shadow-amber-950/50'
-              }`}
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-                  <span>Saving to Dexie...</span>
-                </>
-              ) : editingExpense ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Save Changes</span>
-                </>
-              ) : (
-                <>
-                  <PlusCircle className="w-4 h-4" />
-                  <span>Save to Gullak Pool</span>
-                </>
-              )}
-            </button>
+            {editingExpense ? (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="tap-active min-h-touch w-full py-3.5 rounded-2xl font-black text-sm shadow-xl border flex items-center justify-center gap-2 hover:brightness-110 transition-all bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 border-emerald-300/40 shadow-emerald-950/50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                    <span>Saving Changes...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Save Changes</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={e => handleSubmit(e, true)}
+                  className="tap-active min-h-touch py-3.5 px-3 rounded-2xl font-black text-xs shadow-lg border flex items-center justify-center gap-2 transition-all bg-slate-800 hover:bg-slate-750 text-emerald-300 border-emerald-500/40 hover:border-emerald-400"
+                  title="Save this receipt and keep date/town ready for the next one"
+                >
+                  <PlusCircle className="w-4 h-4 text-emerald-400" />
+                  <span>Save & Add Next (+)</span>
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="tap-active min-h-touch py-3.5 px-3 rounded-2xl font-black text-xs shadow-xl border flex items-center justify-center gap-2 hover:brightness-110 transition-all bg-gradient-to-r from-temple-saffron via-amber-500 to-amber-600 text-slate-950 border-amber-300/40 shadow-amber-950/50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                      <span>Saving to Dexie...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Save to Gullak Pool</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </form>
       </div>
