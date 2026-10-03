@@ -28,7 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/80 px-2.5 sm:px-3.5 pt-safe pb-2 transition-all">
-      <div className="flex items-center justify-between gap-1.5 sm:gap-2 max-w-md mx-auto h-12">
+      <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full mx-auto h-12">
         {/* Left: Hamburger Menu & Brand Crest */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1 mr-1">
           {/* Hamburger Drawer Button with Active User Badge */}

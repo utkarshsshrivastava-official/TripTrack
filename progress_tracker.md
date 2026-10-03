@@ -55,6 +55,7 @@
 | **Phase 40** | **Gullak Expense Tracker — Entry Editor & Custom Date-Time Support** | ✅ **DONE** | 100% | Completed |
 | **Phase 41** | **Gullak Layered Tagging, Categories, Venue & Post-Trip Batch Ledger** | ✅ **DONE** | 100% | Completed |
 | **Phase 42** | **Gullak Financial Export Hub, Rapid Grid Mode & Visual Analytics** | ✅ **DONE** | 100% | Completed |
+| **Phase 43** | **Laptop-Responsive Gullak Workspace & Split Dashboard Ergonomics** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -1199,6 +1200,30 @@
   - [x] Payment methods distribution (UPI digital vs Hard Cash vs Card).
 - [x] **42.5 Dual-Compilation & Build Verification**
   - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors (`built in 7.72s`).
+  - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+
+---
+
+### ✅ Phase 43: Laptop-Responsive Gullak Workspace & Split Dashboard Ergonomics (100% COMPLETE)
+
+- [x] **43.1 Dynamic App Frame Expansion (`App.tsx`, `Header.tsx`)**
+  - [x] Selectively unlocked wide screen viewport: App outer frame stays phone-first `max-w-md` for Itinerary, Vault, Tracking, and Voice, but smoothly expands to `max-w-7xl` on desktop/laptop displays ($\ge 1024\text{px}$) exclusively when `activeTab === 'gullak'`.
+  - [x] Header bar adapts fluidly to `w-full mx-auto` while preserving brand crest, profile indicator, and Duo filter buttons.
+  - [x] Floating frosted glass dock floats centered at the bottom of the screen like a native desktop dock without obstructing ledger entries.
+- [x] **43.2 Gullak 2-Column Split Dashboard Architecture (`GullakPreview.tsx`)**
+  - [x] **Left Sticky Sidebar (`lg:col-span-5 xl:col-span-4`)**: Pinned financial command center featuring Gullak Balance Hero, Top Action Utility Bar (Analytics Toggle & Export & Share), 50/50 Settlement Gauge, Family Color Legend, and inline Visual Spending Analytics.
+  - [x] **Right Main Workspace (`lg:col-span-7 xl:col-span-8`)**: Spacious desktop layout featuring Desktop-Exclusive Header with entry counter and primary "+ Log New Expense" button, Category Pills Strip, Layered Tag Filter Ribbon, Chronological view controls (`By Day`, `Stream`, `⚡ Rapid Grid`), and the Full-Width Transaction Ledger.
+  - [x] Responsive FAB: Mobile floating action button hidden on desktop (`lg:hidden`) to eliminate overlay clutter while preserving mobile phone ergonomics.
+- [x] **43.3 2-Column Desktop Modal for Batch Entry (`AddExpenseSheet.tsx`)**
+  - [x] Modal container morphs on desktop from a narrow mobile drawer (`max-w-lg`) into a wide dual-pane command modal (`max-w-4xl lg:p-6`).
+  - [x] Left Column: Amount input & preset chips, Description input & suggestions, Date-Time picker & Pilgrimage Day fast selectors, Venue & Location with Quick Town chips, and Spending Category grid.
+  - [x] Right Column: Payment Method selector, Layered Tagging system with quick chips, Who Paid from Pocket (with custom multi-payer split inputs), Split Mode selector (50/50, Fam A, Fam B, Custom with Splitwise math preview), and Receipt proof attachment.
+  - [x] Bottom Action Ribbon: Full-width sticky action buttons for "Save & Add Next (+)" and "Save to Gullak Pool" / "Save Changes".
+- [x] **43.4 Laptop Optimization for Rapid Grid & Export Hub (`RapidGridEditor.tsx`, `GullakExportModal.tsx`)**
+  - [x] Rapid Spreadsheet Grid expands to `lg:min-w-full` across the desktop workspace, offering comfortable inline editing with keyboard <kbd>Tab</kbd> and <kbd>Enter</kbd> navigation.
+  - [x] Export Hub modal enhanced with `lg:max-w-2xl` for comfortable preview on laptop screens.
+- [x] **43.5 Dual-Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors (`built in 7.19s`).
   - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
 
 ---

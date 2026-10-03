@@ -56,7 +56,7 @@ export const GullakExportModal: React.FC<GullakExportModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
       <div 
-        className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4"
+        className="w-full max-w-lg lg:max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-5 lg:p-6 space-y-4 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

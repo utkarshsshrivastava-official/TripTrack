@@ -430,276 +430,310 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto space-y-4 pb-28 pt-2 px-3 animate-in fade-in">
-      {/* 1. Gullak Top Hero Metrics Card */}
-      <GullakBalanceHero 
-        summary={summary}
-        onOpenAddModal={() => {
-          setEditingExpense(null);
-          setIsAddSheetOpen(true);
-        }}
-      />
+    <div className="w-full max-w-xl lg:max-w-7xl mx-auto space-y-4 pb-28 pt-2 px-1 sm:px-2 lg:px-4 animate-in fade-in">
+      <div className="lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start">
+        {/* Left Column: Fixed/Sticky Financial Summary, Settlement & Analytics */}
+        <div className="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-16 lg:max-h-[calc(100vh-5.5rem)] lg:overflow-y-auto no-scrollbar pb-2">
+          {/* 1. Gullak Top Hero Metrics Card */}
+          <GullakBalanceHero 
+            summary={summary}
+            onOpenAddModal={() => {
+              setEditingExpense(null);
+              setIsAddSheetOpen(true);
+            }}
+          />
 
-      {/* Top Action Utility Bar: Export Hub & Analytics Toggles */}
-      <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setShowAnalytics(prev => !prev)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all tap-active min-h-touch ${
-              showAnalytics
-                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-950/30'
-                : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>{showAnalytics ? 'Hide Analytics' : 'Analytics & Charts'}</span>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setIsExportModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-amber-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all tap-active min-h-touch"
-            title="Export to WhatsApp, PDF Statement or CSV"
-          >
-            <Share2 className="w-4 h-4 text-temple-gold" />
-            <span>Export & Share</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Visual Analytics Hub (Item 7) */}
-      {showAnalytics && (
-        <GullakAnalyticsView
-          expenses={expenses}
-          summary={summary}
-        />
-      )}
-
-      {/* 2. Splitwise-Grade Dynamic Debt Settlement Gauge */}
-      <SettlementGauge summary={summary} />
-
-      {/* 3. Color Legend for Both Families */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-[11px]">
-        <div className="flex items-center gap-3">
-          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Ledger Colors:</span>
-          <div className="flex items-center gap-1.5 font-bold text-sky-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-sky-400 ring-2 ring-sky-500/30" />
-            <span>{DUO_A_SON.name} (Fam A)</span>
-          </div>
-          <div className="flex items-center gap-1.5 font-bold text-emerald-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-500/30" />
-            <span>{DUO_B_SON.name} (Fam B)</span>
-          </div>
-          <div className="flex items-center gap-1.5 font-bold text-amber-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-500/30" />
-            <span>Both Split</span>
-          </div>
-        </div>
-        <div className="text-[10px] font-mono text-slate-500">
-          Left stripe shows payer
-        </div>
-      </div>
-
-      {/* 4. Filter Ribbon & Chronological Controls */}
-      <div className="space-y-2">
-        {/* Category Pills Strip */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
-          <button
-            type="button"
-            onClick={() => setSelectedCategory('ALL')}
-            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all tap-active ${
-              selectedCategory === 'ALL'
-                ? 'bg-temple-saffron text-slate-950 shadow-md font-black'
-                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-            }`}
-          >
-            All Items ({expenses.length})
-          </button>
-          {(['FOOD', 'TOLL_TAXI', 'HOTEL', 'SHOPPING', 'RITUAL', 'PORTER_DANDI', 'MEDICAL', 'MISC'] as ExpenseCategory[]).map(cat => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all tap-active flex items-center gap-1.5 ${
-                selectedCategory === cat
-                  ? 'bg-slate-200 text-slate-950 font-black shadow-md'
-                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-              }`}
-            >
-              {getCategoryIcon(cat)}
-              <span>{cat.replace('_', ' ')}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Layered Tag Filter Ribbon */}
-        {allUniqueTags.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
-            <span className="text-[10px] uppercase font-bold text-slate-500 shrink-0 flex items-center gap-1">
-              <TagIcon className="w-3 h-3 text-amber-400" />
-              <span>Tags:</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setSelectedTag(null)}
-              className={`px-2.5 py-1 rounded-xl font-mono text-[10px] font-bold shrink-0 transition-all tap-active border ${
-                selectedTag === null
-                  ? 'bg-amber-500 text-slate-950 border-amber-400 shadow'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-              }`}
-            >
-              All Tags
-            </button>
-            {allUniqueTags.map(tag => (
+          {/* Top Action Utility Bar: Export Hub & Analytics Toggles */}
+          <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
+            <div className="flex items-center gap-1.5">
               <button
-                key={tag}
                 type="button"
-                onClick={() => setSelectedTag(prev => prev === tag ? null : tag)}
-                className={`px-2.5 py-1 rounded-xl font-mono text-[10px] font-bold shrink-0 transition-all tap-active border ${
-                  selectedTag === tag
-                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow'
-                    : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-amber-300'
+                onClick={() => setShowAnalytics(prev => !prev)}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all tap-active min-h-touch ${
+                  showAnalytics
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-950/30'
+                    : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
                 }`}
               >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Chronological & Grouping Auto-Adjust Controls Bar with Rapid Grid Mode */}
-        <div className="flex items-center justify-between gap-2 px-1 pt-0.5 text-[11px] font-mono text-slate-400">
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setViewMode('grouped')}
-              className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all tap-active min-h-touch ${
-                viewMode === 'grouped'
-                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-bold'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-              title="Day-wise Grouping"
-            >
-              <Calendar className="w-3.5 h-3.5 text-temple-gold" />
-              <span>By Day</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setViewMode('stream')}
-              className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all tap-active min-h-touch ${
-                viewMode === 'stream'
-                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-bold'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-              title="Chronological Flat Stream"
-            >
-              <Clock className="w-3.5 h-3.5 text-amber-400" />
-              <span>Stream</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all tap-active min-h-touch ${
-                viewMode === 'grid'
-                  ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-              title="Rapid Spreadsheet Batch Entry"
-            >
-              <Table className="w-3.5 h-3.5 text-emerald-400" />
-              <span>⚡ Rapid Grid</span>
-            </button>
-
-            {viewMode !== 'grid' && (
-              <button
-                type="button"
-                onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-                className="px-2 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white flex items-center gap-1 transition-all tap-active min-h-touch"
-                title="Toggle Sort: Newest vs Oldest"
-              >
-                <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" />
-                <span>{sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1 font-bold text-slate-300 bg-slate-950/80 px-2.5 py-1 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-slate-500 uppercase">Total:</span>
-            <span className="text-amber-400 font-mono text-xs">
-              ₹{filteredTotalINR.toLocaleString('en-IN')}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. View Mode Rendering: Rapid Grid Mode (Item 4) vs Itemized Transaction Ledger */}
-      {viewMode === 'grid' ? (
-        <RapidGridEditor
-          expenses={sortedFilteredExpenses}
-          onSaveExpense={handleSaveExpense}
-          onDeleteExpense={handleDeleteExpense}
-        />
-      ) : (
-        <div className="space-y-3">
-          {sortedFilteredExpenses.length === 0 ? (
-            <div className="p-8 text-center rounded-3xl bg-slate-900/50 border border-slate-800 text-slate-400 space-y-2">
-              <p className="text-xs font-medium">No expenses logged under this filter.</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingExpense(null);
-                  setIsAddSheetOpen(true);
-                }}
-                className="text-xs text-temple-gold font-bold underline"
-              >
-                Log an expense now
+                <BarChart3 className="w-4 h-4" />
+                <span>{showAnalytics ? 'Hide Analytics' : 'Analytics & Charts'}</span>
               </button>
             </div>
-          ) : viewMode === 'grouped' ? (
-            groupedExpenses.map(group => (
-              <div key={group.dateKey} className="space-y-2">
-                {/* Day Section Header with Day Total Subtotal */}
-                <div className="flex items-center justify-between px-2 pt-2.5 pb-1 border-b border-slate-800/80">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-temple-gold">
-                      <Calendar className="w-3 h-3" />
-                    </div>
-                    <span className="text-xs font-black text-slate-200 uppercase tracking-wide">
-                      {group.displayDate}
-                    </span>
-                    <span className="text-[10px] font-mono text-slate-500">
-                      ({group.expenses.length} {group.expenses.length === 1 ? 'item' : 'items'})
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Day Total:</span>
-                    <span className="text-xs font-black font-mono text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/25">
-                      ₹{group.dayTotalINR.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </div>
 
-                {/* Transactions in this Day */}
-                <div className="space-y-2">
-                  {group.expenses.map(expense => renderExpenseCard(expense, false))}
-                </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-amber-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all tap-active min-h-touch"
+                title="Export to WhatsApp, PDF Statement or CSV"
+              >
+                <Share2 className="w-4 h-4 text-temple-gold" />
+                <span>Export & Share</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Visual Analytics Hub (Item 7) */}
+          {showAnalytics && (
+            <GullakAnalyticsView
+              expenses={expenses}
+              summary={summary}
+            />
+          )}
+
+          {/* 2. Splitwise-Grade Dynamic Debt Settlement Gauge */}
+          <SettlementGauge summary={summary} />
+
+          {/* 3. Color Legend for Both Families */}
+          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-[11px]">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Ledger Colors:</span>
+              <div className="flex items-center gap-1.5 font-bold text-sky-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-sky-400 ring-2 ring-sky-500/30" />
+                <span>{DUO_A_SON.name} (Fam A)</span>
               </div>
-            ))
+              <div className="flex items-center gap-1.5 font-bold text-emerald-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-500/30" />
+                <span>{DUO_B_SON.name} (Fam B)</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-500/30" />
+                <span>Both Split</span>
+              </div>
+            </div>
+            <div className="text-[10px] font-mono text-slate-500">
+              Left stripe shows payer
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Interactive Workspace (Ledger, Filters, Rapid Grid) */}
+        <div className="lg:col-span-7 xl:col-span-8 min-w-0 space-y-4 mt-4 lg:mt-0">
+          {/* Desktop-Exclusive Quick Action Header */}
+          <div className="hidden lg:flex items-center justify-between p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
+            <div>
+              <h2 className="text-sm font-black text-white flex items-center gap-2">
+                <span>Pilgrimage Expense Ledger</span>
+                <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                  {sortedFilteredExpenses.length} entries
+                </span>
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Track shared cash, bills, and settle 50/50 balances between Utkarsh & Shreyas
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setEditingExpense(null);
+                setIsAddSheetOpen(true);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-temple-saffron via-amber-500 to-amber-600 hover:brightness-110 text-slate-950 font-black text-xs shadow-lg shadow-amber-950/40 border border-amber-300/60 flex items-center gap-2 transition-all tap-active"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Log New Expense</span>
+            </button>
+          </div>
+
+          {/* 4. Filter Ribbon & Chronological Controls */}
+          <div className="space-y-2">
+            {/* Category Pills Strip */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('ALL')}
+                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all tap-active ${
+                  selectedCategory === 'ALL'
+                    ? 'bg-temple-saffron text-slate-950 shadow-md font-black'
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                All Items ({expenses.length})
+              </button>
+              {(['FOOD', 'TOLL_TAXI', 'HOTEL', 'SHOPPING', 'RITUAL', 'PORTER_DANDI', 'MEDICAL', 'MISC'] as ExpenseCategory[]).map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all tap-active flex items-center gap-1.5 ${
+                    selectedCategory === cat
+                      ? 'bg-slate-200 text-slate-950 font-black shadow-md'
+                      : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                  }`}
+                >
+                  {getCategoryIcon(cat)}
+                  <span>{cat.replace('_', ' ')}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Layered Tag Filter Ribbon */}
+            {allUniqueTags.length > 0 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                <span className="text-[10px] uppercase font-bold text-slate-500 shrink-0 flex items-center gap-1">
+                  <TagIcon className="w-3 h-3 text-amber-400" />
+                  <span>Tags:</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTag(null)}
+                  className={`px-2.5 py-1 rounded-xl font-mono text-[10px] font-bold shrink-0 transition-all tap-active border ${
+                    selectedTag === null
+                      ? 'bg-amber-500 text-slate-950 border-amber-400 shadow'
+                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                  }`}
+                >
+                  All Tags
+                </button>
+                {allUniqueTags.map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setSelectedTag(prev => prev === tag ? null : tag)}
+                    className={`px-2.5 py-1 rounded-xl font-mono text-[10px] font-bold shrink-0 transition-all tap-active border ${
+                      selectedTag === tag
+                        ? 'bg-amber-500 text-slate-950 border-amber-400 shadow'
+                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-amber-300'
+                    }`}
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Chronological & Grouping Auto-Adjust Controls Bar with Rapid Grid Mode */}
+            <div className="flex items-center justify-between gap-2 px-1 pt-0.5 text-[11px] font-mono text-slate-400">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grouped')}
+                  className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all tap-active min-h-touch ${
+                    viewMode === 'grouped'
+                      ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-bold'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                  title="Day-wise Grouping"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-temple-gold" />
+                  <span>By Day</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewMode('stream')}
+                  className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all tap-active min-h-touch ${
+                    viewMode === 'stream'
+                      ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-bold'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                  title="Chronological Flat Stream"
+                >
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Stream</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all tap-active min-h-touch ${
+                    viewMode === 'grid'
+                      ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 font-bold'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                  title="Rapid Spreadsheet Batch Entry"
+                >
+                  <Table className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>⚡ Rapid Grid</span>
+                </button>
+
+                {viewMode !== 'grid' && (
+                  <button
+                    type="button"
+                    onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                    className="px-2 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white flex items-center gap-1 transition-all tap-active min-h-touch"
+                    title="Toggle Sort: Newest vs Oldest"
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1 font-bold text-slate-300 bg-slate-950/80 px-2.5 py-1 rounded-xl border border-slate-800">
+                <span className="text-[10px] text-slate-500 uppercase">Total:</span>
+                <span className="text-amber-400 font-mono text-xs">
+                  ₹{filteredTotalINR.toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 5. View Mode Rendering: Rapid Grid Mode vs Itemized Transaction Ledger */}
+          {viewMode === 'grid' ? (
+            <RapidGridEditor
+              expenses={sortedFilteredExpenses}
+              onSaveExpense={handleSaveExpense}
+              onDeleteExpense={handleDeleteExpense}
+            />
           ) : (
-            <div className="space-y-2">
-              {sortedFilteredExpenses.map(expense => renderExpenseCard(expense, true))}
+            <div className="space-y-3">
+              {sortedFilteredExpenses.length === 0 ? (
+                <div className="p-8 text-center rounded-3xl bg-slate-900/50 border border-slate-800 text-slate-400 space-y-2">
+                  <p className="text-xs font-medium">No expenses logged under this filter.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingExpense(null);
+                      setIsAddSheetOpen(true);
+                    }}
+                    className="text-xs text-temple-gold font-bold underline"
+                  >
+                    Log an expense now
+                  </button>
+                </div>
+              ) : viewMode === 'grouped' ? (
+                groupedExpenses.map(group => (
+                  <div key={group.dateKey} className="space-y-2">
+                    {/* Day Section Header with Day Total Subtotal */}
+                    <div className="flex items-center justify-between px-2 pt-2.5 pb-1 border-b border-slate-800/80">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-temple-gold">
+                          <Calendar className="w-3 h-3" />
+                        </div>
+                        <span className="text-xs font-black text-slate-200 uppercase tracking-wide">
+                          {group.displayDate}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-500">
+                          ({group.expenses.length} {group.expenses.length === 1 ? 'item' : 'items'})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] uppercase font-bold text-slate-400">Day Total:</span>
+                        <span className="text-xs font-black font-mono text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/25">
+                          ₹{group.dayTotalINR.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Transactions in this Day */}
+                    <div className="space-y-2">
+                      {group.expenses.map(expense => renderExpenseCard(expense, false))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="space-y-2">
+                  {sortedFilteredExpenses.map(expense => renderExpenseCard(expense, true))}
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
 
-      {/* 6. Floating Action Button (FAB) for Adding Expenses */}
-      <div className="fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.5rem)] right-4 sm:right-auto sm:left-1/2 sm:translate-x-32 z-30 pointer-events-auto">
+      {/* 6. Floating Action Button (FAB) for Adding Expenses (Mobile Only) */}
+      <div className="lg:hidden fixed bottom-[calc(max(0.75rem,env(safe-area-inset-bottom,0px))+4.5rem)] right-4 sm:right-auto sm:left-1/2 sm:translate-x-32 z-30 pointer-events-auto">
         <button
           type="button"
           onClick={() => {

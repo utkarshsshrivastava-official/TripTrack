@@ -186,7 +186,7 @@ export const RapidGridEditor: React.FC<RapidGridEditorProps> = ({
 
       {/* Spreadsheet Table Container */}
       <div className="rounded-2xl border border-slate-800 bg-slate-950 overflow-x-auto shadow-xl">
-        <table className="w-full text-left border-collapse min-w-[760px] text-xs">
+        <table className="w-full text-left border-collapse min-w-[760px] lg:min-w-full text-xs">
           <thead>
             <tr className="bg-slate-900/90 border-b border-slate-800 text-[10px] uppercase font-bold text-slate-400">
               <th className="p-2.5 pl-3 w-8">#</th>

@@ -180,8 +180,8 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 flex justify-center">
-      {/* Mobile-First Frame: 100% on phones, max-w-md centered on desktop */}
-      <div className="w-full max-w-md min-h-screen flex flex-col bg-slate-950 text-slate-100 shadow-2xl relative border-x border-slate-800/40">
+      {/* Mobile-First Frame: 100% on phones, max-w-md centered on desktop, expanding to max-w-7xl for Gullak on laptops */}
+      <div className={`w-full ${activeTab === 'gullak' ? 'max-w-md lg:max-w-7xl' : 'max-w-md'} min-h-screen flex flex-col bg-slate-950 text-slate-100 shadow-2xl relative border-x border-slate-800/40 transition-all duration-300`}>
         {/* Sticky Mobile Single-Tier App Bar */}
         <Header
           onOpenSidebar={() => setIsSidebarOpen(true)}
@@ -256,7 +256,7 @@ export const App: React.FC = () => {
         />
 
         {/* Main Scrollable View Area with safe dock bottom padding */}
-        <main className={`flex-1 ${activeTab === 'tracking' ? 'p-0 overflow-hidden relative flex flex-col' : 'px-3 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] overflow-y-auto'}`}>
+        <main className={`flex-1 ${activeTab === 'tracking' ? 'p-0 overflow-hidden relative flex flex-col' : activeTab === 'gullak' ? 'px-2 sm:px-4 lg:px-6 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] overflow-y-auto' : 'px-3 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] overflow-y-auto'}`}>
           {activeTab === 'itinerary' && (
             <ItineraryPreview
               activeDuo={activeDuo}

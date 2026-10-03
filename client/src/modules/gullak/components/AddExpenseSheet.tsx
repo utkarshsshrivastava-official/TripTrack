@@ -471,7 +471,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
       <div 
-        className="w-full max-w-lg bg-slate-900 border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-6"
+        className="w-full max-w-lg lg:max-w-4xl bg-slate-900 border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 lg:p-6 space-y-4 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-6"
         onClick={e => e.stopPropagation()}
       >
         {/* Drawer Grab Bar & Header */}
@@ -525,7 +525,10 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         )}
 
         <form onSubmit={e => handleSubmit(e, false)} className="space-y-4">
-          {/* Amount Input with Quick Preset Chips */}
+          <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+            {/* Left Column: Basic Details (Amount, Title, Date/Time, Venue, Category) */}
+            <div className="space-y-4">
+              {/* Amount Input with Quick Preset Chips */}
           <div className="space-y-2">
             <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
               Expense Amount (₹ INR)
@@ -732,6 +735,37 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             </div>
           </div>
 
+          {/* Category Selector Grid */}
+          <div className="space-y-1.5 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
+            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+              Spending Category
+            </label>
+            <div className="grid grid-cols-4 sm:grid-cols-4 gap-2">
+              {CATEGORIES.map(cat => {
+                const Icon = cat.icon;
+                const isSelected = category === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategory(cat.id)}
+                    className={`p-2.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-all tap-active ${
+                      isSelected
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow'
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-[10px] text-center leading-tight">{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Transaction Logistics (Payment Method, Tags, Payer, Split, Receipt) */}
+        <div className="space-y-4">
           {/* 💳 Payment Method Selector */}
           <div className="space-y-1.5 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
             <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -1138,36 +1172,8 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             )}
           </div>
 
-          {/* Category Selector Grid */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-              Spending Category
-            </label>
-            <div className="grid grid-cols-4 sm:grid-cols-4 gap-2">
-              {CATEGORIES.map(cat => {
-                const Icon = cat.icon;
-                const isSelected = category === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setCategory(cat.id)}
-                    className={`p-2.5 rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1 border transition-all tap-active ${
-                      isSelected
-                        ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="text-[10px] text-center leading-tight">{cat.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Receipt Photo Attachment */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 p-3 rounded-2xl bg-slate-950/70 border border-slate-800/80">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                 <Receipt className="w-3.5 h-3.5 text-amber-400" />
@@ -1222,9 +1228,11 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
               </button>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Submit Actions: Save & Add Next (Continuous Bulk Entry) vs Save & Finish */}
-          <div className="pt-2">
+      {/* Submit Actions: Save & Add Next (Continuous Bulk Entry) vs Save & Finish */}
+      <div className="pt-2 border-t border-slate-800/80">
             {editingExpense ? (
               <button
                 type="submit"
