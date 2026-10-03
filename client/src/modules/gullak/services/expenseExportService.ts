@@ -4,9 +4,23 @@ import { DUO_A_SON, DUO_B_SON } from '../../../shared/config/travellers.config';
 
 export function generateWhatsAppSummary(expenses: Expense[], summary: GullakFinancialSummary): string {
   const net = summary.netSettlement;
-  const settlementText = net.isSettled
-    ? '✅ *All accounts are completely balanced (₹0 debt)!*'
-    : `⚖️ *Final Settlement Math:*\n👉 *${net.debtorName}* transfers *₹${net.amountINR.toLocaleString('en-IN')}* to *${net.creditorName}* to balance the 50/50 pool.`;
+  const pureNet = summary.pure5050NetSettlement;
+  const hasCustom = summary.hasCustomSplits;
+  const diff = Math.abs((pureNet?.amountINR || 0) - (net.amountINR || 0));
+
+  let settlementText = '';
+  if (net.isSettled) {
+    settlementText = '✅ *All accounts are completely balanced (₹0 debt)!*';
+  } else if (hasCustom) {
+    settlementText = `⚖️ *Final Settlement Options:*
+👉 *Splitwise Option (Personal Deducted):*
+   *${net.debtorName}* transfers *₹${net.amountINR.toLocaleString('en-IN')}* to *${net.creditorName}*
+👉 *Flat 50/50 Option (All In):*
+   *${pureNet?.debtorName}* transfers *₹${(pureNet?.amountINR || 0).toLocaleString('en-IN')}* to *${pureNet?.creditorName}*
+   _(Note: ₹${diff} diff reflects individual personal purchases)_`;
+  } else {
+    settlementText = `⚖️ *Final Settlement Math:*\n👉 *${net.debtorName}* transfers *₹${net.amountINR.toLocaleString('en-IN')}* to *${net.creditorName}* to balance the 50/50 pool.`;
+  }
 
   const catIcons: Record<ExpenseCategory, string> = {
     FOOD: '🍲 Food & Tea',
@@ -30,11 +44,11 @@ export function generateWhatsAppSummary(expenses: Expense[], summary: GullakFina
 ━━━━━━━━━━━━━━━━━━━━
 💰 *Total Trip Spend:* ₹${summary.totalSpentINR.toLocaleString('en-IN')}
 🧾 *Total Receipts Logged:* ${expenses.length} items
-
+${hasCustom ? `🤝 *Shared 50/50 Pool:* ₹${summary.sharedPoolTotalINR.toLocaleString('en-IN')} (₹${summary.sharedPoolPerPersonINR.toLocaleString('en-IN')} each)\n🛍️ *Personal / Custom Tagged:* ₹${(summary.personalA_INR + summary.personalB_INR + summary.customA_INR + summary.customB_INR).toLocaleString('en-IN')}\n` : ''}
 👥 *Out-of-Pocket Expenditure:*
-• 🔵 ${DUO_A_SON.name} (Family A): ₹${summary.paidByUtkarshINR.toLocaleString('en-IN')}
-• 🟢 ${DUO_B_SON.name} (Family B): ₹${summary.paidByShreyasINR.toLocaleString('en-IN')}
-• ⚖️ 50/50 Fair Target: ₹${summary.fairSharePerCoordinatorINR.toLocaleString('en-IN')} each
+• 🔵 ${DUO_A_SON.name} (Family A): Paid ₹${summary.paidByUtkarshINR.toLocaleString('en-IN')}${hasCustom ? ` (Owes ₹${summary.utkarshFairShareINR.toLocaleString('en-IN')})` : ''}
+• 🟢 ${DUO_B_SON.name} (Family B): Paid ₹${summary.paidByShreyasINR.toLocaleString('en-IN')}${hasCustom ? ` (Owes ₹${summary.shreyasFairShareINR.toLocaleString('en-IN')})` : ''}
+• ⚖️ 50/50 Target: ₹${summary.fairSharePerCoordinatorINR.toLocaleString('en-IN')} each
 
 ${settlementText}
 

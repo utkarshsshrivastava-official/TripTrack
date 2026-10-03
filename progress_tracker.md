@@ -56,6 +56,7 @@
 | **Phase 41** | **Gullak Layered Tagging, Categories, Venue & Post-Trip Batch Ledger** | ✅ **DONE** | 100% | Completed |
 | **Phase 42** | **Gullak Financial Export Hub, Rapid Grid Mode & Visual Analytics** | ✅ **DONE** | 100% | Completed |
 | **Phase 43** | **Laptop-Responsive Gullak Workspace & Split Dashboard Ergonomics** | ✅ **DONE** | 100% | Completed |
+| **Phase 44** | **Gullak Settlement Math Audit & Dual Parity Engine (Splitwise vs Flat 50/50)** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -1225,6 +1226,31 @@
 - [x] **43.5 Dual-Compilation & Build Verification**
   - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors (`built in 7.19s`).
   - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
+
+---
+
+### ✅ Phase 44: Gullak Settlement Math Audit & Dual Parity Engine (100% COMPLETE)
+
+- [x] **44.1 MongoDB Atlas Ledger Audit & Discrepancy Forensic Resolution**
+  - [x] Executed deep-database forensic query across all 90 trip expenses ($₹68,955$ total outlay).
+  - [x] Verified zero database corruption and 100% mathematical integrity across all payer contributions ($₹15,473$ Utkarsh, $₹53,482$ Shreyas).
+  - [x] Isolated exact origin of the $₹273$ UI variance: 20 non-shared items (70 shared 50/50 items = $₹65,090$; 8 Fam A personal items = $₹1,215$; 8 Fam B personal items = $₹1,310$; 4 custom split items = $₹1,340$). Shreyas logged $₹545$ more in personal items than Utkarsh ($₹2,205$ vs $₹1,660$). In Splitwise mode, Utkarsh does not pay half of Shreyas's personal purchases ($₹545 / 2 = ₹272.5 \approx ₹273$), yielding $₹18,732$ instead of $₹19,005$.
+- [x] **44.2 Dual Settlement Calculation Engine (`expenseStorage.ts`)**
+  - [x] Augmented `GullakFinancialSummary` to compute and expose both settlement philosophies:
+    - **Splitwise Adjusted**: $₹18,732$ (Deducts tagged personal goods and custom shares).
+    - **Flat 50/50 (All Inclusive)**: $₹19,005$ (Treats all $₹68,955$ as collective pilgrimage expenses).
+  - [x] Computed itemized obligations: Utkarsh total obligation $₹34,205$ ($₹32,545 + ₹1,660$), Shreyas total obligation $₹34,750$ ($₹32,545 + ₹2,205$).
+- [x] **44.3 1-Tap Dual-Mode Toggle & Interactive Math Audit Card (`SettlementGauge.tsx`)**
+  - [x] Added dual-pill switcher: `[Splitwise Adjusted: ₹18,732 (Personal Deducted)] | [Flat 50/50: ₹19,005 (All In)]`.
+  - [x] Added interactive collapsible `"Math Audit: Why is there a ₹273 difference?"` accordion card breaking down all 4 buckets clearly with transparent math.
+  - [x] Updated WhatsApp share message generator to dynamically reflect the selected mode.
+- [x] **44.4 Hero Clarification & Coordinator Obligations (`GullakBalanceHero.tsx`)**
+  - [x] Substituted confusing flat target with transparent subtitle when personal splits exist: `"Shared 50/50: ₹65,090 (₹32,545/ea) • Personal/Custom: ₹3,865"`.
+  - [x] Displayed individual coordinator fair share obligations ($₹34,205$ for Utkarsh, $₹34,750$ for Shreyas) in the coordinator tiles.
+- [x] **44.5 Statement & Export Parity (`PrintableSettlementReport.tsx`, `expenseExportService.ts`)**
+  - [x] Updated Printable PDF report and WhatsApp export to document both Splitwise Adjusted ($₹18,732$) and Flat 50/50 ($₹19,005$) options.
+- [x] **44.6 Compilation & Build Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors (`built in 8.26s`).
 
 ---
 

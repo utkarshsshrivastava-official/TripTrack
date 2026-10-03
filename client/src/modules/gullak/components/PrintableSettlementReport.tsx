@@ -24,6 +24,9 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
   });
 
   const net = summary.netSettlement;
+  const pureNet = summary.pure5050NetSettlement;
+  const hasCustom = summary.hasCustomSplits;
+  const diff = Math.abs((pureNet?.amountINR || 0) - (net.amountINR || 0));
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/90 backdrop-blur-md p-2 sm:p-6 print:p-0 print:bg-white print:static animate-in fade-in">
@@ -99,7 +102,9 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
             <span className="text-base font-black font-mono text-sky-950">
               ₹{summary.paidByUtkarshINR.toLocaleString('en-IN')}
             </span>
-            <span className="text-[10px] text-sky-700 block mt-0.5">Family A Out-of-Pocket</span>
+            <span className="text-[10px] text-sky-700 block mt-0.5">
+              {hasCustom ? `Obligation: ₹${summary.utkarshFairShareINR.toLocaleString('en-IN')}` : 'Family A Out-of-Pocket'}
+            </span>
           </div>
 
           <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
@@ -107,40 +112,70 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
             <span className="text-base font-black font-mono text-emerald-950">
               ₹{summary.paidByShreyasINR.toLocaleString('en-IN')}
             </span>
-            <span className="text-[10px] text-emerald-700 block mt-0.5">Family B Out-of-Pocket</span>
+            <span className="text-[10px] text-emerald-700 block mt-0.5">
+              {hasCustom ? `Obligation: ₹${summary.shreyasFairShareINR.toLocaleString('en-IN')}` : 'Family B Out-of-Pocket'}
+            </span>
           </div>
 
           <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
-            <span className="text-[10px] uppercase font-bold text-amber-800 block">50/50 Target</span>
-            <span className="text-base font-black font-mono text-amber-950">
-              ₹{summary.fairSharePerCoordinatorINR.toLocaleString('en-IN')}
+            <span className="text-[10px] uppercase font-bold text-amber-800 block">
+              {hasCustom ? 'Shared Pool' : '50/50 Target'}
             </span>
-            <span className="text-[10px] text-amber-700 block mt-0.5">Equal Share Each</span>
+            <span className="text-base font-black font-mono text-amber-950">
+              ₹{(hasCustom ? summary.sharedPoolTotalINR : summary.fairSharePerCoordinatorINR).toLocaleString('en-IN')}
+            </span>
+            <span className="text-[10px] text-amber-700 block mt-0.5">
+              {hasCustom ? `₹${summary.sharedPoolPerPersonINR.toLocaleString('en-IN')} each` : 'Equal Share Each'}
+            </span>
           </div>
         </div>
 
         {/* Final Settlement Math Box */}
-        <div className={`p-4 rounded-xl border mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+        <div className={`p-4 rounded-xl border mb-6 ${
           net.isSettled 
             ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
             : 'bg-amber-50 border-amber-300 text-amber-950'
         }`}>
           <div>
             <span className="text-[10px] uppercase font-black tracking-wider block">
-              {net.isSettled ? '✅ Account Status: Balanced' : '⚖️ Final Inter-Family Settlement'}
+              {net.isSettled ? '✅ Account Status: Balanced' : '⚖️ Final Inter-Family Settlement Reconciliation'}
             </span>
-            <p className="text-sm font-black mt-0.5">
-              {net.isSettled 
-                ? 'All shared trip expenses are fully balanced. Neither family owes any outstanding debt.' 
-                : `${net.debtorName} transfers ₹${net.amountINR.toLocaleString('en-IN')} to ${net.creditorName} to achieve 50/50 equality.`
-              }
-            </p>
+            {net.isSettled ? (
+              <p className="text-sm font-black mt-0.5">
+                All shared trip expenses are fully balanced. Neither family owes any outstanding debt.
+              </p>
+            ) : hasCustom ? (
+              <div className="mt-2 space-y-2 text-xs">
+                <div className="p-2.5 rounded-lg bg-white border border-amber-200 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-amber-900 block">Option 1: Splitwise Adjusted (Recommended)</span>
+                    <span className="text-slate-600 text-[11px]">Deducts individual personal purchases/gifts logged during trip</span>
+                  </div>
+                  <div className="text-right font-mono font-black text-amber-900 text-sm">
+                    {net.debtorName} owes {net.creditorName}: ₹{net.amountINR.toLocaleString('en-IN')}
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-white border border-slate-200 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold text-slate-800 block">Option 2: Flat 50/50 Parity</span>
+                    <span className="text-slate-600 text-[11px]">Treats all ₹{summary.totalSpentINR.toLocaleString('en-IN')} as shared pilgrimage spend</span>
+                  </div>
+                  <div className="text-right font-mono font-black text-slate-900 text-sm">
+                    {pureNet?.debtorName} owes {pureNet?.creditorName}: ₹{(pureNet?.amountINR || 0).toLocaleString('en-IN')}
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-slate-500 font-mono pt-1">
+                  * Note: The ₹{diff} variance is due to ₹{((summary.personalB_INR + summary.customB_INR) - (summary.personalA_INR + summary.customA_INR)).toLocaleString('en-IN')} difference in personal items logged.
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm font-black mt-0.5">
+                {net.debtorName} transfers ₹{net.amountINR.toLocaleString('en-IN')} to {net.creditorName} to achieve 50/50 equality.
+              </p>
+            )}
           </div>
-          {!net.isSettled && (
-            <div className="px-3 py-1.5 rounded-lg bg-amber-200/60 border border-amber-400 font-mono text-xs font-black shrink-0">
-              Due: ₹{net.amountINR.toLocaleString('en-IN')}
-            </div>
-          )}
         </div>
 
         {/* Category Breakdown Table */}

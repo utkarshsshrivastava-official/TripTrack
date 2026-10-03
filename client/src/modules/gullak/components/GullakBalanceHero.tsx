@@ -61,13 +61,21 @@ export const GullakBalanceHero: React.FC<GullakBalanceHeroProps> = ({ summary })
         <div className="text-4xl sm:text-5xl font-black font-mono text-white mt-1 tracking-tight drop-shadow-md">
           ₹{summary.totalSpentINR.toLocaleString('en-IN')}
         </div>
-        <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
-          <span>Equal Coordinator Fair Share:</span>
-          <strong>₹{summary.fairSharePerCoordinatorINR.toLocaleString('en-IN')}</strong>
-        </div>
+        {summary.hasCustomSplits ? (
+          <div className="inline-flex flex-wrap items-center justify-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-mono font-medium">
+            <span>Shared 50/50: <strong className="text-white font-bold">₹{summary.sharedPoolTotalINR.toLocaleString('en-IN')}</strong> (₹{summary.sharedPoolPerPersonINR.toLocaleString('en-IN')}/ea)</span>
+            <span className="text-amber-500/70">•</span>
+            <span>Personal/Custom: <strong className="text-white font-bold">₹{(summary.personalA_INR + summary.personalB_INR + summary.customA_INR + summary.customB_INR).toLocaleString('en-IN')}</strong></span>
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-1.5 mt-2 px-3 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-mono font-bold">
+            <span>Equal Coordinator Fair Share:</span>
+            <strong>₹{summary.fairSharePerCoordinatorINR.toLocaleString('en-IN')}</strong>
+          </div>
+        )}
       </div>
 
-      {/* 50/50 Individual Coordinator Contribution Tiles */}
+      {/* Individual Coordinator Contribution & Obligation Tiles */}
       <div className="grid grid-cols-2 gap-2.5 pt-1">
         {/* Utkarsh (Family A) */}
         <div className="p-3 rounded-2xl bg-slate-900/80 border border-sky-500/20 shadow-inner flex items-center gap-2.5">
@@ -82,8 +90,13 @@ export const GullakBalanceHero: React.FC<GullakBalanceHeroProps> = ({ summary })
               ₹{summary.paidByUtkarshINR.toLocaleString('en-IN')}
             </div>
             <div className="text-[9px] text-slate-400 font-mono">
-              {Math.round((summary.paidByUtkarshINR / total) * 100)}% of pool
+              Paid ({Math.round((summary.paidByUtkarshINR / total) * 100)}%)
             </div>
+            {summary.hasCustomSplits && (
+              <div className="text-[9px] text-sky-300 font-mono mt-0.5 border-t border-slate-800/80 pt-0.5">
+                Owes: ₹{summary.utkarshFairShareINR.toLocaleString('en-IN')}
+              </div>
+            )}
           </div>
         </div>
 
@@ -100,8 +113,13 @@ export const GullakBalanceHero: React.FC<GullakBalanceHeroProps> = ({ summary })
               ₹{summary.paidByShreyasINR.toLocaleString('en-IN')}
             </div>
             <div className="text-[9px] text-slate-400 font-mono">
-              {Math.round((summary.paidByShreyasINR / total) * 100)}% of pool
+              Paid ({Math.round((summary.paidByShreyasINR / total) * 100)}%)
             </div>
+            {summary.hasCustomSplits && (
+              <div className="text-[9px] text-emerald-300 font-mono mt-0.5 border-t border-slate-800/80 pt-0.5">
+                Owes: ₹{summary.shreyasFairShareINR.toLocaleString('en-IN')}
+              </div>
+            )}
           </div>
         </div>
       </div>

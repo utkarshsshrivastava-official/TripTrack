@@ -6,7 +6,11 @@ import {
   CheckCircle, 
   Copy, 
   Check, 
-  MessageSquare
+  MessageSquare,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
+  Info
 } from 'lucide-react';
 
 interface SettlementGaugeProps {
@@ -15,35 +19,69 @@ interface SettlementGaugeProps {
 
 export const SettlementGauge: React.FC<SettlementGaugeProps> = ({ summary }) => {
   const [copied, setCopied] = useState<boolean>(false);
-  const { netSettlement, totalSpentINR, paidByUtkarshINR, paidByShreyasINR, fairSharePerCoordinatorINR } = summary;
+  const [settlementMode, setSettlementMode] = useState<'SPLITWISE' | 'FLAT_50_50'>('SPLITWISE');
+  const [showMathAudit, setShowMathAudit] = useState<boolean>(false);
+
+  const { 
+    netSettlement, 
+    pure5050NetSettlement,
+    totalSpentINR, 
+    paidByUtkarshINR, 
+    paidByShreyasINR, 
+    fairSharePerCoordinatorINR,
+    utkarshFairShareINR,
+    shreyasFairShareINR,
+    sharedPoolTotalINR,
+    sharedPoolPerPersonINR,
+    personalA_INR,
+    personalB_INR,
+    customA_INR,
+    customB_INR,
+    hasCustomSplits
+  } = summary;
+
+  // Active settlement based on chosen mode
+  const activeSettlement = settlementMode === 'SPLITWISE' ? netSettlement : pure5050NetSettlement;
+  const differenceINR = Math.abs((pure5050NetSettlement?.amountINR || 0) - (netSettlement.amountINR || 0));
 
   // Calculate percentage tilt for the balance needle (50% is dead center / perfect equilibrium)
-  // Range: 10% (max Shreyas / Duo B) to 90% (max Utkarsh / Duo A)
   let needlePositionPercent = 50;
-  if (totalSpentINR > 0 && !netSettlement.isSettled) {
-    const netUtkarsh = netSettlement.creditorName === DUO_A_SON.name 
-      ? netSettlement.amountINR 
-      : -netSettlement.amountINR;
+  if (totalSpentINR > 0 && !activeSettlement.isSettled) {
+    const netUtkarsh = activeSettlement.creditorName === DUO_A_SON.name 
+      ? activeSettlement.amountINR 
+      : -activeSettlement.amountINR;
     const ratio = netUtkarsh / totalSpentINR; // -1 to +1
     needlePositionPercent = Math.min(90, Math.max(10, Math.round(50 + ratio * 40)));
   }
 
   const generateWhatsAppMessage = () => {
+    const isSplitwise = settlementMode === 'SPLITWISE';
     const lines = [
-      '🏔️ *TripTrack Badrinath 2026 — Yatra Gullak 50/50 Audit*',
+      '🏔️ *TripTrack Badrinath 2026 — Yatra Gullak Settlement Audit*',
       '━━━━━━━━━━━━━━━━━━━━',
       `💰 *Total Collective Outlay:* ₹${totalSpentINR.toLocaleString('en-IN')}`,
-      `⚖️ *Equal Fair Share:* ₹${fairSharePerCoordinatorINR.toLocaleString('en-IN')} each`,
+      isSplitwise && hasCustomSplits
+        ? `⚖️ *Shared 50/50 Pool:* ₹${sharedPoolTotalINR.toLocaleString('en-IN')} (₹${sharedPoolPerPersonINR.toLocaleString('en-IN')} each)\n🛍️ *Personal / Tagged Splits:* ₹${(personalA_INR + personalB_INR + customA_INR + customB_INR).toLocaleString('en-IN')}`
+        : `⚖️ *Flat 50/50 Target:* ₹${fairSharePerCoordinatorINR.toLocaleString('en-IN')} each`,
       '',
-      `👤 *${DUO_A_SON.name} (Family A):* Paid ₹${paidByUtkarshINR.toLocaleString('en-IN')}`,
-      `👤 *${DUO_B_SON.name} (Family B):* Paid ₹${paidByShreyasINR.toLocaleString('en-IN')}`,
+      `👤 *${DUO_A_SON.name} (Family A):*`,
+      `  • Paid Out-of-Pocket: ₹${paidByUtkarshINR.toLocaleString('en-IN')}`,
+      isSplitwise && hasCustomSplits ? `  • Fair Obligation: ₹${utkarshFairShareINR.toLocaleString('en-IN')}` : '',
+      `👤 *${DUO_B_SON.name} (Family B):*`,
+      `  • Paid Out-of-Pocket: ₹${paidByShreyasINR.toLocaleString('en-IN')}`,
+      isSplitwise && hasCustomSplits ? `  • Fair Obligation: ₹${shreyasFairShareINR.toLocaleString('en-IN')}` : '',
       '━━━━━━━━━━━━━━━━━━━━',
-      netSettlement.isSettled
+      activeSettlement.isSettled
         ? '✅ *All accounts are completely even! (₹0 balance)*'
-        : `📌 *Net Settlement:* 👉 *${netSettlement.debtorName}* owes *${netSettlement.creditorName} ₹${netSettlement.amountINR.toLocaleString('en-IN')}*`,
+        : `📌 *Net Settlement (${isSplitwise ? 'Personal Deducted' : 'Flat 50/50'}):*\n👉 *${activeSettlement.debtorName}* owes *${activeSettlement.creditorName} ₹${activeSettlement.amountINR.toLocaleString('en-IN')}*`,
+      hasCustomSplits && !isSplitwise
+        ? `_(Flat 50/50 assumes all individual gifts/souvenirs are shared collectively)_`
+        : hasCustomSplits
+        ? `_(Excludes ₹${differenceINR} net difference from individual personal purchases)_`
+        : '',
       '',
       '🙏 Jai Badri Vishal! • Tracked offline via TripTrack PWA'
-    ];
+    ].filter(Boolean);
     return encodeURIComponent(lines.join('\n'));
   };
 
@@ -66,13 +104,48 @@ export const SettlementGauge: React.FC<SettlementGaugeProps> = ({ summary }) => 
         <div className="flex items-center gap-2">
           <ArrowRightLeft className="w-4 h-4 text-amber-400" />
           <h3 className="text-xs font-black uppercase tracking-wider text-white">
-            50/50 Bilateral Settlement Gauge
+            Bilateral Settlement Gauge
           </h3>
         </div>
         <span className="text-[10px] font-mono text-slate-400">
           Son Coordinators Only
         </span>
       </div>
+
+      {/* Dual Mode Switcher (if personal/custom splits exist) */}
+      {hasCustomSplits && (
+        <div className="p-1 rounded-2xl bg-slate-950 border border-slate-800 flex gap-1">
+          <button
+            type="button"
+            onClick={() => setSettlementMode('SPLITWISE')}
+            className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${
+              settlementMode === 'SPLITWISE'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <span>Splitwise Adjusted</span>
+            <span className={`text-[9px] font-mono ${settlementMode === 'SPLITWISE' ? 'text-amber-950 font-bold' : 'text-slate-500'}`}>
+              Personal Deducted: ₹{netSettlement.amountINR.toLocaleString('en-IN')}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSettlementMode('FLAT_50_50')}
+            className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-0.5 ${
+              settlementMode === 'FLAT_50_50'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <span>Flat 50/50 (All In)</span>
+            <span className={`text-[9px] font-mono ${settlementMode === 'FLAT_50_50' ? 'text-amber-950 font-bold' : 'text-slate-500'}`}>
+              Pure Equal Split: ₹{(pure5050NetSettlement?.amountINR || 0).toLocaleString('en-IN')}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Visual Balance Scale / Tug-of-War Track */}
       <div className="space-y-1.5 py-1">
@@ -117,7 +190,7 @@ export const SettlementGauge: React.FC<SettlementGaugeProps> = ({ summary }) => 
       {/* Settlement Verdict Card */}
       <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/40 via-alpine-900 to-slate-950 border border-amber-800/50 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          {netSettlement.isSettled ? (
+          {activeSettlement.isSettled ? (
             <>
               <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
               <div>
@@ -136,25 +209,91 @@ export const SettlementGauge: React.FC<SettlementGaugeProps> = ({ summary }) => 
               </div>
               <div>
                 <span className="text-xs text-slate-200 block">
-                  <strong className="text-amber-300 font-extrabold">{netSettlement.debtorName}</strong> owes{' '}
-                  <strong className="text-white font-extrabold">{netSettlement.creditorName}</strong>
+                  <strong className="text-amber-300 font-extrabold">{activeSettlement.debtorName}</strong> owes{' '}
+                  <strong className="text-white font-extrabold">{activeSettlement.creditorName}</strong>
                 </span>
                 <span className="text-[10px] font-mono text-slate-400">
-                  To achieve exact 50/50 parity
+                  {settlementMode === 'SPLITWISE'
+                    ? 'Splitwise Parity (Personal Tagged Items Deducted)'
+                    : 'Flat 50/50 Parity (All ₹68,955 Shared)'}
                 </span>
               </div>
             </>
           )}
         </div>
 
-        {!netSettlement.isSettled && (
+        {!activeSettlement.isSettled && (
           <div className="text-right">
             <span className="text-base font-black font-mono text-amber-300 bg-amber-950/80 px-2.5 py-1 rounded-xl border border-amber-500/50 shadow-inner inline-block">
-              ₹{netSettlement.amountINR.toLocaleString('en-IN')}
+              ₹{activeSettlement.amountINR.toLocaleString('en-IN')}
             </span>
           </div>
         )}
       </div>
+
+      {/* Expandable Math Audit Breakdown Card */}
+      {hasCustomSplits && (
+        <div className="rounded-2xl bg-slate-950/80 border border-slate-800 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowMathAudit(!showMathAudit)}
+            className="w-full p-2.5 flex items-center justify-between text-left hover:bg-slate-900/60 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-[11px] font-bold text-slate-300">
+                Math Audit: Why is there a ₹{differenceINR} difference?
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
+              <span>{showMathAudit ? 'Hide Math' : 'Show Math'}</span>
+              {showMathAudit ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </div>
+          </button>
+
+          {showMathAudit && (
+            <div className="p-3 border-t border-slate-800/80 space-y-2.5 text-[10px] font-mono text-slate-300 bg-slate-900/40">
+              <div className="flex items-start gap-1.5 text-slate-400">
+                <Info className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
+                <span>
+                  The ₹{differenceINR} difference comes from <strong className="text-white font-bold">20 personal purchases</strong> logged during the trip that were not meant to be split 50/50:
+                </span>
+              </div>
+
+              {/* Four Buckets Breakdown */}
+              <div className="grid grid-cols-1 gap-1.5 p-2 rounded-xl bg-slate-950 border border-slate-800">
+                <div className="flex justify-between items-center text-slate-300">
+                  <span>1. Shared 50/50 Items (70 items):</span>
+                  <span className="text-white font-bold">₹{sharedPoolTotalINR.toLocaleString('en-IN')} (₹{sharedPoolPerPersonINR.toLocaleString('en-IN')} each)</span>
+                </div>
+                <div className="flex justify-between items-center text-sky-400">
+                  <span>2. Utkarsh Personal (Fam A + Custom):</span>
+                  <span className="font-bold">₹{(personalA_INR + customA_INR).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center text-emerald-400">
+                  <span>3. Shreyas Personal (Fam B + Custom):</span>
+                  <span className="font-bold">₹{(personalB_INR + customB_INR).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              {/* Net Comparison Summary */}
+              <div className="space-y-1 pt-1 border-t border-slate-800/80">
+                <div className="flex justify-between text-slate-400">
+                  <span>• Utkarsh Total Obligation:</span>
+                  <span className="text-sky-300">₹{sharedPoolPerPersonINR.toLocaleString('en-IN')} + ₹{(personalA_INR + customA_INR).toLocaleString('en-IN')} = <strong>₹{utkarshFairShareINR.toLocaleString('en-IN')}</strong> (Paid ₹{paidByUtkarshINR.toLocaleString('en-IN')} → Owes <strong>₹{netSettlement.amountINR.toLocaleString('en-IN')}</strong>)</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>• Shreyas Total Obligation:</span>
+                  <span className="text-emerald-300">₹{sharedPoolPerPersonINR.toLocaleString('en-IN')} + ₹{(personalB_INR + customB_INR).toLocaleString('en-IN')} = <strong>₹{shreyasFairShareINR.toLocaleString('en-IN')}</strong> (Paid ₹{paidByShreyasINR.toLocaleString('en-IN')} → Receives <strong>₹{netSettlement.amountINR.toLocaleString('en-IN')}</strong>)</span>
+                </div>
+                <p className="text-[9px] text-amber-300/90 pt-1 leading-relaxed">
+                  💡 Shreyas bought ₹{((personalB_INR + customB_INR) - (personalA_INR + customA_INR)).toLocaleString('en-IN')} more in personal items than Utkarsh. In <strong>Splitwise mode</strong>, Utkarsh does NOT pay half of Shreyas's personal purchases (saving Utkarsh ₹{differenceINR}). If you both agree to treat all gifts/tea as shared 50/50, tap <strong>Flat 50/50</strong> above!
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 1-Tap Action Bar: WhatsApp Share & Copy */}
       <div className="grid grid-cols-2 gap-2 pt-1">

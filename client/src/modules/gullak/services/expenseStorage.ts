@@ -11,7 +11,23 @@ export interface GullakFinancialSummary {
   paidByUtkarshINR: number;
   paidByShreyasINR: number;
   fairSharePerCoordinatorINR: number;
+  utkarshFairShareINR: number;
+  shreyasFairShareINR: number;
+  sharedPoolTotalINR: number;
+  sharedPoolPerPersonINR: number;
+  personalA_INR: number;
+  personalB_INR: number;
+  customA_INR: number;
+  customB_INR: number;
+  pure5050SettlementINR: number;
+  hasCustomSplits: boolean;
   netSettlement: {
+    debtorName: string;
+    creditorName: string;
+    amountINR: number;
+    isSettled: boolean;
+  };
+  pure5050NetSettlement: {
     debtorName: string;
     creditorName: string;
     amountINR: number;
@@ -341,11 +357,18 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
   let paidByShreyasINR = 0;
   let totalUtkarshFairShareINR = 0;
   let totalShreyasFairShareINR = 0;
+  let sharedPoolTotalINR = 0;
+  let personalA_INR = 0;
+  let personalB_INR = 0;
+  let customA_INR = 0;
+  let customB_INR = 0;
+  let hasCustomSplits = false;
 
   expenses.forEach(e => {
-    totalSpentINR += e.amountINR;
+    const amt = Number(e.amountINR) || 0;
+    totalSpentINR += amt;
     if (categoryTotals[e.category] !== undefined) {
-      categoryTotals[e.category] += e.amountINR;
+      categoryTotals[e.category] += amt;
     }
 
     // 1. Calculate Actual Paid Contribution
@@ -357,9 +380,9 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
       sPaid = Number(e.paymentSplits.shreyasPaidINR) || 0;
     } else {
       if (e.paidBy === DUO_A_SON.name) {
-        uPaid = e.amountINR;
+        uPaid = amt;
       } else if (e.paidBy === DUO_B_SON.name) {
-        sPaid = e.amountINR;
+        sPaid = amt;
       }
     }
 
@@ -373,16 +396,24 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
     if (e.owedSplits) {
       uOwes = Number(e.owedSplits.utkarshOwesINR) || 0;
       sOwes = Number(e.owedSplits.shreyasOwesINR) || 0;
+      customA_INR += uOwes;
+      customB_INR += sOwes;
+      hasCustomSplits = true;
     } else if (e.splitMode === 'FULL_FAMILY_A') {
-      uOwes = e.amountINR;
+      uOwes = amt;
       sOwes = 0;
+      personalA_INR += amt;
+      hasCustomSplits = true;
     } else if (e.splitMode === 'FULL_FAMILY_B') {
       uOwes = 0;
-      sOwes = e.amountINR;
+      sOwes = amt;
+      personalB_INR += amt;
+      hasCustomSplits = true;
     } else {
       // Default: 50/50 Equal Split
-      uOwes = e.amountINR / 2;
-      sOwes = e.amountINR / 2;
+      uOwes = amt / 2;
+      sOwes = amt / 2;
+      sharedPoolTotalINR += amt;
     }
 
     totalUtkarshFairShareINR += uOwes;
@@ -390,8 +421,11 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
   });
 
   const fairSharePerCoordinatorINR = Math.round(totalSpentINR / 2);
+  const utkarshFairShareINR = Math.round(totalUtkarshFairShareINR);
+  const shreyasFairShareINR = Math.round(totalShreyasFairShareINR);
+  const sharedPoolPerPersonINR = Math.round(sharedPoolTotalINR / 2);
 
-  // Net Balance: (Utkarsh Paid) - (Utkarsh Fair Share)
+  // Splitwise Net Balance: (Utkarsh Paid) - (Utkarsh Fair Share)
   const utkarshNet = Math.round(paidByUtkarshINR - totalUtkarshFairShareINR);
 
   let netSettlement = {
@@ -417,12 +451,48 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
     };
   }
 
+  // Pure Flat 50/50 Math (assuming all expenses were shared 50/50 regardless of personal items):
+  const pure5050UtkarshNet = Math.round(paidByUtkarshINR - (totalSpentINR / 2));
+  let pure5050NetSettlement = {
+    debtorName: '',
+    creditorName: '',
+    amountINR: 0,
+    isSettled: true
+  };
+
+  if (pure5050UtkarshNet > 0) {
+    pure5050NetSettlement = {
+      debtorName: DUO_B_SON.name,
+      creditorName: DUO_A_SON.name,
+      amountINR: pure5050UtkarshNet,
+      isSettled: false
+    };
+  } else if (pure5050UtkarshNet < 0) {
+    pure5050NetSettlement = {
+      debtorName: DUO_A_SON.name,
+      creditorName: DUO_B_SON.name,
+      amountINR: Math.abs(pure5050UtkarshNet),
+      isSettled: false
+    };
+  }
+
   return {
     totalSpentINR,
     paidByUtkarshINR,
     paidByShreyasINR,
     fairSharePerCoordinatorINR,
+    utkarshFairShareINR,
+    shreyasFairShareINR,
+    sharedPoolTotalINR,
+    sharedPoolPerPersonINR,
+    personalA_INR,
+    personalB_INR,
+    customA_INR,
+    customB_INR,
+    pure5050SettlementINR: pure5050NetSettlement.amountINR,
+    hasCustomSplits,
     netSettlement,
+    pure5050NetSettlement,
     categoryTotals
   };
 }
