@@ -187,15 +187,25 @@ export async function initializeExpenseStorage(): Promise<OfflineExpenseRecord[]
 }
 
 /**
- * Fetch all expenses from Dexie (ensures clean state without mock seeds)
+ * Auto-adjust and sort expenses by date and time in descending order (most recent first)
+ */
+export function sortExpensesByDateDesc<T extends { createdAt?: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
+}
+
+/**
+ * Fetch all expenses from Dexie (ensures clean state without mock seeds and strictly sorted by date/time)
  */
 export async function getExpensesFromDexie(): Promise<Expense[]> {
   try {
     await localDB.offlineExpenses.bulkDelete(LEGACY_MOCK_EXPENSE_IDS);
 
     const records = await localDB.offlineExpenses.toArray();
-    records.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    return records.map(toExpense);
+    return sortExpensesByDateDesc(records.map(toExpense));
   } catch (err) {
     console.error('Failed to get expenses from Dexie', err);
     return [];

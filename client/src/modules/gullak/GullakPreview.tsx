@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Expense, ExpenseCategory, DuoId } from '../../shared/types';
 import { 
   Plus, 
@@ -13,7 +13,10 @@ import {
   ReceiptText,
   ExternalLink,
   X,
-  Pencil
+  Pencil,
+  Calendar,
+  Clock,
+  ArrowUpDown
 } from 'lucide-react';
 import { 
   DUO_A_SON, 
@@ -24,7 +27,8 @@ import {
   saveExpenseToDexie, 
   updateExpenseInDexie,
   deleteExpenseFromDexie, 
-  calculateGullakSummary 
+  calculateGullakSummary,
+  sortExpensesByDateDesc
 } from './services/expenseStorage';
 import { GullakBalanceHero } from './components/GullakBalanceHero';
 import { SettlementGauge } from './components/SettlementGauge';
@@ -40,6 +44,8 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
   const [isAddSheetOpen, setIsAddSheetOpen] = useState<boolean>(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'ALL'>('ALL');
+  const [viewMode, setViewMode] = useState<'grouped' | 'stream'>('grouped');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [viewingReceipt, setViewingReceipt] = useState<{
     url: string;
     title: string;
@@ -48,10 +54,10 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
   } | null>(null);
 
   useEffect(() => {
-    getExpensesFromDexie().then(setExpenses);
+    getExpensesFromDexie().then(items => setExpenses(sortExpensesByDateDesc(items)));
 
     const handleUpdate = () => {
-      getExpensesFromDexie().then(setExpenses);
+      getExpensesFromDexie().then(items => setExpenses(sortExpensesByDateDesc(items)));
     };
     window.addEventListener('triptrack_expense_update', handleUpdate);
     return () => window.removeEventListener('triptrack_expense_update', handleUpdate);
@@ -61,7 +67,7 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
 
   const handleSaveExpense = async (data: SaveExpenseData) => {
     if (data.id) {
-      // Editing existing expense
+      // Editing existing expense - auto-adjusts order based on date/time
       const updated = await updateExpenseInDexie({
         id: data.id,
         title: data.title,
@@ -74,10 +80,10 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
         owedSplits: data.owedSplits,
         createdAt: data.createdAt || new Date().toISOString()
       });
-      setExpenses(prev => prev.map(e => e.id === data.id ? updated : e));
+      setExpenses(prev => sortExpensesByDateDesc(prev.map(e => e.id === data.id ? updated : e)));
       setEditingExpense(null);
     } else {
-      // Adding new expense
+      // Adding new expense - auto-adjusts into its exact chronological position
       const added = await saveExpenseToDexie({
         title: data.title,
         amountINR: data.amountINR,
@@ -89,7 +95,7 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
         owedSplits: data.owedSplits,
         createdAt: data.createdAt || new Date().toISOString()
       });
-      setExpenses(prev => [added, ...prev]);
+      setExpenses(prev => sortExpensesByDateDesc([added, ...prev]));
     }
   };
 
@@ -109,22 +115,87 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
     }
   };
 
-  const filteredExpenses = expenses.filter(e => {
-    const matchesCategory = selectedCategory === 'ALL' || e.category === selectedCategory;
-    if (!matchesCategory) return false;
+  // Strictly sorted and auto-adjusted expenses filtered by Category and Active Duo
+  const sortedFilteredExpenses = useMemo(() => {
+    const filtered = expenses.filter(e => {
+      const matchesCategory = selectedCategory === 'ALL' || e.category === selectedCategory;
+      if (!matchesCategory) return false;
 
-    if (activeDuo === 'DUO_A') {
-      if (e.paidBy === DUO_A_SON.name) return true;
-      if (e.paidBy === 'Multiple' && (e.paymentSplits?.utkarshPaidINR ?? 0) > 0) return true;
-      return false;
+      if (activeDuo === 'DUO_A') {
+        if (e.paidBy === DUO_A_SON.name) return true;
+        if (e.paidBy === 'Multiple' && (e.paymentSplits?.utkarshPaidINR ?? 0) > 0) return true;
+        return false;
+      }
+      if (activeDuo === 'DUO_B') {
+        if (e.paidBy === DUO_B_SON.name) return true;
+        if (e.paidBy === 'Multiple' && (e.paymentSplits?.shreyasPaidINR ?? 0) > 0) return true;
+        return false;
+      }
+      return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+      const timeA = new Date(a.createdAt || 0).getTime();
+      const timeB = new Date(b.createdAt || 0).getTime();
+      return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    });
+  }, [expenses, selectedCategory, activeDuo, sortOrder]);
+
+  const filteredTotalINR = useMemo(() => {
+    return sortedFilteredExpenses.reduce((acc, curr) => acc + (Number(curr.amountINR) || 0), 0);
+  }, [sortedFilteredExpenses]);
+
+  interface DayExpenseGroup {
+    dateKey: string;
+    displayDate: string;
+    dayTotalINR: number;
+    expenses: Expense[];
+  }
+
+  // Auto-group expenses by calendar day with day subtotals
+  const groupedExpenses = useMemo<DayExpenseGroup[]>(() => {
+    const groupsMap = new Map<string, { displayDate: string; total: number; list: Expense[] }>();
+
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    for (const exp of sortedFilteredExpenses) {
+      const d = new Date(exp.createdAt || Date.now());
+      const isValid = !isNaN(d.getTime());
+      const dateKey = isValid 
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        : 'unknown';
+
+      let displayDate = 'Undated Record';
+      if (isValid) {
+        if (dateKey === todayKey) {
+          displayDate = `Today • ${d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}`;
+        } else if (dateKey === yesterdayKey) {
+          displayDate = `Yesterday • ${d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}`;
+        } else {
+          displayDate = d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        }
+      }
+
+      if (!groupsMap.has(dateKey)) {
+        groupsMap.set(dateKey, { displayDate, total: 0, list: [] });
+      }
+      const group = groupsMap.get(dateKey)!;
+      group.total += Number(exp.amountINR) || 0;
+      group.list.push(exp);
     }
-    if (activeDuo === 'DUO_B') {
-      if (e.paidBy === DUO_B_SON.name) return true;
-      if (e.paidBy === 'Multiple' && (e.paymentSplits?.shreyasPaidINR ?? 0) > 0) return true;
-      return false;
-    }
-    return true;
-  });
+
+    return Array.from(groupsMap.entries()).map(([dateKey, val]) => ({
+      dateKey,
+      displayDate: val.displayDate,
+      dayTotalINR: val.total,
+      expenses: val.list
+    }));
+  }, [sortedFilteredExpenses]);
 
   return (
     <div className="relative space-y-4 pb-28">
@@ -162,18 +233,19 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
         </button>
       )}
 
-      {/* 4. Category Filter Chips Strip */}
-      <div className="space-y-1.5">
+      {/* 4. Category Filter Chips & Sort/Group Toolbar */}
+      <div className="space-y-2">
         <div className="flex items-center justify-between text-xs px-1">
           <span className="font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
             <ReceiptText className="w-3.5 h-3.5 text-temple-gold" />
             <span>Transaction Ledger</span>
           </span>
           <span className="text-[10px] font-mono text-slate-400">
-            {filteredExpenses.length} Records
+            {sortedFilteredExpenses.length} Records
           </span>
         </div>
 
+        {/* Category Filter Chips */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
           <button
             type="button"
@@ -202,11 +274,47 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
             </button>
           ))}
         </div>
+
+        {/* Chronological & Grouping Auto-Adjust Controls Bar */}
+        <div className="flex items-center justify-between gap-2 px-1 pt-0.5 text-[11px] font-mono text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setViewMode(prev => prev === 'grouped' ? 'stream' : 'grouped')}
+              className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all tap-active min-h-touch ${
+                viewMode === 'grouped'
+                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 font-bold'
+                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+              }`}
+              title="Toggle Day-wise Grouping vs Flat Stream"
+            >
+              <Calendar className="w-3.5 h-3.5 text-temple-gold" />
+              <span>{viewMode === 'grouped' ? 'By Day' : 'Stream'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+              className="px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white flex items-center gap-1.5 transition-all tap-active min-h-touch"
+              title="Toggle Sort: Newest vs Oldest"
+            >
+              <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" />
+              <span>{sortOrder === 'desc' ? 'Newest' : 'Oldest'}</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 font-bold text-slate-300 bg-slate-950/80 px-2.5 py-1 rounded-xl border border-slate-800">
+            <span className="text-[10px] text-slate-500 uppercase">Total:</span>
+            <span className="text-amber-400 font-mono text-xs">
+              ₹{filteredTotalINR.toLocaleString('en-IN')}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* 5. Itemized Transaction Ledger */}
-      <div className="space-y-2">
-        {filteredExpenses.length === 0 ? (
+      {/* 5. Itemized Transaction Ledger (Auto-Adjusted by Date & Time) */}
+      <div className="space-y-3">
+        {sortedFilteredExpenses.length === 0 ? (
           <div className="p-8 text-center rounded-3xl bg-slate-900/50 border border-slate-800 text-slate-400 space-y-2">
             <p className="text-xs font-medium">No expenses logged under this filter.</p>
             <button
@@ -220,99 +328,228 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
               Log an expense now
             </button>
           </div>
-        ) : (
-          filteredExpenses.map(expense => (
-            <div
-              key={expense.id}
-              className="p-3.5 rounded-2xl bg-slate-900/85 border border-slate-800/80 flex items-center justify-between shadow-sm hover:border-slate-700 transition-all"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
-                  {getCategoryIcon(expense.category)}
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-extrabold text-white leading-tight truncate">
-                    {expense.title}
-                  </h4>
-                  <div className="text-[10px] text-slate-400 flex flex-wrap items-center gap-1.5 mt-1 font-mono">
-                    {expense.paidBy === 'Multiple' && expense.paymentSplits ? (
-                      <span className="text-amber-300 font-bold bg-amber-500/15 px-1.5 py-0.5 rounded-md border border-amber-500/30">
-                        Paid: Utkarsh ₹{expense.paymentSplits.utkarshPaidINR} • Shreyas ₹{expense.paymentSplits.shreyasPaidINR}
-                      </span>
-                    ) : (
-                      <span className="text-amber-300/90 font-semibold">
-                        Paid by {expense.paidBy}
-                      </span>
-                    )}
-
-                    {expense.splitMode === 'FULL_FAMILY_A' && (
-                      <span className="text-emerald-300 font-bold bg-emerald-500/15 px-1.5 py-0.5 rounded-md border border-emerald-500/30">
-                        100% Fam A
-                      </span>
-                    )}
-                    {expense.splitMode === 'FULL_FAMILY_B' && (
-                      <span className="text-sky-300 font-bold bg-sky-500/15 px-1.5 py-0.5 rounded-md border border-sky-500/30">
-                        100% Fam B
-                      </span>
-                    )}
-                    {expense.splitMode === 'CUSTOM_AMOUNTS' && expense.owedSplits && (
-                      <span className="text-indigo-300 font-bold bg-indigo-500/15 px-1.5 py-0.5 rounded-md border border-indigo-500/30">
-                        Split: ₹{expense.owedSplits.utkarshOwesINR} / ₹{expense.owedSplits.shreyasOwesINR}
-                      </span>
-                    )}
-
-                    <span className="text-slate-600">•</span>
-                    <span className="text-slate-400">
-                      {new Date(expense.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} • {new Date(expense.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+        ) : viewMode === 'grouped' ? (
+          groupedExpenses.map(group => (
+            <div key={group.dateKey} className="space-y-2">
+              {/* Day Section Header with Day Total Subtotal */}
+              <div className="flex items-center justify-between px-2 pt-2.5 pb-1 border-b border-slate-800/80">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-md bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-temple-gold">
+                    <Calendar className="w-3 h-3" />
                   </div>
+                  <span className="text-xs font-black text-slate-200 uppercase tracking-wide">
+                    {group.displayDate}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-500">
+                    ({group.expenses.length} {group.expenses.length === 1 ? 'item' : 'items'})
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Day Total:</span>
+                  <span className="text-xs font-black font-mono text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/25">
+                    ₹{group.dayTotalINR.toLocaleString('en-IN')}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                {expense.receiptUrl && (
-                  <button
-                    type="button"
-                    onClick={() => setViewingReceipt({
-                      url: expense.receiptUrl!,
-                      title: expense.title,
-                      amount: expense.amountINR,
-                      paidBy: expense.paidBy === 'Multiple' && expense.paymentSplits 
-                        ? `Utkarsh (₹${expense.paymentSplits.utkarshPaidINR}) & Shreyas (₹${expense.paymentSplits.shreyasPaidINR})` 
-                        : expense.paidBy
-                    })}
-                    className="p-1 px-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-500/20 tap-active"
-                    title="View Receipt Proof"
+              {/* Transactions in this Day */}
+              <div className="space-y-2">
+                {group.expenses.map(expense => (
+                  <div
+                    key={expense.id}
+                    className="p-3.5 rounded-2xl bg-slate-900/85 border border-slate-800/80 flex items-center justify-between shadow-sm hover:border-slate-700 transition-all"
                   >
-                    <ReceiptText className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Bill</span>
-                  </button>
-                )}
-                <span className="text-sm font-black font-mono text-white mr-1">
-                  ₹{expense.amountINR.toLocaleString('en-IN')}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingExpense(expense);
-                    setIsAddSheetOpen(true);
-                  }}
-                  className="p-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-amber-950/40 tap-active min-h-touch min-w-touch flex items-center justify-center transition-all"
-                  title="Edit Expense"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteExpense(expense.id)}
-                  className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 tap-active min-h-touch min-w-touch flex items-center justify-center transition-all"
-                  title="Delete Expense"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+                        {getCategoryIcon(expense.category)}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-extrabold text-white leading-tight truncate">
+                          {expense.title}
+                        </h4>
+                        <div className="text-[10px] text-slate-400 flex flex-wrap items-center gap-1.5 mt-1 font-mono">
+                          {expense.paidBy === 'Multiple' && expense.paymentSplits ? (
+                            <span className="text-amber-300 font-bold bg-amber-500/15 px-1.5 py-0.5 rounded-md border border-amber-500/30">
+                              Paid: Utkarsh ₹{expense.paymentSplits.utkarshPaidINR} • Shreyas ₹{expense.paymentSplits.shreyasPaidINR}
+                            </span>
+                          ) : (
+                            <span className="text-amber-300/90 font-semibold">
+                              Paid by {expense.paidBy}
+                            </span>
+                          )}
+
+                          {expense.splitMode === 'FULL_FAMILY_A' && (
+                            <span className="text-emerald-300 font-bold bg-emerald-500/15 px-1.5 py-0.5 rounded-md border border-emerald-500/30">
+                              100% Fam A
+                            </span>
+                          )}
+                          {expense.splitMode === 'FULL_FAMILY_B' && (
+                            <span className="text-sky-300 font-bold bg-sky-500/15 px-1.5 py-0.5 rounded-md border border-sky-500/30">
+                              100% Fam B
+                            </span>
+                          )}
+                          {expense.splitMode === 'CUSTOM_AMOUNTS' && expense.owedSplits && (
+                            <span className="text-indigo-300 font-bold bg-indigo-500/15 px-1.5 py-0.5 rounded-md border border-indigo-500/30">
+                              Split: ₹{expense.owedSplits.utkarshOwesINR} / ₹{expense.owedSplits.shreyasOwesINR}
+                            </span>
+                          )}
+
+                          <span className="text-slate-600">•</span>
+                          <span className="text-slate-400 flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5 text-slate-500" />
+                            <span>
+                              {new Date(expense.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      {expense.receiptUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setViewingReceipt({
+                            url: expense.receiptUrl!,
+                            title: expense.title,
+                            amount: expense.amountINR,
+                            paidBy: expense.paidBy === 'Multiple' && expense.paymentSplits 
+                              ? `Utkarsh (₹${expense.paymentSplits.utkarshPaidINR}) & Shreyas (₹${expense.paymentSplits.shreyasPaidINR})` 
+                              : expense.paidBy
+                          })}
+                          className="p-1 px-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-500/20 tap-active"
+                          title="View Receipt Proof"
+                        >
+                          <ReceiptText className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Bill</span>
+                        </button>
+                      )}
+                      <span className="text-sm font-black font-mono text-white mr-1">
+                        ₹{expense.amountINR.toLocaleString('en-IN')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingExpense(expense);
+                          setIsAddSheetOpen(true);
+                        }}
+                        className="p-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-amber-950/40 tap-active min-h-touch min-w-touch flex items-center justify-center transition-all"
+                        title="Edit Expense"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteExpense(expense.id)}
+                        className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 tap-active min-h-touch min-w-touch flex items-center justify-center transition-all"
+                        title="Delete Expense"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))
+        ) : (
+          <div className="space-y-2">
+            {sortedFilteredExpenses.map(expense => (
+              <div
+                key={expense.id}
+                className="p-3.5 rounded-2xl bg-slate-900/85 border border-slate-800/80 flex items-center justify-between shadow-sm hover:border-slate-700 transition-all"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+                    {getCategoryIcon(expense.category)}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-extrabold text-white leading-tight truncate">
+                      {expense.title}
+                    </h4>
+                    <div className="text-[10px] text-slate-400 flex flex-wrap items-center gap-1.5 mt-1 font-mono">
+                      {expense.paidBy === 'Multiple' && expense.paymentSplits ? (
+                        <span className="text-amber-300 font-bold bg-amber-500/15 px-1.5 py-0.5 rounded-md border border-amber-500/30">
+                          Paid: Utkarsh ₹{expense.paymentSplits.utkarshPaidINR} • Shreyas ₹{expense.paymentSplits.shreyasPaidINR}
+                        </span>
+                      ) : (
+                        <span className="text-amber-300/90 font-semibold">
+                          Paid by {expense.paidBy}
+                        </span>
+                      )}
+
+                      {expense.splitMode === 'FULL_FAMILY_A' && (
+                        <span className="text-emerald-300 font-bold bg-emerald-500/15 px-1.5 py-0.5 rounded-md border border-emerald-500/30">
+                          100% Fam A
+                        </span>
+                      )}
+                      {expense.splitMode === 'FULL_FAMILY_B' && (
+                        <span className="text-sky-300 font-bold bg-sky-500/15 px-1.5 py-0.5 rounded-md border border-sky-500/30">
+                          100% Fam B
+                        </span>
+                      )}
+                      {expense.splitMode === 'CUSTOM_AMOUNTS' && expense.owedSplits && (
+                        <span className="text-indigo-300 font-bold bg-indigo-500/15 px-1.5 py-0.5 rounded-md border border-indigo-500/30">
+                          Split: ₹{expense.owedSplits.utkarshOwesINR} / ₹{expense.owedSplits.shreyasOwesINR}
+                        </span>
+                      )}
+
+                      <span className="text-slate-600">•</span>
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5 text-slate-500" />
+                        <span>{new Date(expense.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                        <span>•</span>
+                        <span>{new Date(expense.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  {expense.receiptUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setViewingReceipt({
+                        url: expense.receiptUrl!,
+                        title: expense.title,
+                        amount: expense.amountINR,
+                        paidBy: expense.paidBy === 'Multiple' && expense.paymentSplits 
+                          ? `Utkarsh (₹${expense.paymentSplits.utkarshPaidINR}) & Shreyas (₹${expense.paymentSplits.shreyasPaidINR})` 
+                          : expense.paidBy
+                      })}
+                      className="p-1 px-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold flex items-center gap-1 hover:bg-amber-500/20 tap-active"
+                      title="View Receipt Proof"
+                    >
+                      <ReceiptText className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Bill</span>
+                    </button>
+                  )}
+                  <span className="text-sm font-black font-mono text-white mr-1">
+                    ₹{expense.amountINR.toLocaleString('en-IN')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingExpense(expense);
+                      setIsAddSheetOpen(true);
+                    }}
+                    className="p-2 rounded-xl text-slate-400 hover:text-amber-400 hover:bg-amber-950/40 tap-active min-h-touch min-w-touch flex items-center justify-center transition-all"
+                    title="Edit Expense"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteExpense(expense.id)}
+                    className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 tap-active min-h-touch min-w-touch flex items-center justify-center transition-all"
+                    title="Delete Expense"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 

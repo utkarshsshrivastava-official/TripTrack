@@ -1127,7 +1127,15 @@
   - [x] Backend endpoint `PUT /api/expenses/:id` updates MongoDB Atlas with memory-store fallback and Socket.io `receive_expense` broadcast to both families.
 - [x] **40.4 Formatted Date & Time Display in Transaction Ledger (`GullakPreview.tsx`)**
   - [x] Ledger records display both human date and 12-hour timestamp (e.g., `Sep 24 • 01:30 PM`).
-- [x] **40.5 Dual-Compilation & Build Verification**
+- [x] **40.5 Automatic Chronological Adjustment & Day-Wise Grouped Ledger (`GullakPreview.tsx`, `expenseStorage.ts`, `expense.controller.ts`)**
+  - [x] Integrated `sortExpensesByDateDesc()` utility guaranteeing strict chronological sorting across local storage and state.
+  - [x] Auto-adjustment on create, edit, or sync: Backdated or forward-dated entries immediately slide into their exact chronological spot in the list and recalculate day subtotals.
+  - [x] Day-Wise Grouped Ledger mode (`By Day`) featuring high-contrast calendar headers, transaction count pills, and dynamic Day Total chips (`₹X,XXX`).
+  - [x] Chronological Stream mode (`Stream`) for uninterrupted chronological feeds with full date + time stamps.
+  - [x] 1-Tap Sort Order toggle (`Newest` ⇄ `Oldest`) with `ArrowUpDown` icon for reviewing trip expenses chronologically or reversely.
+  - [x] Active filtered total expenditure counter directly in the toolbar (`Total: ₹XX,XXX`).
+  - [x] Server-side in-memory array `memoryExpenses` auto-sorted on create, update, and bulk-sync.
+- [x] **40.6 Dual-Compilation & Build Verification**
   - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors.
   - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
 

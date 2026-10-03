@@ -73,8 +73,9 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
       if (idx >= 0) {
         memoryExpenses[idx] = { ...payload, createdAt: payload.createdAt.toISOString() };
       } else {
-        memoryExpenses.unshift({ ...payload, createdAt: payload.createdAt.toISOString() });
+        memoryExpenses.push({ ...payload, createdAt: payload.createdAt.toISOString() });
       }
+      memoryExpenses.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
 
     // Broadcast via Socket.io to all devices in the pilgrimage room
@@ -140,6 +141,7 @@ export async function updateExpenseHandler(req: Request, res: Response): Promise
           ...payload,
           createdAt: payload.createdAt ? payload.createdAt.toISOString() : memoryExpenses[idx].createdAt
         };
+        memoryExpenses.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         updatedRecord = memoryExpenses[idx];
       }
     }
@@ -219,6 +221,7 @@ export async function syncBulkExpensesHandler(req: Request, res: Response): Prom
           io.to(FAMILY_ROOM).emit('receive_expense', record);
         }
       }
+      memoryExpenses.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
 
     console.log(`💰 [Gullak API] Successfully synced ${expenses.length} offline-queued expenses to MongoDB Atlas.`);
