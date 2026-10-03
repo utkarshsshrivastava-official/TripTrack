@@ -75,15 +75,15 @@ const PRESET_TITLES = [
 ];
 
 const PILGRIMAGE_DAYS = [
-  { day: 'Day 1', date: '2026-09-24T13:00', label: 'Day 1 • 24 Sep', town: 'Haridwar' },
-  { day: 'Day 2', date: '2026-09-25T13:00', label: 'Day 2 • 25 Sep', town: 'Rishikesh' },
-  { day: 'Day 3', date: '2026-09-26T13:00', label: 'Day 3 • 26 Sep', town: 'Devprayag' },
-  { day: 'Day 4', date: '2026-09-27T13:00', label: 'Day 4 • 27 Sep', town: 'Rudraprayag' },
-  { day: 'Day 5', date: '2026-09-28T13:00', label: 'Day 5 • 28 Sep', town: 'Joshimath' },
-  { day: 'Day 6', date: '2026-09-29T13:00', label: 'Day 6 • 29 Sep', town: 'Badrinath' },
-  { day: 'Day 7', date: '2026-09-30T13:00', label: 'Day 7 • 30 Sep', town: 'Mana Village' },
-  { day: 'Day 8', date: '2026-10-01T13:00', label: 'Day 8 • 01 Oct', town: 'Pipalkoti' },
-  { day: 'Day 9', date: '2026-10-02T13:00', label: 'Day 9 • 02 Oct', town: 'Delhi' },
+  { day: 'Day 1', date: '2026-09-24T13:00', label: 'Day 1 • 24 Sep' },
+  { day: 'Day 2', date: '2026-09-25T13:00', label: 'Day 2 • 25 Sep' },
+  { day: 'Day 3', date: '2026-09-26T13:00', label: 'Day 3 • 26 Sep' },
+  { day: 'Day 4', date: '2026-09-27T13:00', label: 'Day 4 • 27 Sep' },
+  { day: 'Day 5', date: '2026-09-28T13:00', label: 'Day 5 • 28 Sep' },
+  { day: 'Day 6', date: '2026-09-29T13:00', label: 'Day 6 • 29 Sep' },
+  { day: 'Day 7', date: '2026-09-30T13:00', label: 'Day 7 • 30 Sep' },
+  { day: 'Day 8', date: '2026-10-01T13:00', label: 'Day 8 • 01 Oct' },
+  { day: 'Day 9', date: '2026-10-02T13:00', label: 'Day 9 • 02 Oct' },
 ];
 
 const QUICK_TOWNS = [
@@ -332,13 +332,6 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
 
   const handleSelectPilgrimageDay = (dayItem: typeof PILGRIMAGE_DAYS[0]) => {
     setExpenseDateTime(dayItem.date);
-    if (!venueLocation || QUICK_TOWNS.includes(venueLocation) || PILGRIMAGE_DAYS.some(d => d.town === venueLocation)) {
-      setVenueLocation(dayItem.town);
-    }
-    const cleanTag = dayItem.town.replace(' Village', '');
-    if (!tags.includes(cleanTag)) {
-      setTags(prev => [...prev, cleanTag]);
-    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -618,20 +611,26 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             {/* Pilgrimage Day Fast Presets */}
             <div className="space-y-1">
               <span className="text-[10px] font-semibold text-slate-400 block">
-                ⚡ Fast Pilgrimage Day Presets (Auto-fills date, town & tag):
+                ⚡ Trip Date Presets:
               </span>
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                {PILGRIMAGE_DAYS.map(dayItem => (
-                  <button
-                    key={dayItem.day}
-                    type="button"
-                    onClick={() => handleSelectPilgrimageDay(dayItem)}
-                    className="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-amber-400/80 text-[10px] font-bold text-slate-300 hover:text-amber-300 transition-all shrink-0 tap-active"
-                  >
-                    <span>{dayItem.label}</span>
-                    <span className="text-slate-500 font-normal ml-1">({dayItem.town})</span>
-                  </button>
-                ))}
+                {PILGRIMAGE_DAYS.map(dayItem => {
+                  const isSelectedDay = expenseDateTime.startsWith(dayItem.date.slice(0, 10));
+                  return (
+                    <button
+                      key={dayItem.day}
+                      type="button"
+                      onClick={() => handleSelectPilgrimageDay(dayItem)}
+                      className={`px-3 py-1 rounded-xl text-[10px] font-bold transition-all shrink-0 tap-active border ${
+                        isSelectedDay
+                          ? 'bg-amber-500/25 border-amber-400 text-amber-300 shadow'
+                          : 'bg-slate-900 border-slate-700/80 text-slate-300 hover:text-white hover:border-slate-600'
+                      }`}
+                    >
+                      {dayItem.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -720,12 +719,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
                 <button
                   key={town}
                   type="button"
-                  onClick={() => {
-                    setVenueLocation(town);
-                    if (!tags.includes(town)) {
-                      setTags(prev => [...prev, town]);
-                    }
-                  }}
+                  onClick={() => setVenueLocation(town)}
                   className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-all shrink-0 tap-active ${
                     venueLocation === town
                       ? 'bg-rose-500/20 border-rose-500 text-rose-300'

@@ -1168,7 +1168,8 @@
   - [x] Header Color Legend bar explaining payer color coding at a glance.
   - [x] Individual payer badges with color-coded dot indicators.
 - [x] **41.6 Post-Trip Bulk Fill Ergonomics & Continuous Batch Entry Mode**
-  - [x] Fast 9-Day Pilgrimage Selector (`Day 1 • 24 Sep (Haridwar)` through `Day 9 • 02 Oct (Delhi)`): 1-tap sets exact timestamp, pre-selects town location, and tags entry.
+  - [x] Clean Trip Date Selector (`Day 1 • 24 Sep` through `Day 9 • 02 Oct`): Dates decoupled completely from specific towns to support detours, unscheduled stops, and off-plan mountain routes. Tapping a day sets date/time without overwriting location or forcing tags.
+  - [x] Independent Venue & Location Section: Quick town chips and custom venue inputs allow logging any off-route village or landmark regardless of pilgrimage day.
   - [x] Continuous batch entry workflow: Added secondary action button **"Save & Add Next (+)"** beside "Save to Gullak Pool".
   - [x] When logging multiple receipts together, tapping "Save & Add Next" saves to Dexie, shows confirmation toast (`Saved ₹1,200 ("Lunch")! Ready for next receipt...`), clears title and amount, and preserves current day, date, town location, payer, and category so subsequent receipts can be logged in seconds.
 - [x] **41.7 Dual-Compilation & Build Verification**
