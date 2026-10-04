@@ -94,7 +94,7 @@ export const GullakBalanceHero: React.FC<GullakBalanceHeroProps> = ({ summary })
             </div>
             {summary.hasCustomSplits && (
               <div className="text-[9px] text-sky-300 font-mono mt-0.5 border-t border-slate-800/80 pt-0.5">
-                Owes: ₹{summary.utkarshFairShareINR.toLocaleString('en-IN')}
+                Fair Share: ₹{summary.utkarshFairShareINR.toLocaleString('en-IN')}
               </div>
             )}
           </div>
@@ -117,7 +117,7 @@ export const GullakBalanceHero: React.FC<GullakBalanceHeroProps> = ({ summary })
             </div>
             {summary.hasCustomSplits && (
               <div className="text-[9px] text-emerald-300 font-mono mt-0.5 border-t border-slate-800/80 pt-0.5">
-                Owes: ₹{summary.shreyasFairShareINR.toLocaleString('en-IN')}
+                Fair Share: ₹{summary.shreyasFairShareINR.toLocaleString('en-IN')}
               </div>
             )}
           </div>

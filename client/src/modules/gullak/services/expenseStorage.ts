@@ -375,13 +375,19 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
     let uPaid = 0;
     let sPaid = 0;
 
-    if (e.paymentSplits) {
-      uPaid = Number(e.paymentSplits.utkarshPaidINR) || 0;
-      sPaid = Number(e.paymentSplits.shreyasPaidINR) || 0;
+    const hasExplicitPaymentSplits = Boolean(
+      e.paymentSplits && 
+      (Number(e.paymentSplits.utkarshPaidINR) > 0 || Number(e.paymentSplits.shreyasPaidINR) > 0 || e.paidBy === 'Multiple')
+    );
+
+    if (hasExplicitPaymentSplits) {
+      uPaid = Number(e.paymentSplits!.utkarshPaidINR) || 0;
+      sPaid = Number(e.paymentSplits!.shreyasPaidINR) || 0;
     } else {
-      if (e.paidBy === DUO_A_SON.name) {
+      const payer = (e.paidBy || '').trim().toLowerCase();
+      if (payer === 'utkarsh' || payer === DUO_A_SON.name.toLowerCase()) {
         uPaid = amt;
-      } else if (e.paidBy === DUO_B_SON.name) {
+      } else if (payer === 'shreyas' || payer === DUO_B_SON.name.toLowerCase()) {
         sPaid = amt;
       }
     }
@@ -393,9 +399,14 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
     let uOwes = 0;
     let sOwes = 0;
 
-    if (e.owedSplits) {
-      uOwes = Number(e.owedSplits.utkarshOwesINR) || 0;
-      sOwes = Number(e.owedSplits.shreyasOwesINR) || 0;
+    const hasValidCustomOwed = Boolean(
+      e.owedSplits && 
+      (typeof e.owedSplits.utkarshOwesINR === 'number' || typeof e.owedSplits.shreyasOwesINR === 'number')
+    );
+
+    if (e.splitMode === 'CUSTOM_AMOUNTS' && hasValidCustomOwed) {
+      uOwes = Number(e.owedSplits!.utkarshOwesINR) || 0;
+      sOwes = Number(e.owedSplits!.shreyasOwesINR) || 0;
       customA_INR += uOwes;
       customB_INR += sOwes;
       hasCustomSplits = true;
@@ -410,7 +421,7 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
       personalB_INR += amt;
       hasCustomSplits = true;
     } else {
-      // Default: 50/50 Equal Split
+      // Default: 50/50 Equal Split (covers EQUAL_50_50 or missing splitMode)
       uOwes = amt / 2;
       sOwes = amt / 2;
       sharedPoolTotalINR += amt;

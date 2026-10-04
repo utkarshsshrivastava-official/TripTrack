@@ -24,9 +24,15 @@ export async function getExpensesHandler(_req: Request, res: Response): Promise<
           venueName: e.venueName,
           venueLocation: e.venueLocation,
           receiptUrl: e.receiptUrl,
-          paymentSplits: e.paymentSplits,
-          splitMode: e.splitMode,
-          owedSplits: e.owedSplits,
+          paymentSplits: (e.paymentSplits && (Number(e.paymentSplits.utkarshPaidINR) > 0 || Number(e.paymentSplits.shreyasPaidINR) > 0)) ? {
+            utkarshPaidINR: e.paymentSplits.utkarshPaidINR,
+            shreyasPaidINR: e.paymentSplits.shreyasPaidINR
+          } : undefined,
+          splitMode: e.splitMode || 'EQUAL_50_50',
+          owedSplits: (e.owedSplits && (typeof e.owedSplits.utkarshOwesINR === 'number' || typeof e.owedSplits.shreyasOwesINR === 'number')) ? {
+            utkarshOwesINR: e.owedSplits.utkarshOwesINR,
+            shreyasOwesINR: e.owedSplits.shreyasOwesINR
+          } : undefined,
           createdAt: e.createdAt.toISOString()
         }))
       });
