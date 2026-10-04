@@ -155,10 +155,19 @@ export async function syncExpensesWithCloud(): Promise<Expense[]> {
 
     // Upsert cloud expenses into local Dexie
     for (const c of cloudExpenses) {
+      const hasPaymentSplits = Boolean(
+        c.paymentSplits && 
+        (Number(c.paymentSplits.utkarshPaidINR) > 0 || Number(c.paymentSplits.shreyasPaidINR) > 0)
+      );
+      const hasOwedSplits = Boolean(
+        c.owedSplits && 
+        (typeof c.owedSplits.utkarshOwesINR === 'number' || typeof c.owedSplits.shreyasOwesINR === 'number')
+      );
+
       await localDB.offlineExpenses.put({
         id: c.id,
         title: c.title,
-        amountINR: Number(c.amountINR),
+        amountINR: Number(c.amountINR) || 0,
         paidBy: c.paidBy,
         category: c.category,
         paymentMethod: c.paymentMethod || 'UPI',
@@ -166,9 +175,9 @@ export async function syncExpensesWithCloud(): Promise<Expense[]> {
         venueName: c.venueName,
         venueLocation: c.venueLocation,
         receiptUrl: c.receiptUrl,
-        paymentSplits: c.paymentSplits,
-        splitMode: c.splitMode,
-        owedSplits: c.owedSplits,
+        paymentSplits: hasPaymentSplits ? c.paymentSplits : undefined,
+        splitMode: c.splitMode || 'EQUAL_50_50',
+        owedSplits: (c.splitMode === 'CUSTOM_AMOUNTS' && hasOwedSplits) ? c.owedSplits : undefined,
         createdAt: c.createdAt,
         isSynced: true
       });
@@ -509,20 +518,29 @@ export function calculateGullakSummary(expenses: Expense[]): GullakFinancialSumm
 }
 
 function toExpense(rec: OfflineExpenseRecord): Expense {
+  const hasPaymentSplits = Boolean(
+    rec.paymentSplits && 
+    (Number(rec.paymentSplits.utkarshPaidINR) > 0 || Number(rec.paymentSplits.shreyasPaidINR) > 0)
+  );
+  const hasOwedSplits = Boolean(
+    rec.owedSplits && 
+    (typeof rec.owedSplits.utkarshOwesINR === 'number' || typeof rec.owedSplits.shreyasOwesINR === 'number')
+  );
+
   return {
     id: rec.id,
     title: rec.title,
-    amountINR: rec.amountINR,
+    amountINR: Number(rec.amountINR) || 0,
     paidBy: rec.paidBy,
     category: rec.category,
     paymentMethod: rec.paymentMethod || 'UPI',
-    tags: rec.tags || [],
+    tags: Array.isArray(rec.tags) ? rec.tags : [],
     venueName: rec.venueName,
     venueLocation: rec.venueLocation,
     receiptUrl: rec.receiptUrl,
-    paymentSplits: rec.paymentSplits,
-    splitMode: rec.splitMode,
-    owedSplits: rec.owedSplits,
+    paymentSplits: hasPaymentSplits ? rec.paymentSplits : undefined,
+    splitMode: rec.splitMode || 'EQUAL_50_50',
+    owedSplits: (rec.splitMode === 'CUSTOM_AMOUNTS' && hasOwedSplits) ? rec.owedSplits : undefined,
     createdAt: rec.createdAt
   };
 }

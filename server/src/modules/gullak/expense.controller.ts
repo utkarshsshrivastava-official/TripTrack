@@ -74,6 +74,18 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
       return;
     }
 
+    const hasValidPaymentSplits = Boolean(
+      paidBy === 'Multiple' &&
+      paymentSplits && 
+      (Number(paymentSplits.utkarshPaidINR) > 0 || Number(paymentSplits.shreyasPaidINR) > 0)
+    );
+
+    const hasValidOwedSplits = Boolean(
+      splitMode === 'CUSTOM_AMOUNTS' &&
+      owedSplits && 
+      (typeof owedSplits.utkarshOwesINR === 'number' || typeof owedSplits.shreyasOwesINR === 'number')
+    );
+
     const payload = {
       id,
       title,
@@ -85,9 +97,9 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
       venueName: venueName || undefined,
       venueLocation: venueLocation || undefined,
       receiptUrl,
-      paymentSplits,
-      splitMode,
-      owedSplits,
+      paymentSplits: hasValidPaymentSplits ? paymentSplits : undefined,
+      splitMode: splitMode || 'EQUAL_50_50',
+      owedSplits: hasValidOwedSplits ? owedSplits : undefined,
       createdAt: createdAt ? new Date(createdAt) : new Date()
     };
 
@@ -153,15 +165,27 @@ export async function updateExpenseHandler(req: Request, res: Response): Promise
       return;
     }
 
+    const hasValidPaymentSplits = Boolean(
+      paidBy === 'Multiple' &&
+      paymentSplits && 
+      (Number(paymentSplits.utkarshPaidINR) > 0 || Number(paymentSplits.shreyasPaidINR) > 0)
+    );
+
+    const hasValidOwedSplits = Boolean(
+      splitMode === 'CUSTOM_AMOUNTS' &&
+      owedSplits && 
+      (typeof owedSplits.utkarshOwesINR === 'number' || typeof owedSplits.shreyasOwesINR === 'number')
+    );
+
     const payload: any = {
       title,
       amountINR: Number(amountINR),
       paidBy,
       category,
       receiptUrl,
-      paymentSplits,
-      splitMode,
-      owedSplits
+      paymentSplits: hasValidPaymentSplits ? paymentSplits : undefined,
+      splitMode: splitMode || 'EQUAL_50_50',
+      owedSplits: hasValidOwedSplits ? owedSplits : undefined
     };
 
     if (paymentMethod !== undefined) payload.paymentMethod = paymentMethod;
