@@ -1,5 +1,5 @@
 import Dexie, { Table } from 'dexie';
-import { LocationPing, TripSegment, ExpenseCategory, ExpenseSplitMode, PaymentMethod } from '../types';
+import { LocationPing, TripSegment, ExpenseCategory, ExpenseSplitMode, PaymentMethod, ExpenseCabDetails } from '../types';
 
 export interface CachedDocRecord {
   id: string;
@@ -35,6 +35,7 @@ export interface OfflineExpenseRecord {
   venueName?: string;
   venueLocation?: string;
   receiptUrl?: string;
+  cabDetails?: ExpenseCabDetails;
   paymentSplits?: {
     utkarshPaidINR: number;
     shreyasPaidINR: number;

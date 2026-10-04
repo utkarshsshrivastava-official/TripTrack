@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Expense, ExpenseCategory, ExpenseSplitMode, PaymentMethod } from '../../../shared/types';
+import { Expense, ExpenseCategory, ExpenseSplitMode, PaymentMethod, ExpenseCabDetails } from '../../../shared/types';
 import { DUO_A_SON, DUO_B_SON } from '../../../shared/config/travellers.config';
 import { useUserProfile } from '../../../shared/hooks/useUserProfile';
 import { uploadMedia } from '../../../shared/services/mediaService';
@@ -51,6 +51,7 @@ export interface SaveExpenseData {
     utkarshOwesINR: number;
     shreyasOwesINR: number;
   };
+  cabDetails?: ExpenseCabDetails;
   createdAt?: string;
 }
 
@@ -63,15 +64,36 @@ interface AddExpenseSheetProps {
 
 const PRESET_AMOUNTS = [200, 500, 1000, 2500, 5000];
 
-const PRESET_TITLES = [
-  'Dhaba Lunch & Chai',
-  'Temple Special Entry / Puja',
-  'NH-7 Taxi Toll & Fuel',
-  'Porters / Dandi Luggage',
-  'Emergency Medication / Vitals',
-  'Warm Shawls & Woolens',
-  'Badrinath Mahaprasad Boxes',
-  'Night Hotel Stay'
+export interface QuickExpensePreset {
+  label: string;
+  category: ExpenseCategory;
+  tag?: string;
+  icon: string;
+}
+
+export const QUICK_EXPENSE_PRESETS: QuickExpensePreset[] = [
+  { label: 'Breakfast', category: 'FOOD', tag: 'Breakfast', icon: '🍳' },
+  { label: 'Lunch', category: 'FOOD', tag: 'Lunch', icon: '🍲' },
+  { label: 'Dinner', category: 'FOOD', tag: 'Dinner', icon: '🍽️' },
+  { label: 'Snacks', category: 'FOOD', tag: 'Food', icon: '🥪' },
+  { label: 'Chai', category: 'FOOD', tag: 'Chai', icon: '☕' },
+  { label: 'Coffee', category: 'FOOD', tag: 'Chai', icon: '☕' },
+  { label: 'Chai-Coffee', category: 'FOOD', tag: 'Chai', icon: '☕' },
+  { label: 'Shopping', category: 'SHOPPING', tag: 'Shopping', icon: '🛍️' },
+  { label: 'Gift shopping', category: 'SHOPPING', tag: 'Shopping', icon: '🎁' },
+  { label: 'medical', category: 'MEDICAL', tag: 'Medicine', icon: '💊' },
+  { label: 'Hotel Fee', category: 'HOTEL', tag: 'Hotel', icon: '🏨' },
+  { label: 'Cab Installment', category: 'TOLL_TAXI', tag: 'Taxi', icon: '🚕' },
+  { label: 'Cab', category: 'TOLL_TAXI', tag: 'Taxi', icon: '🚖' },
+];
+
+const QUICK_CAB_PACKAGES = [
+  'Haridwar - Badrinath 7D Circuit',
+  'Joshimath - Badrinath Shuttle',
+  'Rishikesh - Devprayag Drop',
+  'Badrinath - Mana Roundtrip',
+  'Haridwar - Rishikesh Drop',
+  'Local Station / Sightseeing'
 ];
 
 const PILGRIMAGE_DAYS = [
@@ -187,6 +209,11 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   const [tags, setTags] = useState<string[]>([]);
   const [customTagInput, setCustomTagInput] = useState('');
 
+  // Cab & Driver Transit Details State
+  const [driverName, setDriverName] = useState('');
+  const [vehicleNumber, setVehicleNumber] = useState('');
+  const [cabRouteOrPackage, setCabRouteOrPackage] = useState('');
+
   // Custom Date & Time State
   const [expenseDateTime, setExpenseDateTime] = useState<string>(formatDateForInput(new Date()));
 
@@ -218,6 +245,9 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         setPaymentMethod(editingExpense.paymentMethod || 'UPI');
         setTags(editingExpense.tags || []);
         setCustomTagInput('');
+        setDriverName(editingExpense.cabDetails?.driverName || '');
+        setVehicleNumber(editingExpense.cabDetails?.vehicleNumber || '');
+        setCabRouteOrPackage(editingExpense.cabDetails?.cabRouteOrPackage || '');
         setBatchSuccessMsg(null);
 
         const hasBothPaid = Boolean(
@@ -261,6 +291,9 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         setPaymentMethod('UPI');
         setTags([]);
         setCustomTagInput('');
+        setDriverName('');
+        setVehicleNumber('');
+        setCabRouteOrPackage('');
         setBatchSuccessMsg(null);
         setPayerMode(isDuoB ? 'SHREYAS' : 'UTKARSH');
         setUtkarshPaid('');
@@ -403,6 +436,13 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
 
       const createdAtIso = expenseDateTime ? new Date(expenseDateTime).toISOString() : new Date().toISOString();
 
+      const hasCabInfo = Boolean(driverName.trim() || vehicleNumber.trim() || cabRouteOrPackage.trim());
+      const finalCabDetails: ExpenseCabDetails | undefined = (category === 'TOLL_TAXI' || hasCabInfo) && hasCabInfo ? {
+        driverName: driverName.trim() || undefined,
+        vehicleNumber: vehicleNumber.trim() || undefined,
+        cabRouteOrPackage: cabRouteOrPackage.trim() || undefined
+      } : undefined;
+
       await onSaveExpense({
         id: editingExpense?.id,
         title: title.trim(),
@@ -429,6 +469,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
           utkarshOwesINR: 0,
           shreyasOwesINR: Math.round(totalNum)
         } : undefined,
+        cabDetails: finalCabDetails,
         createdAt: createdAtIso
       });
 
@@ -441,6 +482,9 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         setAmount('');
         setVenueName('');
         setCustomTagInput('');
+        setDriverName('');
+        setVehicleNumber('');
+        setCabRouteOrPackage('');
         setBatchSuccessMsg(`Saved ₹${savedAmt.toLocaleString('en-IN')} ("${savedTitle}")! Ready for next receipt...`);
       } else {
         onClose();
@@ -464,8 +508,12 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
     }
   };
 
-  const handleSelectPresetTitle = (t: string) => {
-    setTitle(t);
+  const handleSelectPreset = (preset: QuickExpensePreset) => {
+    setTitle(preset.label);
+    setCategory(preset.category);
+    if (preset.tag && !tags.includes(preset.tag)) {
+      setTags(prev => [...prev, preset.tag!]);
+    }
   };
 
   return (
@@ -570,31 +618,46 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
 
           {/* Description Input & Quick Suggestion Chips */}
           <div className="space-y-2">
-            <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-              Expense Description
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                Expense Description
+              </label>
+              <span className="text-[10px] text-amber-400 font-semibold flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-temple-gold" />
+                <span>1-Tap Presets</span>
+              </span>
+            </div>
+
+            {/* Quick 1-Tap Preset Description Chips (13 Presets) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              {QUICK_EXPENSE_PRESETS.map(preset => {
+                const isSelected = title.trim().toLowerCase() === preset.label.toLowerCase();
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => handleSelectPreset(preset)}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all tap-active shrink-0 flex items-center gap-1.5 min-h-touch ${
+                      isSelected
+                        ? 'bg-amber-500 text-slate-950 border-amber-400 shadow font-black'
+                        : 'bg-slate-950 text-slate-300 border-slate-800 hover:text-white hover:border-slate-700'
+                    }`}
+                  >
+                    <span>{preset.icon}</span>
+                    <span>{preset.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <input
               type="text"
               required
               value={title}
               onChange={e => setTitle(e.target.value)}
-              placeholder="e.g. Satvik Thalis for 4 at Srinagar"
+              placeholder="e.g. Satvik Thalis, Cab Installment, Medical..."
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-temple-gold"
             />
-
-            <div className="flex flex-wrap gap-1.5 pt-0.5">
-              {PRESET_TITLES.map(preset => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => handleSelectPresetTitle(preset)}
-                  className="px-2 py-0.5 rounded-lg bg-slate-950/70 border border-slate-800 text-[10px] text-slate-400 hover:text-amber-300 hover:border-amber-500/40 transition-all flex items-center gap-1 tap-active"
-                >
-                  <Sparkles className="w-2.5 h-2.5 text-temple-gold" />
-                  <span>{preset}</span>
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* 📅 Date & Time Picker Section + Post-Trip Pilgrimage Day Fast Selectors */}
@@ -762,6 +825,86 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
               })}
             </div>
           </div>
+
+          {/* 🚖 Cab Transit & Driver Details (Visible when category is TOLL_TAXI or Cab preset chosen) */}
+          {(category === 'TOLL_TAXI' || driverName || vehicleNumber || cabRouteOrPackage || title.toLowerCase().includes('cab') || title.toLowerCase().includes('taxi')) && (
+            <div className="space-y-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Car className="w-4 h-4 text-amber-400" />
+                  <span>Cab Transit & Driver Details</span>
+                </label>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  NH-7 Vehicle Log
+                </span>
+              </div>
+
+              {/* Quick Route / Package Preset Chips */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-semibold text-slate-400 block">
+                  ⚡ Route / Package Presets:
+                </span>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                  {QUICK_CAB_PACKAGES.map(pkg => (
+                    <button
+                      key={pkg}
+                      type="button"
+                      onClick={() => setCabRouteOrPackage(pkg)}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-semibold border transition-all shrink-0 tap-active min-h-[30px] ${
+                        cabRouteOrPackage === pkg
+                          ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold shadow'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {pkg}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cab Route or Package Name Input */}
+              <div>
+                <label className="text-[10px] font-semibold text-slate-300 block mb-1">
+                  Cab Route / Package Name
+                </label>
+                <input
+                  type="text"
+                  value={cabRouteOrPackage}
+                  onChange={e => setCabRouteOrPackage(e.target.value)}
+                  placeholder="e.g. Haridwar-Badrinath 7D Circuit / Joshimath Shuttle"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 shadow-inner"
+                />
+              </div>
+
+              {/* Driver Name & Vehicle Number Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-300 block mb-1">
+                    Cab Driver Name
+                  </label>
+                  <input
+                    type="text"
+                    value={driverName}
+                    onChange={e => setDriverName(e.target.value)}
+                    placeholder="e.g. Rajesh Kumar (Pawan Tour)"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-300 block mb-1">
+                    Cab Vehicle Number
+                  </label>
+                  <input
+                    type="text"
+                    value={vehicleNumber}
+                    onChange={e => setVehicleNumber(e.target.value)}
+                    placeholder="e.g. UK 07 TA 1234"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-xs text-white font-mono uppercase placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Transaction Logistics (Payment Method, Tags, Payer, Split, Receipt) */}

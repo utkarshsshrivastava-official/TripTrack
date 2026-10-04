@@ -33,6 +33,11 @@ export async function getExpensesHandler(_req: Request, res: Response): Promise<
             utkarshOwesINR: e.owedSplits.utkarshOwesINR,
             shreyasOwesINR: e.owedSplits.shreyasOwesINR
           } : undefined,
+          cabDetails: (e.cabDetails && (e.cabDetails.driverName || e.cabDetails.vehicleNumber || e.cabDetails.cabRouteOrPackage)) ? {
+            driverName: e.cabDetails.driverName || undefined,
+            vehicleNumber: e.cabDetails.vehicleNumber || undefined,
+            cabRouteOrPackage: e.cabDetails.cabRouteOrPackage || undefined
+          } : undefined,
           createdAt: e.createdAt.toISOString()
         }))
       });
@@ -66,6 +71,7 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
       paymentSplits, 
       splitMode, 
       owedSplits, 
+      cabDetails,
       createdAt 
     } = req.body;
 
@@ -86,6 +92,11 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
       (typeof owedSplits.utkarshOwesINR === 'number' || typeof owedSplits.shreyasOwesINR === 'number')
     );
 
+    const hasValidCabDetails = Boolean(
+      cabDetails &&
+      (cabDetails.driverName?.trim() || cabDetails.vehicleNumber?.trim() || cabDetails.cabRouteOrPackage?.trim())
+    );
+
     const payload = {
       id,
       title,
@@ -100,6 +111,11 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
       paymentSplits: hasValidPaymentSplits ? paymentSplits : undefined,
       splitMode: splitMode || 'EQUAL_50_50',
       owedSplits: hasValidOwedSplits ? owedSplits : undefined,
+      cabDetails: hasValidCabDetails ? {
+        driverName: cabDetails.driverName?.trim() || undefined,
+        vehicleNumber: cabDetails.vehicleNumber?.trim() || undefined,
+        cabRouteOrPackage: cabDetails.cabRouteOrPackage?.trim() || undefined
+      } : undefined,
       createdAt: createdAt ? new Date(createdAt) : new Date()
     };
 
@@ -157,6 +173,7 @@ export async function updateExpenseHandler(req: Request, res: Response): Promise
       paymentSplits, 
       splitMode, 
       owedSplits, 
+      cabDetails,
       createdAt 
     } = req.body;
 
@@ -177,6 +194,11 @@ export async function updateExpenseHandler(req: Request, res: Response): Promise
       (typeof owedSplits.utkarshOwesINR === 'number' || typeof owedSplits.shreyasOwesINR === 'number')
     );
 
+    const hasValidCabDetails = Boolean(
+      cabDetails &&
+      (cabDetails.driverName?.trim() || cabDetails.vehicleNumber?.trim() || cabDetails.cabRouteOrPackage?.trim())
+    );
+
     const payload: any = {
       title,
       amountINR: Number(amountINR),
@@ -185,7 +207,12 @@ export async function updateExpenseHandler(req: Request, res: Response): Promise
       receiptUrl,
       paymentSplits: hasValidPaymentSplits ? paymentSplits : undefined,
       splitMode: splitMode || 'EQUAL_50_50',
-      owedSplits: hasValidOwedSplits ? owedSplits : undefined
+      owedSplits: hasValidOwedSplits ? owedSplits : undefined,
+      cabDetails: hasValidCabDetails ? {
+        driverName: cabDetails.driverName?.trim() || undefined,
+        vehicleNumber: cabDetails.vehicleNumber?.trim() || undefined,
+        cabRouteOrPackage: cabDetails.cabRouteOrPackage?.trim() || undefined
+      } : undefined
     };
 
     if (paymentMethod !== undefined) payload.paymentMethod = paymentMethod;
@@ -251,6 +278,11 @@ export async function syncBulkExpensesHandler(req: Request, res: Response): Prom
     if (isMongoConnected()) {
       for (const item of expenses) {
         if (!item.id || !item.title) continue;
+        const hasValidCab = Boolean(
+          item.cabDetails &&
+          (item.cabDetails.driverName?.trim() || item.cabDetails.vehicleNumber?.trim() || item.cabDetails.cabRouteOrPackage?.trim())
+        );
+
         const payload = {
           id: item.id,
           title: item.title,
@@ -265,6 +297,11 @@ export async function syncBulkExpensesHandler(req: Request, res: Response): Prom
           paymentSplits: item.paymentSplits,
           splitMode: item.splitMode,
           owedSplits: item.owedSplits,
+          cabDetails: hasValidCab ? {
+            driverName: item.cabDetails.driverName?.trim() || undefined,
+            vehicleNumber: item.cabDetails.vehicleNumber?.trim() || undefined,
+            cabRouteOrPackage: item.cabDetails.cabRouteOrPackage?.trim() || undefined
+          } : undefined,
           createdAt: item.createdAt ? new Date(item.createdAt) : new Date()
         };
 

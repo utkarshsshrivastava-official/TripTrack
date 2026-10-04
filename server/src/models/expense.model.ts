@@ -20,6 +20,11 @@ export interface IExpense extends Document {
     utkarshOwesINR: number;
     shreyasOwesINR: number;
   };
+  cabDetails?: {
+    driverName?: string;
+    vehicleNumber?: string;
+    cabRouteOrPackage?: string;
+  };
   createdAt: Date;
   updatedAt?: Date;
 }
@@ -55,6 +60,11 @@ const ExpenseSchema = new Schema({
   owedSplits: {
     utkarshOwesINR: Number,
     shreyasOwesINR: Number
+  },
+  cabDetails: {
+    driverName: { type: String },
+    vehicleNumber: { type: String },
+    cabRouteOrPackage: { type: String }
   },
   createdAt: { type: Date, default: Date.now }
 }, { timestamps: { createdAt: false, updatedAt: true } });

@@ -71,6 +71,9 @@ export function exportExpensesToCSV(expenses: Expense[]): void {
     'Venue Name',
     'Venue Location',
     'Tags',
+    'Cab Route / Package',
+    'Cab Driver Name',
+    'Cab Vehicle No',
     'Receipt URL'
   ];
 
@@ -102,6 +105,9 @@ export function exportExpensesToCSV(expenses: Expense[]): void {
       escapeCSV(exp.venueName || ''),
       escapeCSV(exp.venueLocation || ''),
       escapeCSV(tagsStr),
+      escapeCSV(exp.cabDetails?.cabRouteOrPackage || ''),
+      escapeCSV(exp.cabDetails?.driverName || ''),
+      escapeCSV(exp.cabDetails?.vehicleNumber || ''),
       escapeCSV(exp.receiptUrl || '')
     ].join(',');
   });

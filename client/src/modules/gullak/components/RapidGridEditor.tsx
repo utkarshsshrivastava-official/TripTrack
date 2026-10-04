@@ -22,6 +22,7 @@ interface DraftRow {
   splitMode: ExpenseSplitMode;
   paymentMethod: PaymentMethod;
   category: ExpenseCategory;
+  cabDetails?: any;
   isDirty?: boolean;
 }
 
@@ -63,6 +64,7 @@ export const RapidGridEditor: React.FC<RapidGridEditorProps> = ({
       splitMode: exp.splitMode || 'EQUAL_50_50',
       paymentMethod: exp.paymentMethod || 'UPI',
       category: exp.category || 'FOOD',
+      cabDetails: exp.cabDetails,
       isDirty: false
     }));
   });
@@ -91,6 +93,7 @@ export const RapidGridEditor: React.FC<RapidGridEditorProps> = ({
         category: row.category,
         venueName: row.venueName.trim() || undefined,
         venueLocation: row.venueLocation.trim() || undefined,
+        cabDetails: row.cabDetails,
         createdAt: createdAtIso
       });
 

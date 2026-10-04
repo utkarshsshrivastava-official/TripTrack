@@ -96,6 +96,7 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
         paymentSplits: data.paymentSplits,
         splitMode: data.splitMode,
         owedSplits: data.owedSplits,
+        cabDetails: data.cabDetails,
         createdAt: data.createdAt || new Date().toISOString()
       });
       setExpenses(prev => sortExpensesByDateDesc(prev.map(e => e.id === data.id ? updated : e)));
@@ -115,6 +116,7 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
         paymentSplits: data.paymentSplits,
         splitMode: data.splitMode,
         owedSplits: data.owedSplits,
+        cabDetails: data.cabDetails,
         createdAt: data.createdAt || new Date().toISOString()
       });
       setExpenses(prev => sortExpensesByDateDesc([added, ...prev]));
@@ -307,6 +309,28 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
                   {expense.venueName && expense.venueLocation && <span className="text-slate-500"> • </span>}
                   {expense.venueLocation && <span className="text-slate-300">{expense.venueLocation}</span>}
                 </span>
+              </div>
+            )}
+
+            {/* Cab & Driver Transit Details Badge */}
+            {expense.cabDetails && (expense.cabDetails.driverName || expense.cabDetails.vehicleNumber || expense.cabDetails.cabRouteOrPackage) && (
+              <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-amber-200/90 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-lg w-fit">
+                <Car className="w-3 h-3 text-amber-400 shrink-0" />
+                {expense.cabDetails.cabRouteOrPackage && (
+                  <span className="font-bold text-amber-300">
+                    {expense.cabDetails.cabRouteOrPackage}
+                  </span>
+                )}
+                {expense.cabDetails.driverName && (
+                  <span className="text-slate-300">
+                    Driver: <span className="font-semibold text-white">{expense.cabDetails.driverName}</span>
+                  </span>
+                )}
+                {expense.cabDetails.vehicleNumber && (
+                  <span className="px-1.5 py-0.2 rounded bg-slate-900 border border-amber-400/40 font-mono font-bold text-amber-300">
+                    {expense.cabDetails.vehicleNumber}
+                  </span>
+                )}
               </div>
             )}
 

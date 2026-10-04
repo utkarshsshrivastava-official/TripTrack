@@ -60,6 +60,7 @@ function setupExpenseSocketListeners() {
         paymentSplits: expenseData.paymentSplits,
         splitMode: expenseData.splitMode,
         owedSplits: expenseData.owedSplits,
+        cabDetails: expenseData.cabDetails,
         createdAt: expenseData.createdAt || new Date().toISOString(),
         isSynced: true
       };
@@ -178,6 +179,7 @@ export async function syncExpensesWithCloud(): Promise<Expense[]> {
         paymentSplits: hasPaymentSplits ? c.paymentSplits : undefined,
         splitMode: c.splitMode || 'EQUAL_50_50',
         owedSplits: (c.splitMode === 'CUSTOM_AMOUNTS' && hasOwedSplits) ? c.owedSplits : undefined,
+        cabDetails: c.cabDetails,
         createdAt: c.createdAt,
         isSynced: true
       });
@@ -541,6 +543,7 @@ function toExpense(rec: OfflineExpenseRecord): Expense {
     paymentSplits: hasPaymentSplits ? rec.paymentSplits : undefined,
     splitMode: rec.splitMode || 'EQUAL_50_50',
     owedSplits: (rec.splitMode === 'CUSTOM_AMOUNTS' && hasOwedSplits) ? rec.owedSplits : undefined,
+    cabDetails: rec.cabDetails,
     createdAt: rec.createdAt
   };
 }

@@ -194,6 +194,12 @@ export type PaymentMethod = 'UPI' | 'CASH' | 'CARD' | 'NET_BANKING' | 'OTHER';
 
 export type ExpenseSplitMode = 'EQUAL_50_50' | 'CUSTOM_AMOUNTS' | 'FULL_FAMILY_A' | 'FULL_FAMILY_B';
 
+export interface ExpenseCabDetails {
+  driverName?: string;
+  vehicleNumber?: string;
+  cabRouteOrPackage?: string;
+}
+
 export interface Expense {
   id: string;
   title: string;
@@ -205,6 +211,7 @@ export interface Expense {
   venueName?: string;
   venueLocation?: string;
   receiptUrl?: string;
+  cabDetails?: ExpenseCabDetails;
   createdAt: string;
 
   // Splitwise-Grade Multi-Payer & Custom Split Fields
