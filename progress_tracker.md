@@ -1251,6 +1251,14 @@
   - [x] Updated Printable PDF report and WhatsApp export to document both Splitwise Adjusted ($₹18,732$) and Flat 50/50 ($₹19,005$) options.
 - [x] **44.6 Compilation & Build Verification**
   - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors (`built in 8.26s`).
+- [x] **44.7 Top-to-Bottom Multi-Tier Mathematical Integrity & Subdocument Sanitization Audit**
+  - [x] Hardened deserialization in [expenseStorage.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/gullak/services/expenseStorage.ts) and [expense.controller.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/modules/gullak/expense.controller.ts) to eliminate Mongoose `{}` subdocument default traps.
+  - [x] Programmatically validated all 90 items in live MongoDB Atlas:
+    - Sum of Payer Contributions ($₹15,473 + ₹53,482$) = Total Outlay ($₹68,955$) with $0\text{ INR}$ variance.
+    - Sum of Pool Buckets ($₹65,090$ Shared + $₹1,215$ Fam A + $₹1,310$ Fam B + $₹445$ Custom A + $₹895$ Custom B) = Total Outlay ($₹68,955$) with $0\text{ INR}$ variance.
+    - Sum of Obligations ($₹34,205 + ₹34,750$) = Total Outlay ($₹68,955$) with $0\text{ INR}$ variance.
+    - Sum of Category Totals ($₹34,295$ Cabs + $₹16,000$ Food + $₹9,314$ Hotels + $₹6,825$ Misc + $₹1,840$ Shopping + $₹681$ Rituals) = Total Outlay ($₹68,955$) with $0\text{ INR}$ variance.
+    - Itemized cross-check: 100% of items satisfy $\text{uPaid} + \text{sPaid} = \text{amt}$ and $\text{uOwes} + \text{sOwes} = \text{amt}$.
 
 ---
 
