@@ -26,7 +26,7 @@ interface GullakAnalyticsViewProps {
 
 const CATEGORY_META: Record<ExpenseCategory, { label: string; color: string; bg: string; icon: React.FC<{ className?: string; style?: React.CSSProperties }> }> = {
   FOOD: { label: 'Food & Tea', color: '#10b981', bg: 'bg-emerald-500', icon: Utensils },
-  TOLL_TAXI: { label: 'Cab & Toll', color: '#38bdf8', bg: 'bg-sky-500', icon: Car },
+  TOLL_TAXI: { label: 'Travel & Transit', color: '#38bdf8', bg: 'bg-sky-500', icon: Car },
   HOTEL: { label: 'Hotel & Stay', color: '#a855f7', bg: 'bg-purple-500', icon: Hotel },
   SHOPPING: { label: 'Shopping & Woolens', color: '#ec4899', bg: 'bg-pink-500', icon: ShoppingBag },
   RITUAL: { label: 'Pujas & Rituals', color: '#f59e0b', bg: 'bg-amber-500', icon: Flame },

@@ -24,7 +24,7 @@ export function generateWhatsAppSummary(expenses: Expense[], summary: GullakFina
 
   const catIcons: Record<ExpenseCategory, string> = {
     FOOD: '🍲 Food & Tea',
-    TOLL_TAXI: '🚕 Cab & Toll',
+    TOLL_TAXI: '🚗 Travel & Transit',
     HOTEL: '🏨 Hotel & Stay',
     SHOPPING: '🛍️ Shopping & Woolens',
     RITUAL: '🪔 Pujas & Rituals',
@@ -71,6 +71,7 @@ export function exportExpensesToCSV(expenses: Expense[]): void {
     'Venue Name',
     'Venue Location',
     'Tags',
+    'Transit Mode',
     'Cab Route / Package',
     'Cab Driver Name',
     'Cab Vehicle No',
@@ -97,7 +98,7 @@ export function exportExpensesToCSV(expenses: Expense[]): void {
       escapeCSV(dateStr),
       escapeCSV(timeStr),
       escapeCSV(exp.title),
-      escapeCSV(exp.category),
+      escapeCSV(exp.category === 'TOLL_TAXI' ? 'Travel & Transit' : exp.category),
       exp.amountINR,
       escapeCSV(exp.paidBy),
       escapeCSV(exp.splitMode || 'EQUAL_50_50'),
@@ -105,6 +106,7 @@ export function exportExpensesToCSV(expenses: Expense[]): void {
       escapeCSV(exp.venueName || ''),
       escapeCSV(exp.venueLocation || ''),
       escapeCSV(tagsStr),
+      escapeCSV(exp.cabDetails?.transitType || (exp.category === 'TOLL_TAXI' ? 'CAB' : '')),
       escapeCSV(exp.cabDetails?.cabRouteOrPackage || ''),
       escapeCSV(exp.cabDetails?.driverName || ''),
       escapeCSV(exp.cabDetails?.vehicleNumber || ''),

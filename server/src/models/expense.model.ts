@@ -21,9 +21,11 @@ export interface IExpense extends Document {
     shreyasOwesINR: number;
   };
   cabDetails?: {
+    transitType?: 'CAB' | 'AUTO' | 'TRAIN' | 'FLIGHT' | 'TOLL_PARKING' | 'OTHER';
     driverName?: string;
     vehicleNumber?: string;
     cabRouteOrPackage?: string;
+    notes?: string;
   };
   createdAt: Date;
   updatedAt?: Date;
@@ -62,9 +64,15 @@ const ExpenseSchema = new Schema({
     shreyasOwesINR: Number
   },
   cabDetails: {
+    transitType: { 
+      type: String, 
+      enum: ['CAB', 'AUTO', 'TRAIN', 'FLIGHT', 'TOLL_PARKING', 'OTHER'],
+      default: 'CAB'
+    },
     driverName: { type: String },
     vehicleNumber: { type: String },
-    cabRouteOrPackage: { type: String }
+    cabRouteOrPackage: { type: String },
+    notes: { type: String }
   },
   createdAt: { type: Date, default: Date.now }
 }, { timestamps: { createdAt: false, updatedAt: true } });

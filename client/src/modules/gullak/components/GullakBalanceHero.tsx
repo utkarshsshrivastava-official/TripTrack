@@ -10,7 +10,7 @@ interface GullakBalanceHeroProps {
 }
 
 const CATEGORY_COLORS: Record<ExpenseCategory, { name: string; color: string; bg: string; icon: React.FC<{ className?: string }> }> = {
-  TOLL_TAXI: { name: 'Cab & Toll', color: '#38bdf8', bg: 'bg-sky-500', icon: Car },
+  TOLL_TAXI: { name: 'Travel & Transit', color: '#38bdf8', bg: 'bg-sky-500', icon: Car },
   FOOD: { name: 'Food & Tea', color: '#10b981', bg: 'bg-emerald-500', icon: Utensils },
   RITUAL: { name: 'Rituals & Pujas', color: '#f59e0b', bg: 'bg-amber-500', icon: Flame },
   HOTEL: { name: 'Hotels & Stay', color: '#a855f7', bg: 'bg-purple-500', icon: Hotel },

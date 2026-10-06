@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Expense, ExpenseCategory, ExpenseSplitMode, PaymentMethod, ExpenseCabDetails } from '../../../shared/types';
+import { Expense, ExpenseCategory, ExpenseSplitMode, PaymentMethod, ExpenseCabDetails, TransitType } from '../../../shared/types';
 import { DUO_A_SON, DUO_B_SON } from '../../../shared/config/travellers.config';
 import { useUserProfile } from '../../../shared/hooks/useUserProfile';
 import { uploadMedia } from '../../../shared/services/mediaService';
@@ -69,7 +69,130 @@ export interface QuickExpensePreset {
   category: ExpenseCategory;
   tag?: string;
   icon: string;
+  transitType?: TransitType;
 }
+
+export const TRANSIT_MODES: {
+  id: TransitType;
+  label: string;
+  shortLabel: string;
+  icon: string;
+  badge: string;
+  routeLabel: string;
+  routePlaceholder: string;
+  driverLabel: string;
+  driverPlaceholder: string;
+  vehicleLabel: string;
+  vehiclePlaceholder: string;
+  quickPackages: string[];
+  defaultTag: string;
+}[] = [
+  {
+    id: 'CAB',
+    label: 'Cab / Taxi',
+    shortLabel: 'Cab',
+    icon: '🚕',
+    badge: 'Hill Cab Ledger',
+    routeLabel: 'Cab Route / Package Name',
+    routePlaceholder: 'e.g. Haridwar-Badrinath 7D Circuit / Joshimath Shuttle',
+    driverLabel: 'Cab Driver Name',
+    driverPlaceholder: 'e.g. Rajesh Kumar (Pawan Tour)',
+    vehicleLabel: 'Vehicle Registration Number',
+    vehiclePlaceholder: 'e.g. UK 07 TA 1234',
+    quickPackages: [
+      'Haridwar - Badrinath 7D Circuit',
+      'Joshimath - Badrinath Shuttle',
+      'Rishikesh - Devprayag Drop',
+      'Badrinath - Mana Roundtrip',
+      'Haridwar - Rishikesh Drop',
+      'Local Station / Sightseeing'
+    ],
+    defaultTag: 'Taxi'
+  },
+  {
+    id: 'AUTO',
+    label: 'Auto Rickshaw',
+    shortLabel: 'Auto',
+    icon: '🛺',
+    badge: 'Auto Rickshaw Fare',
+    routeLabel: 'Stand / Station / Route',
+    routePlaceholder: 'e.g. Haridwar Stn ➔ Har Ki Pauri / Rishikesh Ghat Drop',
+    driverLabel: 'Auto Driver Name (Optional)',
+    driverPlaceholder: 'e.g. Manoj Bhai / Local Stand',
+    vehicleLabel: 'Auto Registration Number',
+    vehiclePlaceholder: 'e.g. UK 07 A 5678',
+    quickPackages: [
+      'Haridwar Stn ➔ Har Ki Pauri',
+      'Rishikesh Triveni Ghat Drop',
+      'Joshimath Market Shuttle',
+      'Badrinath Local Stand',
+      'Dehradun ISBT ➔ Station'
+    ],
+    defaultTag: 'Auto'
+  },
+  {
+    id: 'TRAIN',
+    label: 'Train / IRCTC',
+    shortLabel: 'Train',
+    icon: '🚆',
+    badge: 'IRCTC Rail Transit',
+    routeLabel: 'Train Name & Route',
+    routePlaceholder: 'e.g. 12441 Bilaspur Rajdhani / 12056 Dehradun Shatabdi',
+    driverLabel: 'Coach & Berth (Optional)',
+    driverPlaceholder: 'e.g. Coach B1 Berths 45-48',
+    vehicleLabel: '10-Digit PNR / Ticket Number',
+    vehiclePlaceholder: 'e.g. PNR 245-1234567',
+    quickPackages: [
+      '12441 Bilaspur Rajdhani Express',
+      '12056 Dehradun Jan Shatabdi',
+      '14309 Ujjain - Rishikesh Express',
+      'IRCTC Premium Tatkal Berth',
+      'Haridwar - Delhi Vande Bharat'
+    ],
+    defaultTag: 'Train'
+  },
+  {
+    id: 'FLIGHT',
+    label: 'Flight / Airline',
+    shortLabel: 'Flight',
+    icon: '✈️',
+    badge: 'Aviation Transit',
+    routeLabel: 'Flight Sector / Airport Route',
+    routePlaceholder: 'e.g. Delhi (DEL) ➔ Dehradun Jolly Grant (DED)',
+    driverLabel: 'Airline & Flight Number',
+    driverPlaceholder: 'e.g. IndiGo 6E-204 / 6E-5128',
+    vehicleLabel: 'Airline PNR / Booking Ref',
+    vehiclePlaceholder: 'e.g. PNR WXYZ12',
+    quickPackages: [
+      'IndiGo 6E DEL ➔ DED (Jolly Grant)',
+      'Return Flight DED ➔ DEL',
+      'Connecting Transit Sector',
+      'Excess Baggage / Seat Addon'
+    ],
+    defaultTag: 'Flight'
+  },
+  {
+    id: 'TOLL_PARKING',
+    label: 'Toll & Parking',
+    shortLabel: 'Toll',
+    icon: '🛣️',
+    badge: 'Highway & Parking',
+    routeLabel: 'Toll Plaza / Parking Location',
+    routePlaceholder: 'e.g. NH-7 Highway Toll Plaza / Badrinath Parking Lot',
+    driverLabel: 'Vehicle / FASTag Account',
+    driverPlaceholder: 'e.g. UK 07 TA 1234 (FASTag)',
+    vehicleLabel: 'Slip / Receipt / Barcode Number',
+    vehiclePlaceholder: 'e.g. Toll Receipt #84920',
+    quickPackages: [
+      'NH-7 Alaknanda Toll Plaza',
+      'Haridwar Bypass FASTag Toll',
+      'Badrinath Dham Dedicated Parking',
+      'Rishikesh Parking Ground',
+      'Joshimath Barrier Tax'
+    ],
+    defaultTag: 'Toll'
+  }
+];
 
 export const QUICK_EXPENSE_PRESETS: QuickExpensePreset[] = [
   { label: 'Breakfast', category: 'FOOD', tag: 'Breakfast', icon: '🍳' },
@@ -83,17 +206,12 @@ export const QUICK_EXPENSE_PRESETS: QuickExpensePreset[] = [
   { label: 'Gift shopping', category: 'SHOPPING', tag: 'Shopping', icon: '🎁' },
   { label: 'medical', category: 'MEDICAL', tag: 'Medicine', icon: '💊' },
   { label: 'Hotel Fee', category: 'HOTEL', tag: 'Hotel', icon: '🏨' },
-  { label: 'Cab Installment', category: 'TOLL_TAXI', tag: 'Taxi', icon: '🚕' },
-  { label: 'Cab', category: 'TOLL_TAXI', tag: 'Taxi', icon: '🚖' },
-];
-
-const QUICK_CAB_PACKAGES = [
-  'Haridwar - Badrinath 7D Circuit',
-  'Joshimath - Badrinath Shuttle',
-  'Rishikesh - Devprayag Drop',
-  'Badrinath - Mana Roundtrip',
-  'Haridwar - Rishikesh Drop',
-  'Local Station / Sightseeing'
+  { label: 'Cab Installment', category: 'TOLL_TAXI', tag: 'Taxi', icon: '🚕', transitType: 'CAB' },
+  { label: 'Cab', category: 'TOLL_TAXI', tag: 'Taxi', icon: '🚖', transitType: 'CAB' },
+  { label: 'Auto Rickshaw', category: 'TOLL_TAXI', tag: 'Auto', icon: '🛺', transitType: 'AUTO' },
+  { label: 'Train Ticket', category: 'TOLL_TAXI', tag: 'Train', icon: '🚆', transitType: 'TRAIN' },
+  { label: 'Flight Ticket', category: 'TOLL_TAXI', tag: 'Flight', icon: '✈️', transitType: 'FLIGHT' },
+  { label: 'Toll Tax', category: 'TOLL_TAXI', tag: 'Toll', icon: '🛣️', transitType: 'TOLL_PARKING' },
 ];
 
 const PILGRIMAGE_DAYS = [
@@ -152,7 +270,7 @@ const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: string }[] = [
 
 const CATEGORIES: { id: ExpenseCategory; label: string; icon: React.FC<{ className?: string }> }[] = [
   { id: 'FOOD', label: 'Food & Tea', icon: Utensils },
-  { id: 'TOLL_TAXI', label: 'Cab & Toll', icon: Car },
+  { id: 'TOLL_TAXI', label: 'Travel & Transit', icon: Car },
   { id: 'HOTEL', label: 'Hotel & Stay', icon: Hotel },
   { id: 'SHOPPING', label: 'Shopping & Woolens', icon: ShoppingBag },
   { id: 'RITUAL', label: 'Pujas & Rituals', icon: Flame },
@@ -209,7 +327,8 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   const [tags, setTags] = useState<string[]>([]);
   const [customTagInput, setCustomTagInput] = useState('');
 
-  // Cab & Driver Transit Details State
+  // Travel & Transit Sub-Mode State
+  const [transitType, setTransitType] = useState<TransitType>('CAB');
   const [driverName, setDriverName] = useState('');
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [cabRouteOrPackage, setCabRouteOrPackage] = useState('');
@@ -245,6 +364,16 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         setPaymentMethod(editingExpense.paymentMethod || 'UPI');
         setTags(editingExpense.tags || []);
         setCustomTagInput('');
+
+        // Detect or restore Transit Type
+        const detectedTransitType: TransitType = editingExpense.cabDetails?.transitType || (
+          editingExpense.tags?.some(t => t.toLowerCase() === 'auto') || editingExpense.title.toLowerCase().includes('auto') ? 'AUTO' :
+          editingExpense.tags?.some(t => t.toLowerCase() === 'train') || editingExpense.title.toLowerCase().includes('train') || editingExpense.title.toLowerCase().includes('rail') || editingExpense.title.toLowerCase().includes('irctc') ? 'TRAIN' :
+          editingExpense.tags?.some(t => t.toLowerCase() === 'flight') || editingExpense.title.toLowerCase().includes('flight') || editingExpense.title.toLowerCase().includes('indigo') ? 'FLIGHT' :
+          editingExpense.tags?.some(t => t.toLowerCase() === 'toll') || editingExpense.title.toLowerCase().includes('toll') || editingExpense.title.toLowerCase().includes('parking') ? 'TOLL_PARKING' :
+          'CAB'
+        );
+        setTransitType(detectedTransitType);
         setDriverName(editingExpense.cabDetails?.driverName || '');
         setVehicleNumber(editingExpense.cabDetails?.vehicleNumber || '');
         setCabRouteOrPackage(editingExpense.cabDetails?.cabRouteOrPackage || '');
@@ -291,6 +420,7 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
         setPaymentMethod('UPI');
         setTags([]);
         setCustomTagInput('');
+        setTransitType('CAB');
         setDriverName('');
         setVehicleNumber('');
         setCabRouteOrPackage('');
@@ -437,7 +567,8 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
       const createdAtIso = expenseDateTime ? new Date(expenseDateTime).toISOString() : new Date().toISOString();
 
       const hasCabInfo = Boolean(driverName.trim() || vehicleNumber.trim() || cabRouteOrPackage.trim());
-      const finalCabDetails: ExpenseCabDetails | undefined = (category === 'TOLL_TAXI' || hasCabInfo) && hasCabInfo ? {
+      const finalCabDetails: ExpenseCabDetails | undefined = (category === 'TOLL_TAXI' || hasCabInfo) ? {
+        transitType,
         driverName: driverName.trim() || undefined,
         vehicleNumber: vehicleNumber.trim() || undefined,
         cabRouteOrPackage: cabRouteOrPackage.trim() || undefined
@@ -511,6 +642,9 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
   const handleSelectPreset = (preset: QuickExpensePreset) => {
     setTitle(preset.label);
     setCategory(preset.category);
+    if (preset.transitType) {
+      setTransitType(preset.transitType);
+    }
     if (preset.tag && !tags.includes(preset.tag)) {
       setTags(prev => [...prev, preset.tag!]);
     }
@@ -826,85 +960,123 @@ export const AddExpenseSheet: React.FC<AddExpenseSheetProps> = ({
             </div>
           </div>
 
-          {/* 🚖 Cab Transit & Driver Details (Visible when category is TOLL_TAXI or Cab preset chosen) */}
-          {(category === 'TOLL_TAXI' || driverName || vehicleNumber || cabRouteOrPackage || title.toLowerCase().includes('cab') || title.toLowerCase().includes('taxi')) && (
-            <div className="space-y-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 animate-in fade-in slide-in-from-top-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Car className="w-4 h-4 text-amber-400" />
-                  <span>Cab Transit & Driver Details</span>
-                </label>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  NH-7 Vehicle Log
-                </span>
-              </div>
-
-              {/* Quick Route / Package Preset Chips */}
-              <div className="space-y-1">
-                <span className="text-[10px] font-semibold text-slate-400 block">
-                  ⚡ Route / Package Presets:
-                </span>
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                  {QUICK_CAB_PACKAGES.map(pkg => (
-                    <button
-                      key={pkg}
-                      type="button"
-                      onClick={() => setCabRouteOrPackage(pkg)}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-semibold border transition-all shrink-0 tap-active min-h-[30px] ${
-                        cabRouteOrPackage === pkg
-                          ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold shadow'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {pkg}
-                    </button>
-                  ))}
+          {/* 🚗 Travel & Transit Parent Hub (Cab, Auto, Train, Flight, Toll) */}
+          {(category === 'TOLL_TAXI' || driverName || vehicleNumber || cabRouteOrPackage || title.toLowerCase().includes('cab') || title.toLowerCase().includes('taxi') || title.toLowerCase().includes('auto') || title.toLowerCase().includes('train') || title.toLowerCase().includes('flight')) && (() => {
+            const activeTransitMode = TRANSIT_MODES.find(m => m.id === transitType) || TRANSIT_MODES[0];
+            return (
+              <div className="space-y-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-base">{activeTransitMode.icon}</span>
+                    <span>Travel & Transit Logistics</span>
+                  </label>
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    {activeTransitMode.badge}
+                  </span>
                 </div>
-              </div>
 
-              {/* Cab Route or Package Name Input */}
-              <div>
-                <label className="text-[10px] font-semibold text-slate-300 block mb-1">
-                  Cab Route / Package Name
-                </label>
-                <input
-                  type="text"
-                  value={cabRouteOrPackage}
-                  onChange={e => setCabRouteOrPackage(e.target.value)}
-                  placeholder="e.g. Haridwar-Badrinath 7D Circuit / Joshimath Shuttle"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 shadow-inner"
-                />
-              </div>
+                {/* 🚖 Interactive Transit Sub-Mode Tabs */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-semibold text-slate-400 block">
+                    Mode of Travel:
+                  </span>
+                  <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-950/80 border border-slate-800 overflow-x-auto no-scrollbar">
+                    {TRANSIT_MODES.map(mode => {
+                      const isModeActive = transitType === mode.id;
+                      return (
+                        <button
+                          key={mode.id}
+                          type="button"
+                          onClick={() => {
+                            setTransitType(mode.id);
+                            if (mode.defaultTag && !tags.includes(mode.defaultTag)) {
+                              setTags(prev => [
+                                ...prev.filter(t => !['Taxi', 'Cab', 'Auto', 'Train', 'Flight', 'Toll'].includes(t)),
+                                mode.defaultTag
+                              ]);
+                            }
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 tap-active min-h-[34px] ${
+                            isModeActive
+                              ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                              : 'text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent'
+                          }`}
+                        >
+                          <span className="text-sm">{mode.icon}</span>
+                          <span>{mode.shortLabel}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-              {/* Driver Name & Vehicle Number Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* Quick Route / Package Preset Chips for this Mode */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-semibold text-slate-400 block">
+                    ⚡ {activeTransitMode.shortLabel} Presets:
+                  </span>
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                    {activeTransitMode.quickPackages.map(pkg => (
+                      <button
+                        key={pkg}
+                        type="button"
+                        onClick={() => setCabRouteOrPackage(pkg)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold border transition-all shrink-0 tap-active min-h-[30px] ${
+                          cabRouteOrPackage === pkg
+                            ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold shadow'
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {pkg}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Dynamic Route / Package / Stand Name Input */}
                 <div>
                   <label className="text-[10px] font-semibold text-slate-300 block mb-1">
-                    Cab Driver Name
+                    {activeTransitMode.routeLabel}
                   </label>
                   <input
                     type="text"
-                    value={driverName}
-                    onChange={e => setDriverName(e.target.value)}
-                    placeholder="e.g. Rajesh Kumar (Pawan Tour)"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                    value={cabRouteOrPackage}
+                    onChange={e => setCabRouteOrPackage(e.target.value)}
+                    placeholder={activeTransitMode.routePlaceholder}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 shadow-inner"
                   />
                 </div>
-                <div>
-                  <label className="text-[10px] font-semibold text-slate-300 block mb-1">
-                    Cab Vehicle Number
-                  </label>
-                  <input
-                    type="text"
-                    value={vehicleNumber}
-                    onChange={e => setVehicleNumber(e.target.value)}
-                    placeholder="e.g. UK 07 TA 1234"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-xs text-white font-mono uppercase placeholder-slate-500 focus:outline-none focus:border-amber-400"
-                  />
+
+                {/* Dynamic Operator / Driver & Vehicle / PNR / Plate Number Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-300 block mb-1">
+                      {activeTransitMode.driverLabel}
+                    </label>
+                    <input
+                      type="text"
+                      value={driverName}
+                      onChange={e => setDriverName(e.target.value)}
+                      placeholder={activeTransitMode.driverPlaceholder}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-300 block mb-1">
+                      {activeTransitMode.vehicleLabel}
+                    </label>
+                    <input
+                      type="text"
+                      value={vehicleNumber}
+                      onChange={e => setVehicleNumber(e.target.value)}
+                      placeholder={activeTransitMode.vehiclePlaceholder}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-amber-500/40 text-xs text-white font-mono uppercase placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
         {/* Right Column: Transaction Logistics (Payment Method, Tags, Payer, Split, Receipt) */}

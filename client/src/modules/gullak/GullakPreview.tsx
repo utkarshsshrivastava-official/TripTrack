@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Expense, ExpenseCategory, DuoId, PaymentMethod } from '../../shared/types';
+import { Expense, ExpenseCategory, DuoId, PaymentMethod, TransitType } from '../../shared/types';
 import { 
   Plus, 
   Car, 
@@ -31,7 +31,7 @@ import {
 import { 
   getExpensesFromDexie, 
   saveExpenseToDexie, 
-  updateExpenseInDexie,
+  updateExpenseInDexie, 
   deleteExpenseFromDexie, 
   calculateGullakSummary,
   sortExpensesByDateDesc
@@ -44,6 +44,33 @@ import { PrintableSettlementReport } from './components/PrintableSettlementRepor
 import { RapidGridEditor } from './components/RapidGridEditor';
 import { GullakAnalyticsView } from './components/GullakAnalyticsView';
 
+export function getExpenseTransitType(e: Expense): TransitType {
+  if (e.cabDetails?.transitType) return e.cabDetails.transitType;
+  const t = (e.title || '').toLowerCase();
+  const tags = (e.tags || []).map(x => x.toLowerCase());
+  if (tags.some(x => x === 'auto') || t.includes('auto') || t.includes('rickshaw')) return 'AUTO';
+  if (tags.some(x => x === 'train') || t.includes('train') || t.includes('rail') || t.includes('irctc') || t.includes('12441') || t.includes('rajdhani') || t.includes('shatabdi')) return 'TRAIN';
+  if (tags.some(x => x === 'flight') || t.includes('flight') || t.includes('indigo') || t.includes('air') || t.includes('pnr')) return 'FLIGHT';
+  if (tags.some(x => x === 'toll') || t.includes('toll') || tags.some(x => x === 'parking') || t.includes('parking') || t.includes('fastag')) return 'TOLL_PARKING';
+  return 'CAB';
+}
+
+export function getTransitDisplayInfo(type: TransitType) {
+  switch (type) {
+    case 'AUTO':
+      return { icon: '🛺', label: 'Auto', badgeColor: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300' };
+    case 'TRAIN':
+      return { icon: '🚆', label: 'Train', badgeColor: 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300' };
+    case 'FLIGHT':
+      return { icon: '✈️', label: 'Flight', badgeColor: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-300' };
+    case 'TOLL_PARKING':
+      return { icon: '🛣️', label: 'Toll', badgeColor: 'bg-amber-500/15 border-amber-500/30 text-amber-300' };
+    case 'CAB':
+    default:
+      return { icon: '🚕', label: 'Cab', badgeColor: 'bg-amber-500/15 border-amber-500/30 text-amber-300' };
+  }
+}
+
 interface GullakPreviewProps {
   activeDuo: DuoId | 'ALL';
   onOpenMemorial?: () => void;
@@ -54,6 +81,7 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
   const [isAddSheetOpen, setIsAddSheetOpen] = useState<boolean>(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory | 'ALL'>('ALL');
+  const [selectedTransitFilter, setSelectedTransitFilter] = useState<'ALL' | TransitType>('ALL');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grouped' | 'stream' | 'grid'>('grouped');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
@@ -189,11 +217,35 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
     return Array.from(set).sort();
   }, [expenses]);
 
-  // Strictly sorted and auto-adjusted expenses filtered by Category, Tag, and Active Duo
+  // Transit mode counts under parent Travel category
+  const transitCounts = useMemo(() => {
+    const travelExpenses = expenses.filter(e => e.category === 'TOLL_TAXI');
+    const counts: Record<'ALL' | TransitType, number> = {
+      ALL: travelExpenses.length,
+      CAB: 0,
+      AUTO: 0,
+      TRAIN: 0,
+      FLIGHT: 0,
+      TOLL_PARKING: 0,
+      OTHER: 0
+    };
+    travelExpenses.forEach(e => {
+      const mode = getExpenseTransitType(e);
+      if (counts[mode] !== undefined) counts[mode]++;
+    });
+    return counts;
+  }, [expenses]);
+
+  // Strictly sorted and auto-adjusted expenses filtered by Category, Sub-Transit Mode, Tag, and Active Duo
   const sortedFilteredExpenses = useMemo(() => {
     const filtered = expenses.filter(e => {
       const matchesCategory = selectedCategory === 'ALL' || e.category === selectedCategory;
       if (!matchesCategory) return false;
+
+      if (selectedCategory === 'TOLL_TAXI' && selectedTransitFilter !== 'ALL') {
+        const mode = getExpenseTransitType(e);
+        if (mode !== selectedTransitFilter) return false;
+      }
 
       const matchesTag = !selectedTag || (e.tags && e.tags.includes(selectedTag));
       if (!matchesTag) return false;
@@ -216,7 +268,7 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
       const timeB = new Date(b.createdAt || 0).getTime();
       return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
     });
-  }, [expenses, selectedCategory, selectedTag, activeDuo, sortOrder]);
+  }, [expenses, selectedCategory, selectedTransitFilter, selectedTag, activeDuo, sortOrder]);
 
   const filteredTotalINR = useMemo(() => {
     return sortedFilteredExpenses.reduce((acc, curr) => acc + (Number(curr.amountINR) || 0), 0);
@@ -312,27 +364,35 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
               </div>
             )}
 
-            {/* Cab & Driver Transit Details Badge */}
-            {expense.cabDetails && (expense.cabDetails.driverName || expense.cabDetails.vehicleNumber || expense.cabDetails.cabRouteOrPackage) && (
-              <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-amber-200/90 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-lg w-fit">
-                <Car className="w-3 h-3 text-amber-400 shrink-0" />
-                {expense.cabDetails.cabRouteOrPackage && (
-                  <span className="font-bold text-amber-300">
-                    {expense.cabDetails.cabRouteOrPackage}
-                  </span>
-                )}
-                {expense.cabDetails.driverName && (
-                  <span className="text-slate-300">
-                    Driver: <span className="font-semibold text-white">{expense.cabDetails.driverName}</span>
-                  </span>
-                )}
-                {expense.cabDetails.vehicleNumber && (
-                  <span className="px-1.5 py-0.2 rounded bg-slate-900 border border-amber-400/40 font-mono font-bold text-amber-300">
-                    {expense.cabDetails.vehicleNumber}
-                  </span>
-                )}
-              </div>
-            )}
+            {/* Travel & Transit Mode Details Badge */}
+            {(expense.cabDetails && (expense.cabDetails.driverName || expense.cabDetails.vehicleNumber || expense.cabDetails.cabRouteOrPackage || expense.cabDetails.transitType) || expense.category === 'TOLL_TAXI') && (() => {
+              const transitMode = getExpenseTransitType(expense);
+              const info = getTransitDisplayInfo(transitMode);
+              const hasSpecifics = Boolean(expense.cabDetails && (expense.cabDetails.driverName || expense.cabDetails.vehicleNumber || expense.cabDetails.cabRouteOrPackage));
+              if (!hasSpecifics && expense.category !== 'TOLL_TAXI') return null;
+
+              return (
+                <div className={`flex flex-wrap items-center gap-1.5 text-[10px] border px-2 py-0.5 rounded-lg w-fit ${info.badgeColor}`}>
+                  <span className="text-xs">{info.icon}</span>
+                  <span className="font-bold uppercase tracking-wider text-[9px] opacity-90">{info.label}</span>
+                  {expense.cabDetails?.cabRouteOrPackage && (
+                    <span className="font-bold text-white">
+                      • {expense.cabDetails.cabRouteOrPackage}
+                    </span>
+                  )}
+                  {expense.cabDetails?.driverName && (
+                    <span className="text-slate-300">
+                      • {transitMode === 'TRAIN' ? 'Coach:' : transitMode === 'FLIGHT' ? 'Flight:' : transitMode === 'TOLL_PARKING' ? 'Ref:' : 'Driver:'} <span className="font-semibold text-white">{expense.cabDetails.driverName}</span>
+                    </span>
+                  )}
+                  {expense.cabDetails?.vehicleNumber && (
+                    <span className="px-1.5 py-0.2 rounded bg-slate-900 border border-current font-mono font-bold text-white">
+                      {expense.cabDetails.vehicleNumber}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Payer, Split & Payment Method Badges */}
             <div className="text-[10px] text-slate-400 flex flex-wrap items-center gap-1.5 font-mono">
@@ -578,7 +638,10 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => {
+                    setSelectedCategory(cat);
+                    if (cat !== 'TOLL_TAXI') setSelectedTransitFilter('ALL');
+                  }}
                   className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all tap-active flex items-center gap-1.5 ${
                     selectedCategory === cat
                       ? 'bg-slate-200 text-slate-950 font-black shadow-md'
@@ -586,10 +649,92 @@ export const GullakPreview: React.FC<GullakPreviewProps> = ({ activeDuo, onOpenM
                   }`}
                 >
                   {getCategoryIcon(cat)}
-                  <span>{cat.replace('_', ' ')}</span>
+                  <span>{cat === 'TOLL_TAXI' ? 'Travel & Transit' : cat.replace('_', ' ')}</span>
                 </button>
               ))}
             </div>
+
+            {/* Travel & Transit Mode Tabs Sub-Ribbon (Connected under parent Travel) */}
+            {selectedCategory === 'TOLL_TAXI' && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs bg-slate-900/60 p-1.5 rounded-2xl border border-sky-500/25 animate-in fade-in">
+                <span className="text-[10px] uppercase font-black text-sky-400 shrink-0 flex items-center gap-1 pl-1">
+                  <Car className="w-3 h-3 text-sky-400" />
+                  <span>Travel Modes:</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTransitFilter('ALL')}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold shrink-0 transition-all tap-active flex items-center gap-1 ${
+                    selectedTransitFilter === 'ALL'
+                      ? 'bg-sky-500 text-slate-950 font-black shadow-md'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                  }`}
+                >
+                  <span>All Travel</span>
+                  <span className="text-[9px] font-mono opacity-80">({transitCounts.ALL})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTransitFilter('CAB')}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold shrink-0 transition-all tap-active flex items-center gap-1 ${
+                    selectedTransitFilter === 'CAB'
+                      ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                  }`}
+                >
+                  <span>🚕 Cabs</span>
+                  <span className="text-[9px] font-mono opacity-80">({transitCounts.CAB})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTransitFilter('AUTO')}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold shrink-0 transition-all tap-active flex items-center gap-1 ${
+                    selectedTransitFilter === 'AUTO'
+                      ? 'bg-emerald-500 text-slate-950 font-black shadow-md'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                  }`}
+                >
+                  <span>🛺 Autos</span>
+                  <span className="text-[9px] font-mono opacity-80">({transitCounts.AUTO})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTransitFilter('TRAIN')}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold shrink-0 transition-all tap-active flex items-center gap-1 ${
+                    selectedTransitFilter === 'TRAIN'
+                      ? 'bg-indigo-500 text-white font-black shadow-md'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                  }`}
+                >
+                  <span>🚆 Trains</span>
+                  <span className="text-[9px] font-mono opacity-80">({transitCounts.TRAIN})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTransitFilter('FLIGHT')}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold shrink-0 transition-all tap-active flex items-center gap-1 ${
+                    selectedTransitFilter === 'FLIGHT'
+                      ? 'bg-cyan-500 text-slate-950 font-black shadow-md'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                  }`}
+                >
+                  <span>✈️ Flights</span>
+                  <span className="text-[9px] font-mono opacity-80">({transitCounts.FLIGHT})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTransitFilter('TOLL_PARKING')}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold shrink-0 transition-all tap-active flex items-center gap-1 ${
+                    selectedTransitFilter === 'TOLL_PARKING'
+                      ? 'bg-slate-200 text-slate-950 font-black shadow-md'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700/60'
+                  }`}
+                >
+                  <span>🛣️ Tolls</span>
+                  <span className="text-[9px] font-mono opacity-80">({transitCounts.TOLL_PARKING})</span>
+                </button>
+              </div>
+            )}
 
             {/* Layered Tag Filter Ribbon */}
             {allUniqueTags.length > 0 && (

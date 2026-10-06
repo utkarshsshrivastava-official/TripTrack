@@ -194,10 +194,14 @@ export type PaymentMethod = 'UPI' | 'CASH' | 'CARD' | 'NET_BANKING' | 'OTHER';
 
 export type ExpenseSplitMode = 'EQUAL_50_50' | 'CUSTOM_AMOUNTS' | 'FULL_FAMILY_A' | 'FULL_FAMILY_B';
 
+export type TransitType = 'CAB' | 'AUTO' | 'TRAIN' | 'FLIGHT' | 'TOLL_PARKING' | 'OTHER';
+
 export interface ExpenseCabDetails {
+  transitType?: TransitType;
   driverName?: string;
   vehicleNumber?: string;
   cabRouteOrPackage?: string;
+  notes?: string;
 }
 
 export interface Expense {

@@ -28,7 +28,7 @@ interface DraftRow {
 
 const CATEGORY_OPTIONS: { id: ExpenseCategory; label: string }[] = [
   { id: 'FOOD', label: 'Food & Tea' },
-  { id: 'TOLL_TAXI', label: 'Cab & Toll' },
+  { id: 'TOLL_TAXI', label: 'Travel & Transit' },
   { id: 'HOTEL', label: 'Hotel & Stay' },
   { id: 'SHOPPING', label: 'Shopping & Woolens' },
   { id: 'RITUAL', label: 'Pujas & Rituals' },

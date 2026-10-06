@@ -59,6 +59,7 @@
 | **Phase 44** | **Gullak Settlement Math Audit & Dual Parity Engine (Splitwise vs Flat 50/50)** | ✅ **DONE** | 100% | Completed |
 | **Phase 45** | **Gullak Quick Description Presets & Cab Transit & Driver Details Engine** | ✅ **DONE** | 100% | Completed |
 | **Phase 46** | **Printable Settlement Report & Itinerary Dossier Zero-Leakage DOM Print Engine** | ✅ **DONE** | 100% | Completed |
+| **Phase 47** | **Unified Travel & Transit Hierarchy: Sub-Category Tabs (Cab, Auto, Train, Flight, Toll) & Mode Badges** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -1310,6 +1311,40 @@
   - [x] Enhanced itemized ledger rows to print driver, vehicle plate, and route details when `exp.cabDetails` is present.
 - [x] **46.4 Build & Production Verification**
   - [x] `npm --prefix client run build`: Passed cleanly with 0 TypeScript/Vite errors (`tsc -b && vite build` built in 18.02s).
+
+---
+
+### ✅ Phase 47: Unified Travel & Transit Hierarchy: Sub-Category Tabs & Mode Badges (100% COMPLETE)
+
+- [x] **47.1 Universal Data Model & Backward-Compatible Transit Sub-Modes**
+  - [x] Maintained underlying `TOLL_TAXI` category enum in MongoDB and Dexie for 100% backward compatibility with all historical logs while rebranding client UI to **Travel & Transit**.
+  - [x] Extended `TransitType = 'CAB' | 'AUTO' | 'TRAIN' | 'FLIGHT' | 'TOLL_PARKING' | 'OTHER'` across client and server schemas.
+  - [x] Extended `ExpenseCabDetails` in [index.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/shared/types/index.ts) and `IExpense` in [expense.model.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/models/expense.model.ts) with `transitType?: TransitType` and `notes?: string`.
+  - [x] Sanitized and persisted `transitType` and `notes` across controller handlers (`getExpensesHandler`, `createExpenseHandler`, `updateExpenseHandler`, `syncBulkExpensesHandler`) in [expense.controller.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/modules/gullak/expense.controller.ts).
+- [x] **47.2 Add / Edit Expense Dynamic Transit Tab Bar (`AddExpenseSheet.tsx`)**
+  - [x] Configured 5 distinct travel sub-modes with tailor-made contextual fields:
+    - `🚕 Cab / Taxi`: Driver name, vehicle plate, route presets (`Haridwar - Badrinath 7D Circuit`, etc.).
+    - `🛺 Auto Rickshaw`: Auto driver name, vehicle number, local shuttle presets (`Haridwar Station - Ashram Drop`, etc.).
+    - `🚆 Train / IRCTC`: Coach/Seat, PNR/Train number, route presets (`Bilaspur Rajdhani Express`, `Haridwar - Rishikesh Express`, etc.).
+    - `✈️ Flight`: Flight code/PNR, seat, route presets (`IndiGo DEL - DED Flight`, `Return Flight DED - DEL`, etc.).
+    - `🛣️ Toll & Parking`: Plaza name / FASTag ref, receipt tag, highway presets (`NH-7 Rishikesh Bypass Toll`, `Badrinath Parking Plaza`, etc.).
+  - [x] Added quick description presets for Auto Rickshaw (`🛺 Auto`), Train Ticket (`🚆 Train`), Flight Ticket (`✈️ Flight`), and Toll Tax (`🛣️ Toll`).
+  - [x] Synced transit sub-mode changes automatically with default descriptions and tags when creating or editing an entry.
+- [x] **47.3 Gullak Ledger Travel Modes Sub-Ribbon & Filtering Hub (`GullakPreview.tsx`)**
+  - [x] Rebranded category pill to **Travel & Transit**.
+  - [x] When **Travel & Transit** is active, rendered an interactive **Travel Modes Sub-Ribbon**:
+    - `All Travel (N)`, `🚕 Cabs (N)`, `🛺 Autos (N)`, `🚆 Trains (N)`, `✈️ Flights (N)`, `🛣️ Tolls (N)`.
+  - [x] Built live counter badges calculating exact count of expenses under each sub-mode.
+  - [x] Added smart classifier heuristic checking both explicit `cabDetails.transitType` and auto-tag/keyword matching for zero-effort legacy expense mapping.
+  - [x] Filtered ledger seamlessly by sub-mode while remaining anchored under the parent Travel category.
+  - [x] Dynamic card badges: Rendered color-coded mode badges (`🚕 Cab`, `🛺 Auto`, `🚆 Train`, `✈️ Flight`, `🛣️ Toll`) with route, driver/flight/coach details, and plate/PNR tags.
+- [x] **47.4 Secondary Views & Reporting Consistency**
+  - [x] Updated category display names in [GullakBalanceHero.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/gullak/components/GullakBalanceHero.tsx), [GullakAnalyticsView.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/gullak/components/GullakAnalyticsView.tsx), and [RapidGridEditor.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/gullak/components/RapidGridEditor.tsx).
+  - [x] Added `Transit Mode` column and formatted `Travel & Transit` in [expenseExportService.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/gullak/services/expenseExportService.ts) CSV and WhatsApp exports.
+  - [x] Enhanced [PrintableSettlementReport.tsx](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/client/src/modules/gullak/components/PrintableSettlementReport.tsx) to print mode-specific emojis (`🚕`, `🛺`, `🚆`, `✈️`, `🛣️`) and labels (`Driver:`, `Auto:`, `Coach/Seat:`, `Flight/PNR:`, `Plaza:`) in the itemized transaction ledger.
+- [x] **47.5 Monorepo Build & Production Verification**
+  - [x] `npm --prefix server run build`: 0 TypeScript errors.
+  - [x] `npm --prefix client run build`: 0 TypeScript/Vite errors (`built in 8.15s`).
 
 ---
 

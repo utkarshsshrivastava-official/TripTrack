@@ -231,7 +231,9 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
                   const pct = summary.totalSpentINR > 0 ? Math.round((amt / summary.totalSpentINR) * 100) : 0;
                   return (
                     <tr key={cat} className="border-b border-slate-200">
-                      <td className="p-2 border-r border-slate-200 font-medium">{cat.replace('_', ' ')}</td>
+                      <td className="p-2 border-r border-slate-200 font-medium">
+                        {cat === 'TOLL_TAXI' ? 'Travel & Transit' : cat.replace('_', ' ')}
+                      </td>
                       <td className="p-2 border-r border-slate-200 font-mono font-bold text-right">
                         ₹{amt.toLocaleString('en-IN')}
                       </td>
@@ -267,6 +269,24 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
                   const dateFormatted = !isNaN(d.getTime()) 
                     ? d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) 
                     : '';
+
+                  const transitType = exp.cabDetails?.transitType;
+                  const titleLower = exp.title.toLowerCase();
+                  let transitEmoji = '🚕';
+                  let transitRole = 'Driver:';
+                  if (transitType === 'AUTO' || titleLower.includes('auto') || titleLower.includes('rickshaw')) {
+                    transitEmoji = '🛺';
+                    transitRole = 'Auto:';
+                  } else if (transitType === 'TRAIN' || titleLower.includes('train') || titleLower.includes('irctc') || titleLower.includes('rail')) {
+                    transitEmoji = '🚆';
+                    transitRole = 'Coach/Seat:';
+                  } else if (transitType === 'FLIGHT' || titleLower.includes('flight') || titleLower.includes('indigo') || titleLower.includes('air')) {
+                    transitEmoji = '✈️';
+                    transitRole = 'Flight/PNR:';
+                  } else if (transitType === 'TOLL_PARKING' || titleLower.includes('toll') || titleLower.includes('fastag') || titleLower.includes('parking')) {
+                    transitEmoji = '🛣️';
+                    transitRole = 'Plaza:';
+                  }
                   
                   return (
                     <tr key={exp.id} className="border-b border-slate-200 even:bg-slate-50">
@@ -281,13 +301,15 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
                         )}
                         {exp.cabDetails && (exp.cabDetails.cabRouteOrPackage || exp.cabDetails.driverName || exp.cabDetails.vehicleNumber) && (
                           <div className="text-[9px] text-amber-800 font-mono mt-0.5">
-                            🚕 {exp.cabDetails.cabRouteOrPackage ? `${exp.cabDetails.cabRouteOrPackage}` : ''}
-                            {exp.cabDetails.driverName ? ` • Driver: ${exp.cabDetails.driverName}` : ''}
+                            {transitEmoji} {exp.cabDetails.cabRouteOrPackage ? `${exp.cabDetails.cabRouteOrPackage}` : ''}
+                            {exp.cabDetails.driverName ? ` • ${transitRole} ${exp.cabDetails.driverName}` : ''}
                             {exp.cabDetails.vehicleNumber ? ` (${exp.cabDetails.vehicleNumber})` : ''}
                           </div>
                         )}
                       </td>
-                      <td className="p-2 border-r border-slate-200 text-slate-600">{exp.category.replace('_', ' ')}</td>
+                      <td className="p-2 border-r border-slate-200 text-slate-600">
+                        {exp.category === 'TOLL_TAXI' ? 'Travel & Transit' : exp.category.replace('_', ' ')}
+                      </td>
                       <td className="p-2 border-r border-slate-200 font-medium">
                         {exp.paidBy === 'Multiple' && exp.paymentSplits 
                           ? `U: ₹${exp.paymentSplits.utkarshPaidINR}, S: ₹${exp.paymentSplits.shreyasPaidINR}`

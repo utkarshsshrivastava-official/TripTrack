@@ -33,10 +33,12 @@ export async function getExpensesHandler(_req: Request, res: Response): Promise<
             utkarshOwesINR: e.owedSplits.utkarshOwesINR,
             shreyasOwesINR: e.owedSplits.shreyasOwesINR
           } : undefined,
-          cabDetails: (e.cabDetails && (e.cabDetails.driverName || e.cabDetails.vehicleNumber || e.cabDetails.cabRouteOrPackage)) ? {
+          cabDetails: (e.cabDetails && (e.cabDetails.driverName || e.cabDetails.vehicleNumber || e.cabDetails.cabRouteOrPackage || e.cabDetails.transitType || e.cabDetails.notes)) ? {
+            transitType: e.cabDetails.transitType || 'CAB',
             driverName: e.cabDetails.driverName || undefined,
             vehicleNumber: e.cabDetails.vehicleNumber || undefined,
-            cabRouteOrPackage: e.cabDetails.cabRouteOrPackage || undefined
+            cabRouteOrPackage: e.cabDetails.cabRouteOrPackage || undefined,
+            notes: e.cabDetails.notes || undefined
           } : undefined,
           createdAt: e.createdAt.toISOString()
         }))
@@ -94,7 +96,7 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
 
     const hasValidCabDetails = Boolean(
       cabDetails &&
-      (cabDetails.driverName?.trim() || cabDetails.vehicleNumber?.trim() || cabDetails.cabRouteOrPackage?.trim())
+      (cabDetails.driverName?.trim() || cabDetails.vehicleNumber?.trim() || cabDetails.cabRouteOrPackage?.trim() || cabDetails.transitType || cabDetails.notes?.trim())
     );
 
     const payload = {
@@ -112,9 +114,11 @@ export async function createExpenseHandler(req: Request, res: Response): Promise
       splitMode: splitMode || 'EQUAL_50_50',
       owedSplits: hasValidOwedSplits ? owedSplits : undefined,
       cabDetails: hasValidCabDetails ? {
+        transitType: cabDetails.transitType || 'CAB',
         driverName: cabDetails.driverName?.trim() || undefined,
         vehicleNumber: cabDetails.vehicleNumber?.trim() || undefined,
-        cabRouteOrPackage: cabDetails.cabRouteOrPackage?.trim() || undefined
+        cabRouteOrPackage: cabDetails.cabRouteOrPackage?.trim() || undefined,
+        notes: cabDetails.notes?.trim() || undefined
       } : undefined,
       createdAt: createdAt ? new Date(createdAt) : new Date()
     };
@@ -196,7 +200,7 @@ export async function updateExpenseHandler(req: Request, res: Response): Promise
 
     const hasValidCabDetails = Boolean(
       cabDetails &&
-      (cabDetails.driverName?.trim() || cabDetails.vehicleNumber?.trim() || cabDetails.cabRouteOrPackage?.trim())
+      (cabDetails.driverName?.trim() || cabDetails.vehicleNumber?.trim() || cabDetails.cabRouteOrPackage?.trim() || cabDetails.transitType || cabDetails.notes?.trim())
     );
 
     const payload: any = {
@@ -209,9 +213,11 @@ export async function updateExpenseHandler(req: Request, res: Response): Promise
       splitMode: splitMode || 'EQUAL_50_50',
       owedSplits: hasValidOwedSplits ? owedSplits : undefined,
       cabDetails: hasValidCabDetails ? {
+        transitType: cabDetails.transitType || 'CAB',
         driverName: cabDetails.driverName?.trim() || undefined,
         vehicleNumber: cabDetails.vehicleNumber?.trim() || undefined,
-        cabRouteOrPackage: cabDetails.cabRouteOrPackage?.trim() || undefined
+        cabRouteOrPackage: cabDetails.cabRouteOrPackage?.trim() || undefined,
+        notes: cabDetails.notes?.trim() || undefined
       } : undefined
     };
 
@@ -280,7 +286,7 @@ export async function syncBulkExpensesHandler(req: Request, res: Response): Prom
         if (!item.id || !item.title) continue;
         const hasValidCab = Boolean(
           item.cabDetails &&
-          (item.cabDetails.driverName?.trim() || item.cabDetails.vehicleNumber?.trim() || item.cabDetails.cabRouteOrPackage?.trim())
+          (item.cabDetails.driverName?.trim() || item.cabDetails.vehicleNumber?.trim() || item.cabDetails.cabRouteOrPackage?.trim() || item.cabDetails.transitType || item.cabDetails.notes?.trim())
         );
 
         const payload = {
@@ -298,9 +304,11 @@ export async function syncBulkExpensesHandler(req: Request, res: Response): Prom
           splitMode: item.splitMode,
           owedSplits: item.owedSplits,
           cabDetails: hasValidCab ? {
+            transitType: item.cabDetails.transitType || 'CAB',
             driverName: item.cabDetails.driverName?.trim() || undefined,
             vehicleNumber: item.cabDetails.vehicleNumber?.trim() || undefined,
-            cabRouteOrPackage: item.cabDetails.cabRouteOrPackage?.trim() || undefined
+            cabRouteOrPackage: item.cabDetails.cabRouteOrPackage?.trim() || undefined,
+            notes: item.cabDetails.notes?.trim() || undefined
           } : undefined,
           createdAt: item.createdAt ? new Date(item.createdAt) : new Date()
         };
