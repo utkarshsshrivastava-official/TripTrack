@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Share2, 
@@ -32,6 +33,18 @@ export const DayItineraryExportModal: React.FC<DayItineraryExportModalProps> = (
   });
   const [isAllDays, setIsAllDays] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (activeTab === 'PRINT') {
+      document.body.classList.add('print-itinerary-active');
+    } else {
+      document.body.classList.remove('print-itinerary-active');
+    }
+    return () => {
+      document.body.classList.remove('print-itinerary-active');
+    };
+  }, [isOpen, activeTab]);
 
   if (!isOpen) return null;
 
@@ -166,17 +179,21 @@ export const DayItineraryExportModal: React.FC<DayItineraryExportModalProps> = (
   };
 
   const handlePrint = () => {
+    document.body.classList.add('print-itinerary-active');
     window.print();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+  const content = (
+    <div 
+      id="printable-itinerary-portal"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/80 backdrop-blur-md animate-fade-in print:p-0 print:m-0 print:bg-white print:static print:overflow-visible"
+    >
       <div 
-        className="w-full max-w-lg max-h-[92vh] flex flex-col bg-slate-900 border border-slate-700/70 rounded-3xl shadow-2xl overflow-hidden"
+        className="w-full max-w-lg max-h-[92vh] flex flex-col bg-slate-900 border border-slate-700/70 rounded-3xl shadow-2xl overflow-hidden print:bg-white print:border-none print:shadow-none print:max-h-none print:max-w-none print:overflow-visible print:w-full print:rounded-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 bg-gradient-to-r from-sky-950/70 via-slate-900 to-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+        <div className="p-4 bg-gradient-to-r from-sky-950/70 via-slate-900 to-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0 print:hidden">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-500/40 text-sky-400 flex items-center justify-center shrink-0">
               <Share2 className="w-5 h-5" />
@@ -204,7 +221,7 @@ export const DayItineraryExportModal: React.FC<DayItineraryExportModalProps> = (
         </div>
 
         {/* Mode Tabs (WhatsApp vs Print) */}
-        <div className="p-2.5 bg-slate-950/50 border-b border-slate-800 flex items-center gap-2 shrink-0">
+        <div className="p-2.5 bg-slate-950/50 border-b border-slate-800 flex items-center gap-2 shrink-0 print:hidden">
           <button
             type="button"
             onClick={() => setActiveTab('WHATSAPP')}
@@ -233,7 +250,7 @@ export const DayItineraryExportModal: React.FC<DayItineraryExportModalProps> = (
         </div>
 
         {/* Scope Selector: Single Day vs All 9 Days */}
-        <div className="p-3 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between gap-2 shrink-0">
+        <div className="p-3 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between gap-2 shrink-0 print:hidden">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -379,7 +396,7 @@ export const DayItineraryExportModal: React.FC<DayItineraryExportModalProps> = (
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 bg-slate-950/70 border-t border-slate-800 flex items-center justify-between gap-2 shrink-0">
+        <div className="p-4 bg-slate-950/70 border-t border-slate-800 flex items-center justify-between gap-2 shrink-0 print:hidden">
           {activeTab === 'WHATSAPP' ? (
             <>
               <button
@@ -423,4 +440,7 @@ export const DayItineraryExportModal: React.FC<DayItineraryExportModalProps> = (
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(content, document.body);
 };

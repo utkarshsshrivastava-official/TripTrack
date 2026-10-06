@@ -58,6 +58,7 @@
 | **Phase 43** | **Laptop-Responsive Gullak Workspace & Split Dashboard Ergonomics** | ✅ **DONE** | 100% | Completed |
 | **Phase 44** | **Gullak Settlement Math Audit & Dual Parity Engine (Splitwise vs Flat 50/50)** | ✅ **DONE** | 100% | Completed |
 | **Phase 45** | **Gullak Quick Description Presets & Cab Transit & Driver Details Engine** | ✅ **DONE** | 100% | Completed |
+| **Phase 46** | **Printable Settlement Report & Itinerary Dossier Zero-Leakage DOM Print Engine** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -1290,6 +1291,25 @@
 - [x] **45.5 Compilation & Build Verification**
   - [x] `npm --prefix server run build`: Passed cleanly with zero TypeScript errors.
   - [x] `npm --prefix client run build`: Passed cleanly with zero TypeScript errors (`built in 8.25s`).
+
+---
+
+### ✅ Phase 46: Printable Settlement Report & Itinerary Dossier Zero-Leakage DOM Print Engine (100% COMPLETE)
+
+- [x] **46.1 Zero-Leakage React Portal DOM Isolation Architecture**
+  - [x] Extracted `PrintableSettlementReport.tsx` outside the `#root` DOM tree using `createPortal(content, document.body)`.
+  - [x] Extracted `DayItineraryExportModal.tsx` outside `#root` DOM tree using `createPortal(content, document.body)`.
+  - [x] Added dynamic lifecycle hooks applying `body.print-settlement-active` and `body.print-itinerary-active` class states to `document.body` during modal lifecycles with keyboard <kbd>Esc</kbd> and backdrop exit handlers.
+- [x] **46.2 Complete Background App Shell Suppression in Print CSS (`index.css`)**
+  - [x] Implemented strict `@media print` rules: `body.print-settlement-active #root, body.print-itinerary-active #root, body.print-isolated-modal #root { display: none !important; visibility: hidden !important; height: 0 !important; max-height: 0 !important; overflow: hidden !important; }`.
+  - [x] Eliminated the root cause of the print bug: Prevents the underlying Gullak ledger page (hero balance card, 90 expense cards, charts, floating action buttons, bottom navigation dock) from streaming into physical print output or PDF previews.
+  - [x] Rendered `#printable-settlement-portal` and `#printable-itinerary-portal` as standalone full-canvas clean white paper (`background: #ffffff !important; overflow: visible !important; border: none !important;`).
+- [x] **46.3 Professional Paper Formatting & Visual Precision**
+  - [x] Configured `@page { size: A4 portrait; margin: 10mm; }` with forced background graphic preservation (`-webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;`).
+  - [x] Integrated `print-avoid-break` (`break-inside: avoid !important; page-break-inside: avoid !important;`) on executive summary cards, settlement reconciliation math boxes, category breakdown tables, and dual-family signature blocks.
+  - [x] Enhanced itemized ledger rows to print driver, vehicle plate, and route details when `exp.cabDetails` is present.
+- [x] **46.4 Build & Production Verification**
+  - [x] `npm --prefix client run build`: Passed cleanly with 0 TypeScript/Vite errors (`tsc -b && vite build` built in 18.02s).
 
 ---
 

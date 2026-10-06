@@ -132,15 +132,78 @@
 .animate-shimmer {
   animation: shimmer 2s infinite;
 }
+/* ==========================================================================
+   Offline Printable Document & Modal Print Isolation Engine
+   ========================================================================== */
+@page {
+  size: A4 portrait;
+  margin: 10mm 10mm 10mm 10mm;
+}
 
-/* Offline Printable Sheet Styles */
 @media print {
-  body {
+  /* When printing an isolated modal (settlement report or itinerary sheet), completely hide the main app root */
+  body.print-settlement-active #root,
+  body.print-itinerary-active #root,
+  body.print-isolated-modal #root {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.print-settlement-active,
+  body.print-itinerary-active,
+  body.print-isolated-modal {
     background-color: #ffffff !important;
     color: #000000 !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
-  
-  /* Hide global navigation and floating chrome */
+
+  /* Printable Settlement Statement & Itinerary Dossier Portal & Document Canvas */
+  body.print-settlement-active #printable-settlement-portal,
+  body.print-itinerary-active #printable-itinerary-portal {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  body.print-settlement-active #printable-settlement-statement {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Force background graphics, colored table headers, and badges to print faithfully */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Prevent page cuts right through summary cards, rows, and signatures */
+  .print-avoid-break,
+  tr,
+  thead,
+  tfoot {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Global print rules: hide floating chrome & navigation */
   header, 
   nav, 
   #bottom-dock, 
@@ -160,3 +223,4 @@
     color: #000000 !important;
   }
 }
+

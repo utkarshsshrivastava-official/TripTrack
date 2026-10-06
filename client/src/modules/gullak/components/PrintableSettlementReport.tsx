@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Expense } from '../../../shared/types';
 import { GullakFinancialSummary } from '../services/expenseStorage';
 import { DUO_A_SON, DUO_B_SON, DUO_A_ELDER, DUO_B_ELDER } from '../../../shared/config/travellers.config';
@@ -15,7 +16,27 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
   summary,
   onClose
 }) => {
+  useEffect(() => {
+    // Add print isolation class to body while modal is open
+    document.body.classList.add('print-settlement-active');
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    // Keyboard ESC to close
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.classList.remove('print-settlement-active');
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   const handlePrint = () => {
+    document.body.classList.add('print-settlement-active');
     window.print();
   };
 
@@ -28,10 +49,17 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
   const hasCustom = summary.hasCustomSplits;
   const diff = Math.abs((pureNet?.amountINR || 0) - (net.amountINR || 0));
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/90 backdrop-blur-md p-2 sm:p-6 print:p-0 print:bg-white print:static animate-in fade-in">
+  const content = (
+    <div 
+      id="printable-settlement-portal"
+      onClick={onClose}
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/90 backdrop-blur-md p-2 sm:p-6 print:p-0 print:m-0 print:bg-white print:static print:overflow-visible animate-in fade-in"
+    >
       {/* Top Floating Control Bar (Hidden when Printing) */}
-      <div className="max-w-4xl mx-auto mb-4 flex items-center justify-between p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl print:hidden">
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-4xl mx-auto mb-4 flex items-center justify-between p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl print:hidden"
+      >
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-temple-gold" />
           <div>
@@ -61,9 +89,13 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
       </div>
 
       {/* The Printable Document Paper */}
-      <div className="max-w-4xl mx-auto bg-white text-slate-900 rounded-2xl p-6 sm:p-10 shadow-2xl print:shadow-none print:p-0 print:rounded-none font-sans text-xs">
+      <div 
+        id="printable-settlement-statement"
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-4xl mx-auto bg-white text-slate-900 rounded-2xl p-6 sm:p-10 shadow-2xl print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-full print:rounded-none font-sans text-xs"
+      >
         {/* Document Header */}
-        <div className="border-b-2 border-slate-900 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="border-b-2 border-slate-900 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print-avoid-break">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] uppercase font-black tracking-widest px-2 py-0.5 rounded bg-slate-900 text-white">
@@ -88,7 +120,7 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
         </div>
 
         {/* Financial Executive Summary Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 print-avoid-break">
           <div className="p-3 rounded-xl bg-slate-100 border border-slate-300">
             <span className="text-[10px] uppercase font-bold text-slate-500 block">Total Spend</span>
             <span className="text-base font-black font-mono text-slate-950">
@@ -131,7 +163,7 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
         </div>
 
         {/* Final Settlement Math Box */}
-        <div className={`p-4 rounded-xl border mb-6 ${
+        <div className={`p-4 rounded-xl border mb-6 print-avoid-break ${
           net.isSettled 
             ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
             : 'bg-amber-50 border-amber-300 text-amber-950'
@@ -179,7 +211,7 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
         </div>
 
         {/* Category Breakdown Table */}
-        <div className="mb-6">
+        <div className="mb-6 print-avoid-break">
           <h3 className="text-xs font-black uppercase tracking-wide text-slate-800 mb-2">
             Spending by Category
           </h3>
@@ -213,11 +245,11 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
 
         {/* Itemized Transaction Ledger */}
         <div className="mb-8">
-          <h3 className="text-xs font-black uppercase tracking-wide text-slate-800 mb-2">
+          <h3 className="text-xs font-black uppercase tracking-wide text-slate-800 mb-2 print-avoid-break">
             Complete Itemized Transaction Ledger ({sortedExpenses.length} Records)
           </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse border border-slate-300 text-[11px]">
+          <div className="overflow-x-auto print:overflow-visible">
+            <table className="w-full text-left border-collapse border border-slate-300 text-[11px] print:text-[10px]">
               <thead>
                 <tr className="bg-slate-100 text-[10px] uppercase font-bold text-slate-600 border-b border-slate-300">
                   <th className="p-2 border-r border-slate-300 w-8">#</th>
@@ -247,6 +279,13 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
                             {exp.venueName}{exp.venueName && exp.venueLocation ? ' • ' : ''}{exp.venueLocation}
                           </div>
                         )}
+                        {exp.cabDetails && (exp.cabDetails.cabRouteOrPackage || exp.cabDetails.driverName || exp.cabDetails.vehicleNumber) && (
+                          <div className="text-[9px] text-amber-800 font-mono mt-0.5">
+                            🚕 {exp.cabDetails.cabRouteOrPackage ? `${exp.cabDetails.cabRouteOrPackage}` : ''}
+                            {exp.cabDetails.driverName ? ` • Driver: ${exp.cabDetails.driverName}` : ''}
+                            {exp.cabDetails.vehicleNumber ? ` (${exp.cabDetails.vehicleNumber})` : ''}
+                          </div>
+                        )}
                       </td>
                       <td className="p-2 border-r border-slate-200 text-slate-600">{exp.category.replace('_', ' ')}</td>
                       <td className="p-2 border-r border-slate-200 font-medium">
@@ -266,7 +305,7 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
                 })}
               </tbody>
               <tfoot>
-                <tr className="bg-slate-900 text-white font-bold">
+                <tr className="bg-slate-900 text-white font-bold print-avoid-break">
                   <td colSpan={6} className="p-2.5 text-right uppercase text-[10px] tracking-wider">
                     Total Pilgrimage Spend:
                   </td>
@@ -280,7 +319,7 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
         </div>
 
         {/* Verification Signatures Box */}
-        <div className="border-t-2 border-slate-300 pt-6 mt-8">
+        <div className="border-t-2 border-slate-300 pt-6 mt-8 print-avoid-break">
           <p className="text-[10px] text-slate-500 font-mono mb-6">
             Both coordinator families have reviewed and approved all documented expenditures for the 2026 Badrinath Dham Yatra.
           </p>
@@ -298,4 +337,8 @@ export const PrintableSettlementReport: React.FC<PrintableSettlementReportProps>
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return null;
+  return createPortal(content, document.body);
 };
+
