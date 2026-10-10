@@ -118,25 +118,36 @@ class EmailService {
     if (process.env.BREVO_API_KEY) {
       console.log('⚡ [Brevo API] Configured with Brevo HTTPS REST API (Port 443) — Immune to cloud SMTP port blocking!');
     }
+
+    if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true') {
+      console.log('🔕 [Email Service] Email sending is DISABLED post-pilgrimage. All outbound emails will be suppressed.');
+    }
   }
 
   getProviderInfo() {
+    if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true') {
+      return {
+        type: 'DISABLED' as const,
+        name: 'Notifications Disabled',
+        status: 'Email sending deactivated post-pilgrimage (no inbox spam)'
+      };
+    }
     if (process.env.BREVO_API_KEY) {
       return {
-        type: 'BREVO_HTTPS',
+        type: 'BREVO_HTTPS' as const,
         name: 'Brevo HTTPS (Port 443)',
         status: 'Active (100% cloud deliverability)'
       };
     }
     if (this.isConfigured) {
       return {
-        type: 'GMAIL_SMTP',
+        type: 'GMAIL_SMTP' as const,
         name: 'Gmail SMTP',
         status: 'Active (Port 465/587 - Local/Dedicated)'
       };
     }
     return {
-      type: 'SIMULATION',
+      type: 'SIMULATION' as const,
       name: 'Safe Console Simulation',
       status: 'Payloads logged to server console'
     };
@@ -209,6 +220,16 @@ class EmailService {
    */
   async sendEmail(subject: string, htmlBody: string, specificRecipients?: string[]): Promise<{ success: boolean; simulated?: boolean; messageId?: string; warning?: string }> {
     const recipients = specificRecipients && specificRecipients.length > 0 ? specificRecipients : this.getRecipients();
+
+    // Master killswitch: If email notifications are disabled post-pilgrimage, suppress all outbound dispatches
+    if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true') {
+      console.log(`🔕 [Email Service] Outbound emails are disabled post-pilgrimage. Suppressed dispatch for: "${subject}" to ${recipients.length} recipients.`);
+      return {
+        success: true,
+        simulated: true,
+        warning: 'Email dispatch is permanently disabled post-pilgrimage to prevent inbox spam.'
+      };
+    }
 
     if (recipients.length === 0) {
       console.warn('⚠️ [Email Service] No recipients configured.');

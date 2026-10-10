@@ -1104,6 +1104,10 @@ class AutomationService {
    * Start the background scheduler for scheduled morning briefings and daily evening digest
    */
   startScheduler(): void {
+    if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true') {
+      console.log('🔕 [Automation] Pilgrimage completed (Sep 24 - Oct 02). Autonomous email scheduler deactivated to prevent inbox spam.');
+      return;
+    }
     if (this.isRunning) return;
     this.isRunning = true;
 
@@ -1128,6 +1132,8 @@ class AutomationService {
    * Check all scheduled briefings and evening digest against the current date/time
    */
   async checkScheduledEvents(): Promise<void> {
+    if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true') return;
+
     const now = new Date();
 
     // 1. Check morning briefings
@@ -1196,7 +1202,11 @@ class AutomationService {
       tomorrowPreview: 'Early morning sacred visit to Badrinath Sanctum & Brahma Kapal ancestral rituals. Pacing is gentle.'
     };
 
-    await emailService.notifyDailyEveningDigest(digestData);
+    if (process.env.ENABLE_EMAIL_NOTIFICATIONS === 'true') {
+      await emailService.notifyDailyEveningDigest(digestData);
+    } else {
+      console.log('🔕 [Automation] Email suppressed for Sandhya bulletin / daily digest.');
+    }
     return digestData;
   }
 
@@ -1205,7 +1215,8 @@ class AutomationService {
    */
   getStatus() {
     return {
-      schedulerActive: this.isRunning,
+      schedulerActive: this.isRunning && process.env.ENABLE_EMAIL_NOTIFICATIONS === 'true',
+      emailSendingEnabled: process.env.ENABLE_EMAIL_NOTIFICATIONS === 'true',
       provider: emailService.getProviderInfo(),
       recipients: emailService.getRecipients(),
       counts: {

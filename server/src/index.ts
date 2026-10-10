@@ -29,8 +29,12 @@ async function bootstrap() {
   // Attach Socket.io server
   initSocketServer(httpServer);
 
-  // Start Autonomous Pilgrimage Briefings & Evening Digest Scheduler
-  automationService.startScheduler();
+  // Autonomous Pilgrimage Briefings & Evening Digest Scheduler (Disabled post-pilgrimage to prevent inbox spam)
+  if (process.env.ENABLE_EMAIL_NOTIFICATIONS === 'true') {
+    automationService.startScheduler();
+  } else {
+    console.log('🔕 [Automation] Autonomous email briefings & evening digest scheduler deactivated post-pilgrimage.');
+  }
 
   httpServer.listen(PORT, HOST, () => {
     console.log(`🚀 [TripTrack Server] Running on http://${HOST}:${PORT}`);

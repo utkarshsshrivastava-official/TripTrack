@@ -60,6 +60,7 @@
 | **Phase 45** | **Gullak Quick Description Presets & Cab Transit & Driver Details Engine** | ✅ **DONE** | 100% | Completed |
 | **Phase 46** | **Printable Settlement Report & Itinerary Dossier Zero-Leakage DOM Print Engine** | ✅ **DONE** | 100% | Completed |
 | **Phase 47** | **Unified Travel & Transit Hierarchy: Sub-Category Tabs (Cab, Auto, Train, Flight, Toll) & Mode Badges** | ✅ **DONE** | 100% | Completed |
+| **Phase 48** | **Post-Pilgrimage Inbox Spam Prevention & Email Sending Killswitch Engine** | ✅ **DONE** | 100% | Completed |
 
 ---
 
@@ -1345,6 +1346,25 @@
 - [x] **47.5 Monorepo Build & Production Verification**
   - [x] `npm --prefix server run build`: 0 TypeScript errors.
   - [x] `npm --prefix client run build`: 0 TypeScript/Vite errors (`built in 8.15s`).
+
+---
+
+### ✅ Phase 48: Post-Pilgrimage Inbox Spam Prevention & Email Sending Killswitch Engine (100% COMPLETE)
+
+- [x] **48.1 Multi-Layer Environment & Killswitch Infrastructure**
+  - [x] Added `ENABLE_EMAIL_NOTIFICATIONS=false` in `server/.env` and `server/.env.example`.
+  - [x] Implemented core killswitch in [email.service.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/modules/notifications/email.service.ts) `sendEmail`: completely suppresses outbound network requests to Brevo HTTPS API and Gmail SMTP when flag is not `'true'`.
+  - [x] Added safe simulation and warning message return (`Email dispatch is permanently disabled post-pilgrimage to prevent inbox spam.`).
+- [x] **48.2 Autonomous Background Scheduler Deactivation**
+  - [x] Guarded `startScheduler()` in [automation.service.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/modules/notifications/automation.service.ts) and [server/src/index.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/index.ts): stops 60-second polling interval completely post-pilgrimage.
+  - [x] Guarded morning briefings, evening Sandhya bulletin digest, and geofence/milestone email triggers from dispatching outbound emails while preserving in-app telemetry and socket room sync.
+- [x] **48.3 Family UI & Status Reassurance (`EmailAlertsModal.tsx`)**
+  - [x] Added `DISABLED` provider type and `emailSendingEnabled` flag support in client status model.
+  - [x] Displayed rose-tinted `Notifications Disabled` pill badge in header.
+  - [x] Rendered dedicated notice banner: `🔕 Email Dispatch Silenced Post-Pilgrimage` explaining that historical records remain safe while inboxes are protected from daily spam.
+- [x] **48.4 Monorepo Build & Production Verification**
+  - [x] `npm --prefix server run build`: 0 TypeScript errors.
+  - [x] `npm --prefix client run build`: 0 TypeScript/Vite errors.
 
 ---
 

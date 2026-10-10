@@ -56,8 +56,9 @@ interface BriefingItem {
 
 interface AutomationStatus {
   schedulerActive: boolean;
+  emailSendingEnabled?: boolean;
   provider?: {
-    type: 'BREVO_HTTPS' | 'GMAIL_SMTP' | 'SIMULATION';
+    type: 'BREVO_HTTPS' | 'GMAIL_SMTP' | 'SIMULATION' | 'DISABLED';
     name: string;
     status: string;
   };
@@ -335,7 +336,9 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
               <h2 className="text-sm sm:text-base font-extrabold text-white tracking-tight flex items-center gap-2">
                 <span>Family Email Alerts & Automation</span>
                 <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
-                  status?.provider?.type === 'BREVO_HTTPS'
+                  status?.provider?.type === 'DISABLED'
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                    : status?.provider?.type === 'BREVO_HTTPS'
                     ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                     : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                 }`}>
@@ -364,6 +367,21 @@ export const EmailAlertsModal: React.FC<EmailAlertsModalProps> = ({ isOpen, onCl
           }`}>
             {actionMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
             <span className="flex-1 leading-snug">{actionMessage.text}</span>
+          </div>
+        )}
+
+        {/* Post-Pilgrimage Inboxes Silenced Notice */}
+        {status?.provider?.type === 'DISABLED' && (
+          <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-500/40 flex items-start gap-3 animate-in fade-in">
+            <span className="text-base select-none">🔕</span>
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold text-amber-200">
+                Email Dispatch Silenced Post-Pilgrimage
+              </h4>
+              <p className="text-[11px] text-amber-300/80 leading-relaxed">
+                The 2026 Badrinath Dham pilgrimage is complete. Autonomous morning briefings, GPS geofence triggers, and 8:00 PM evening Sandhya bulletins are permanently deactivated to keep family inboxes clean. Live records remain safely archived.
+              </p>
+            </div>
           </div>
         )}
 
