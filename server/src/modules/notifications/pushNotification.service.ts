@@ -3,15 +3,17 @@ import { PushSubscriptionModel } from '../../models/pushSubscription.model';
 import { isMongoConnected } from '../../shared/lib/mongodb';
 
 // Default fallback keys if not in env
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BDRY-W3qw4-oEUxq8el3fpaTs-rB1HURGXWql5zyIBohVr2KVCN8ogCIrUR5w6D33sbHxqhRMjzf08BkWg2WUZo';
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'U7e_9uM289pWnitLT6143jIfFMGlxMxL55BQ7Yt_bp4';
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:utkarshshrivastava.13@gmail.com';
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || '';
 
-try {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-  console.log('🔔 [WebPush] VAPID configuration initialized successfully.');
-} catch (err) {
-  console.error('⚠️ [WebPush] Failed to initialize VAPID details:', err);
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY && VAPID_SUBJECT) {
+  try {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+    console.log('🔔 [WebPush] VAPID configuration initialized successfully.');
+  } catch (err) {
+    console.error('⚠️ [WebPush] Failed to initialize VAPID details:', err);
+  }
 }
 
 export class PushNotificationService {
@@ -133,7 +135,7 @@ export class PushNotificationService {
           // If status is 404 (Not Found) or 410 (Gone), device unsubscribed or token expired
           if (err.statusCode === 404 || err.statusCode === 410) {
             console.log(`🧹 [WebPush] Cleaning expired subscription for endpoint: ${sub.endpoint.slice(0, 30)}...`);
-            await PushSubscriptionModel.findOneAndDelete({ endpoint: sub.endpoint }).catch(() => {});
+            await PushSubscriptionModel.findOneAndDelete({ endpoint: sub.endpoint }).catch(() => { });
           } else {
             console.warn(`⚠️ [WebPush] Push dispatch error for ${sub.userName}:`, err.message || err);
           }
@@ -191,7 +193,7 @@ export class PushNotificationService {
         sent++;
       } catch (err: any) {
         if (err.statusCode === 404 || err.statusCode === 410) {
-          await PushSubscriptionModel.findOneAndDelete({ endpoint: sub.endpoint }).catch(() => {});
+          await PushSubscriptionModel.findOneAndDelete({ endpoint: sub.endpoint }).catch(() => { });
         }
       }
     }

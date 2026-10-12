@@ -170,16 +170,22 @@ class EmailService {
    * Completely immune to Render's outbound SMTP port blocking.
    */
   async sendViaBrevo(
-    subject: string, 
-    htmlBody: string, 
+    subject: string,
+    htmlBody: string,
     recipients: string[]
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     const apiKey = process.env.BREVO_API_KEY?.replace(/['"\r\n\s]/g, '');
     if (!apiKey) return { success: false, error: 'BREVO_API_KEY not configured' };
 
-    console.log(`📡 [Brevo HTTPS API] Attempting dispatch with key: ${apiKey.slice(0, 10)}... (length: ${apiKey.length})`);
+    if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true') {
+      return { success: false, error: 'Email sending deactivated post-pilgrimage' };
+    }
 
-    const senderEmail = process.env.SMTP_USER?.trim() || 'utkarshsofficial13@gmail.com';
+    const senderEmail = process.env.SMTP_USER?.trim() || '';
+    if (!senderEmail) {
+      console.warn('⚠️ [Brevo HTTPS API] No verified sender email configured. Dispatch aborted.');
+      return { success: false, error: 'No sender email configured' };
+    }
     const senderName = 'TripTrack by Ut-tech';
 
     try {
@@ -274,11 +280,11 @@ class EmailService {
     console.log(`Subject: ${subject}`);
     console.log('--- HTML Preview ---');
     console.log(htmlBody.slice(0, 300) + '...\n===============================================================\n');
-    return { 
-      success: true, 
-      simulated: true, 
-      warning: process.env.BREVO_API_KEY 
-        ? 'Brevo API call failed. Notification logged to cloud console.' 
+    return {
+      success: true,
+      simulated: true,
+      warning: process.env.BREVO_API_KEY
+        ? 'Brevo API call failed. Notification logged to cloud console.'
         : 'Outbound SMTP ports blocked on Render free tier. Add BREVO_API_KEY in Render environment variables for 100% production delivery.'
     };
   }
@@ -431,7 +437,7 @@ class EmailService {
    */
   async notifyScheduledBriefing(data: ScheduledBriefing) {
     const isPreDeparture = data.phase === 'PRE_DEPARTURE';
-    
+
     // Determine icon, label & Hindi translation based on time slot
     let slotIcon = '🌅';
     let slotName = 'Morning';
@@ -454,8 +460,8 @@ class EmailService {
       slotColor = '#8b5cf6'; // violet
     }
 
-    const phaseTitle = isPreDeparture 
-      ? '🎒 Pre-Departure / यात्रा पूर्व तैयारी' 
+    const phaseTitle = isPreDeparture
+      ? '🎒 Pre-Departure / यात्रा पूर्व तैयारी'
       : '🏔️ Pilgrimage Morning / दैनिक यात्रा बुलेटिन';
 
     const subject = `${slotIcon} [${isPreDeparture ? 'TripTrack Prep / पूर्व तैयारी' : 'Yatra Briefing / यात्रा बुलेटिन'}] ${data.dayTitle} — ${data.subject}`;
@@ -468,14 +474,14 @@ class EmailService {
           </h3>
           <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: #bae6fd;">
             ${data.checklistItems.map((item, idx) => {
-              const itemHi = data.checklistItemsHindi && data.checklistItemsHindi[idx];
-              return `
+        const itemHi = data.checklistItemsHindi && data.checklistItemsHindi[idx];
+        return `
                 <li style="margin-bottom: 8px;">
                   <strong style="color: #38bdf8;">✓</strong> <span style="font-weight: 600;">${item}</span>
                   ${itemHi ? `<div style="color: #7dd3fc; font-size: 12.5px; margin-left: 6px; margin-top: 2px;">• ${itemHi}</div>` : ''}
                 </li>
               `;
-            }).join('')}
+      }).join('')}
           </ul>
         </div>
       `
@@ -489,14 +495,14 @@ class EmailService {
           </h3>
           <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: #e9d5ff;">
             ${data.sightseeingTips.map((tip, idx) => {
-              const tipHi = data.sightseeingTipsHindi && data.sightseeingTipsHindi[idx];
-              return `
+        const tipHi = data.sightseeingTipsHindi && data.sightseeingTipsHindi[idx];
+        return `
                 <li style="margin-bottom: 8px;">
                   <strong style="color: #c084fc;">•</strong> <span style="font-weight: 600;">${tip}</span>
                   ${tipHi ? `<div style="color: #d8b4fe; font-size: 12.5px; margin-left: 6px; margin-top: 2px;">• ${tipHi}</div>` : ''}
                 </li>
               `;
-            }).join('')}
+      }).join('')}
           </ul>
         </div>
       `
@@ -620,7 +626,7 @@ class EmailService {
    */
   async notifyDailyEveningDigest(data: DailyDigestData) {
     const subject = `🌄 [Sandhya Bulletin / संध्या बुलेटिन] Daily Yatra Summary — ${data.dateStr}`;
-    const milestonesList = data.milestonesCovered.length > 0 
+    const milestonesList = data.milestonesCovered.length > 0
       ? data.milestonesCovered.map(m => `<li style="margin-bottom: 4px; color: #cbd5e1;">✅ ${m}</li>`).join('')
       : '<li style="color: #94a3b8;">Resting / Acclimatization day • विश्राम एवं अनुकूलन दिवस</li>';
 

@@ -1132,18 +1132,23 @@ class AutomationService {
    * Check all scheduled briefings and evening digest against the current date/time
    */
   async checkScheduledEvents(): Promise<void> {
-    if (process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true') return;
-
+    // Master Safety Guard: Pilgrimage concluded on Oct 02, 2026. Never dispatch historical briefings post-pilgrimage.
+    const tripEndDate = new Date('2026-10-03T00:00:00+05:30');
     const now = new Date();
+    if (now > tripEndDate || process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'true') {
+      return;
+    }
 
-    // 1. Check morning briefings
+    // 1. Check morning briefings (Strict 30-minute window only, never replay past events)
     for (const briefing of SCHEDULED_BRIEFINGS) {
       const triggerKey = `briefing-${briefing.id}`;
       if (this.dispatchedTriggers.has(triggerKey)) continue;
 
       const targetTime = new Date(briefing.scheduledFor);
-      // If current time is past or within 10 minutes of target briefing time
-      if (now >= targetTime) {
+      const diffMs = now.getTime() - targetTime.getTime();
+
+      // Only trigger if currently within 0 to 30 minutes of the target briefing time
+      if (diffMs >= 0 && diffMs <= 30 * 60 * 1000) {
         this.dispatchedTriggers.add(triggerKey);
         console.log(`🌅 [Automation] Triggering Scheduled Briefing: ${briefing.dayTitle}`);
         await emailService.notifyScheduledBriefing(briefing);
