@@ -1362,7 +1362,11 @@
   - [x] Added `DISABLED` provider type and `emailSendingEnabled` flag support in client status model.
   - [x] Displayed rose-tinted `Notifications Disabled` pill badge in header.
   - [x] Rendered dedicated notice banner: `🔕 Email Dispatch Silenced Post-Pilgrimage` explaining that historical records remain safe while inboxes are protected from daily spam.
-- [x] **48.4 Monorepo Build & Production Verification**
+- [x] **48.4 Hardcoded Date Cutoff & Window Replay Prevention**
+  - [x] Added hardcoded pilgrimage completion cutoff (`now > new Date('2026-10-03')`) in [automation.service.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/modules/notifications/automation.service.ts): mathematically prevents historical briefings from ever evaluating as due.
+  - [x] Replaced open-ended `now >= targetTime` with a strict `diffMs <= 30 * 60 * 1000` window to eliminate backlog flushing on container restarts.
+  - [x] Guarded `sendViaBrevo` in [email.service.ts](file:///d:/UTKARSH/Live%20Projects/Vercel-live-Website/TripTrack/server/src/modules/notifications/email.service.ts) against missing sender email and killswitch check.
+- [x] **48.5 Monorepo Build & Production Verification**
   - [x] `npm --prefix server run build`: 0 TypeScript errors.
   - [x] `npm --prefix client run build`: 0 TypeScript/Vite errors.
 
