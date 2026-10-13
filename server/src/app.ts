@@ -34,7 +34,9 @@ app.get(['/', '/health', '/api/health'], (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'ok',
     app: 'TripTrack API',
-    version: '1.0.0',
+    version: '1.0.1',
+    gitCommit: 'c043f94-killswitch-active',
+    emailDeactivated: true,
     target: 'Badrinath Dham Pilgrimage 2026',
     mongoConnected: isMongoConnected(),
     uptime: Math.floor(process.uptime()),
